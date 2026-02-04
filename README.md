@@ -17,5 +17,3 @@
 ## Submitted To
 - **Sir Elcid Serrano**
 
-## Date Submitted
-- **19 January 2026**
