@@ -3,9 +3,9 @@ import supabase from "./database-auth/supabase-client";
 import { BrowserRouter , Routes, Route } from "react-router-dom";
 import MainLayout from './layouts/MainLayout';
 
-import Home from './pages/Home.jsx';
-import Donate from './pages/Donate.jsx';
-import Profile from './pages/Profile.jsx';
+import Home from './pages/Home';
+import Donate from './pages/Donate';
+import Profile from './pages/Profile';
 
 function App() {
   return (
