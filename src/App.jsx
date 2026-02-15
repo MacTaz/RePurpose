@@ -6,6 +6,8 @@ import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
 import Donate from './pages/Donate';
 import Profile from './pages/Profile';
+import Manage from './pages/Manage';
+import Landing from './pages/Landing';
 
 function App() {
   return (
@@ -16,6 +18,9 @@ function App() {
           <Route index element={<Home />} />
           <Route path="donate" element={<Donate />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="manage" element={<Manage />} />
+          <Route path="landing" element={<Landing />} />
+          <Route path="home" element={<Home />} />
         </Route>
       </Routes>
     </BrowserRouter>

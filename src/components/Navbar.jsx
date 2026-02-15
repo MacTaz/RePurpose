@@ -9,6 +9,9 @@ export default function Navbar() {
         <Link to="/" className="hover:text-blue-600">Home</Link>
         <Link to="/donate" className="hover:text-blue-600">Donate</Link>
         <Link to="/profile" className="hover:text-blue-600">Profile</Link>
+        <Link to="/manage" className="hover:text-blue-600">Manage</Link>
+        <Link to="/landing" className="hover:text-blue-600">Landing</Link>
+        <Link to="/donate" className="hover:text-blue-600">Donate</Link>
       </div>
 
     </nav>
