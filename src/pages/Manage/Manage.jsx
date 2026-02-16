@@ -1,5 +1,3 @@
-import Button from '../components/Button';
-
 export default function Donate() {
   return (
     <div className="flex flex-col items-center justify-center space-y-6 mt-20">
