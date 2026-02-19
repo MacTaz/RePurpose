@@ -8,6 +8,8 @@ import Donate from './pages/Donate/Donate';
 import Profile from './pages/Profile/Profile';
 import Manage from './pages/Manage/Manage';
 import Landing from './pages/Landing/Landing';
+import Login from './pages/Landing/Login'
+import Sign_up from './pages/Landing/Sign_up'
 
 function App() {
   return (
@@ -19,9 +21,12 @@ function App() {
           <Route path="donate" element={<Donate />} />
           <Route path="profile" element={<Profile />} />
           <Route path="manage" element={<Manage />} />
-          <Route path="landing" element={<Landing />} />
           <Route path="home" element={<Home />} />
         </Route>
+
+        <Route path="landing" element={<Landing />} /> {/*Nilabas ko toh dahil may sarili itong layout*/}
+        <Route path="/login" element={<Login />} />
+        <Route path="/sign_up" element={<Sign_up />} />
       </Routes>
     </BrowserRouter>
   );
