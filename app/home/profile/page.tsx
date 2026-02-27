@@ -20,7 +20,7 @@ const ProfilePage = async () => {
     const role = (profile?.role || 'donor') as 'donor' | 'organization';
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-['Inter']">
+        <div className="min-h-screen bg-white flex flex-col font-inter">
             <Navbar role={role} />
             <main className="flex-1 p-10">
                 <h1 className="text-3xl font-bold text-slate-800">Profile</h1>
