@@ -22,7 +22,7 @@ const Manage = async () => {
     const role = (profile?.role || 'donor') as 'donor' | 'organization';
 
     return (
-        <div className="min-h-screen bg-white font-sans flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col font-inter">
             <Navbar role={role} />
 
             {role === 'donor' ? (

@@ -2,6 +2,7 @@ import React from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import InboxClient from './_components/InboxClient'
 
 const InboxPage = async () => {
     const supabase = await createClient();
@@ -11,19 +12,14 @@ const InboxPage = async () => {
         redirect('/login');
     }
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-    const role = (profile?.role || 'donor') as 'donor' | 'organization';
+    // Faster approach: Get role directly from user metadata
+    const role = (user.user_metadata?.role || 'donor') as 'donor' | 'organization';
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-['Inter']">
+        <div className="h-screen flex flex-col bg-white overflow-hidden font-inter">
             <Navbar role={role} />
-            <main className="flex-1 p-10">
-                <h1 className="text-3xl font-bold text-slate-800">Inbox</h1>
+            <main className="flex-1 flex overflow-hidden">
+                <InboxClient role={role} />
             </main>
         </div>
     )
