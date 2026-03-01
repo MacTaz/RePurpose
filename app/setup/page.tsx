@@ -58,8 +58,8 @@ export default function SetupPage() {
 
             if (profileFile) {
                 const fileExt = profileFile.name.split('.').pop();
-                // Path must be {userId}/{filename} so storage RLS foldername() check matches
-                const filePath = `${user.id}/${user.id}.${fileExt}`;
+                // Path must be {userId}/avatar.{fileExt} so storage RLS foldername() check matches
+                const filePath = `${user.id}/avatar.${fileExt}`;
 
                 const { error: uploadError } = await supabase.storage
                     .from('avatars')
@@ -104,11 +104,28 @@ export default function SetupPage() {
 
     return (
         <div className={`min-h-screen ${bgColor} transition-all duration-1000 ease-in-out flex items-center justify-center p-4 md:p-10 font-inter`}>
-            {/* Abstract Background Elements for Premium Feel */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-black/10 rounded-full blur-3xl animate-pulse"></div>
+            {/* Topographic Wave Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <svg className="absolute w-[200%] md:w-full h-[200%] md:h-full object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-70" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900">
+                    <rect width="1440" height="900" fill="black" fillOpacity="0.3" />
 
-            <div className={`relative bg-white/95 backdrop-blur-sm rounded-[2.5rem] shadow-2xl ${shadowColor} w-full max-w-4xl overflow-hidden flex flex-col md:flex-row transition-all duration-500`}>
+                    {/* Top Left Waves */}
+                    <path fill="white" fillOpacity="0.04" d="M0 0 L1200 0 C1100 250, 1000 400, 800 550 C600 700, 400 850, 0 900 Z" />
+                    <path fill="white" fillOpacity="0.06" d="M0 0 L900 0 C800 200, 750 400, 600 550 C450 700, 250 800, 0 850 Z" />
+                    <path fill="white" fillOpacity="0.08" d="M0 0 L600 0 C550 150, 450 300, 350 450 C250 600, 150 700, 0 750 Z" />
+                    <path fill="white" fillOpacity="0.1" d="M0 0 L300 0 C250 100, 200 200, 150 300 C100 400, 50 500, 0 550 Z" />
+                    <path fill="white" fillOpacity="0.15" d="M0 0 L100 0 C80 50, 60 100, 40 150 C20 200, 10 250, 0 300 Z" />
+
+                    {/* Bottom Right Waves */}
+                    <path fill="white" fillOpacity="0.04" d="M 1440 900 L 240 900 C 340 650, 440 500, 640 350 C 840 200, 1040 50, 1440 0 Z" />
+                    <path fill="white" fillOpacity="0.06" d="M 1440 900 L 540 900 C 640 700, 690 500, 840 350 C 990 200, 1190 100, 1440 50 Z" />
+                    <path fill="white" fillOpacity="0.08" d="M 1440 900 L 840 900 C 890 750, 990 600, 1090 450 C 1190 300, 1290 200, 1440 150 Z" />
+                    <path fill="white" fillOpacity="0.1" d="M 1440 900 L 1140 900 C 1190 800, 1240 700, 1290 600 C 1340 500, 1390 400, 1440 350 Z" />
+                    <path fill="white" fillOpacity="0.15" d="M 1440 900 L 1340 900 C 1360 850, 1380 800, 1400 750 C 1420 700, 1430 650, 1440 600 Z" />
+                </svg>
+            </div>
+
+            <div className={`relative z-10 bg-white/95 backdrop-blur-sm rounded-[2.5rem] shadow-2xl ${shadowColor} w-full max-w-4xl overflow-hidden flex flex-col md:flex-row transition-all duration-500`}>
 
                 {/* Left Side: Dynamic Welcome Sidebar */}
                 <div className={`md:w-5/12 p-10 md:p-12 flex flex-col justify-between items-center text-white transition-all duration-1000 ${bgColor} relative overflow-hidden`}>
