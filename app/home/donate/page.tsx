@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import DonationForm from './_components/DonationForm'
 
 export default async function Donate() {
     const supabase = await createClient();
@@ -19,10 +20,10 @@ export default async function Donate() {
     const role = (profile?.role || 'donor') as 'donor' | 'organization';
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-['Inter']">
+        <div className="min-h-screen bg-[#9dbcd4] flex flex-col font-['Inter']">
             <Navbar role={role} />
-            <main className="flex-1 p-10">
-                <h1 className="text-3xl font-bold text-slate-800">Donate</h1>
+            <main className="flex-1">
+                <DonationForm />
             </main>
         </div>
     )
