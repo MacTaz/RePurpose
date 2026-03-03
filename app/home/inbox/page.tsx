@@ -12,13 +12,8 @@ const InboxPage = async () => {
         redirect('/login');
     }
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-    const role = (profile?.role || 'donor') as 'donor' | 'organization';
+    // Faster approach: Get role directly from user metadata
+    const role = (user.user_metadata?.role || 'donor') as 'donor' | 'organization';
 
     return (
         <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-['Inter']">

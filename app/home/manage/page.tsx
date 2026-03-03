@@ -14,17 +14,10 @@ const Manage = async () => {
         redirect('/login');
     }
 
-    // Fetch the profile to get the role
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-    const role = (profile?.role || 'donor') as 'donor' | 'organization';
+    const role = (user.user_metadata?.role || 'donor') as 'donor' | 'organization';
 
     return (
-        <div className="min-h-screen bg-white font-sans flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col font-inter">
             <Navbar role={role} />
 
             {role === 'donor' ? (

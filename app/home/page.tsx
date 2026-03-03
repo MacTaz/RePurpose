@@ -1,27 +1,36 @@
 import React from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { AlertTriangle, Home as HomeIcon, Clock, Package, CheckCircle, Truck, ClipboardList, Zap, ArrowRight, Activity } from 'lucide-react'
 
 const Home = async () => {
     const supabase = await createClient();
 
+    // 1. Check if user is logged in
     const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) {
         redirect('/login');
     }
 
-    // Fetch the profile to get the role
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+    // 2. Faster approach: Check metadata for setup status
+    // If not complete in metadata, check the 'profiles' table as a fallback
+    const setupComplete = user.user_metadata?.setup_complete;
 
-    const role = (profile?.role || 'donor') as 'donor' | 'organization';
+    if (!setupComplete) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (!profile) {
+            redirect('/setup');
+        }
+    }
+
+    // 3. Get role directly from user metadata for speed
+    const role = (user.user_metadata?.role || 'donor') as 'donor' | 'organization';
 
     return (
         <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-['Inter'] selection:bg-[#7BA4D5]/30">
