@@ -2,6 +2,8 @@ import React from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import DonorProfile from '@/components/DonorProfile'
+import CharityProfile from '@/components/CharityProfile'
 
 const ProfilePage = async () => {
     const supabase = await createClient();
@@ -22,14 +24,23 @@ const ProfilePage = async () => {
     return (
         <div className="min-h-screen bg-white flex flex-col font-['Inter']">
             <Navbar role={role} />
-            <main className="flex-1 p-10">
-                <h1 className="text-3xl font-bold text-slate-800">Profile</h1>
-                <div className="mt-8 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
-                    <p className="text-slate-600"><strong>Name:</strong> {profile?.full_name}</p>
-                    <p className="text-slate-600"><strong>Email:</strong> {user.email}</p>
-                    <p className="text-slate-600 capitalize"><strong>Role:</strong> {role}</p>
-                </div>
-            </main>
+            {role === 'donor' ? (
+                <DonorProfile
+                    user={{
+                        name: profile?.full_name || 'Donor User',
+                        email: user.email || '',
+                        role: role
+                    }}
+                />
+            ) : (
+                <CharityProfile
+                    user={{
+                        name: profile?.full_name || 'Organization User',
+                        email: user.email || '',
+                        role: role
+                    }}
+                />
+            )}
         </div>
     )
 }
