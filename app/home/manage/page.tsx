@@ -2,8 +2,8 @@ import React from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import DonorManage from './_components/DonorManage'
-import OrgManage from './_components/OrgManage'
+import ManageDonor from '@/components/ManageDonor'
+import ManageCharity from '@/components/ManageCharity'
 
 const Manage = async () => {
     const supabase = await createClient();
@@ -20,7 +20,13 @@ const Manage = async () => {
         <div className="min-h-screen bg-white flex flex-col font-inter">
             <Navbar role={role} />
 
-            {role === 'donor' ? <DonorManage /> : <OrgManage />}
+            {role === 'donor' ? (
+                /* DONOR VIEW */
+                <ManageDonor />
+            ) : (
+                /* ORGANIZATION VIEW */
+                <ManageCharity />
+            )}
         </div>
     )
 }
