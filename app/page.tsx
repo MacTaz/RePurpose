@@ -1,9 +1,14 @@
 import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 import Link from 'next/link'
 
 export default async function LandingPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/home");
+  }
 
   return (
     <div className='h-screen flex flex-col'>
@@ -25,14 +30,8 @@ export default async function LandingPage() {
             <nav className="flex items-center justify-between p-6">
               <h1 className="text-white font-inter text-4xl font-black">RePurpose</h1>
               <div className='flex gap-x-10 text-white font-konkhmer text-[26px] font-normal'>
-                {user ? (
-                  <Link href="/home" className="relative text-[#647BD0] font-bold after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#647BD0]">Dashboard</Link>
-                ) : (
-                  <>
-                    <Link href="/login" className="relative text-white after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#647BD0] after:transition-all after:duration-300 hover:text-[#647BD0] hover:after:w-full">Login</Link>
-                    <Link href="/register" className="relative text-white after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#647BD0] after:transition-all after:duration-300 hover:text-[#647BD0] hover:after:w-full">Sign up</Link>
-                  </>
-                )}
+                <Link href="/login" className="relative text-white after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#647BD0] after:transition-all after:duration-300 hover:text-[#647BD0] hover:after:w-full">Login</Link>
+                <Link href="/register" className="relative text-white after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-[#647BD0] after:transition-all after:duration-300 hover:text-[#647BD0] hover:after:w-full">Sign up</Link>
               </div>
             </nav>
           </div>
@@ -41,8 +40,8 @@ export default async function LandingPage() {
           <div className='flex-1 flex flex-col items-center justify-center'>
             <h1 className="text-white text-center font-montserrat text-[70px] font-light leading-[1] mb-4">Give Your Pre-Loved<br />Items a New Purpose</h1>
             <p className="text-white text-center font-hind-guntur text-1xl font-extralight">Connect with local organizations and ensure your usable<br />goods go where they're needed most</p>
-            <Link href={user ? "/home" : "/register"} className="block text-center relative py-3 px-8 text-white text-base font-bold rounded-full overflow-hidden bg-[#647BD0] w-[275px] max-w-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-[#647BD0] before:to-[#FF9248] before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0 mt-7">
-              {user ? "Go to Dashboard" : "Get Started"}
+            <Link href="/register" className="block text-center relative py-3 px-8 text-white text-base font-bold rounded-full overflow-hidden bg-[#647BD0] w-[275px] max-w-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-[#647BD0] before:to-[#FF9248] before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0 mt-7">
+              Get Started
             </Link>
           </div>
 
