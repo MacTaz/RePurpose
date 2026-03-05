@@ -20,16 +20,17 @@ export async function login(formData: FormData) {
         redirect(`/error?message=${encodeURIComponent(error.message)}`);
     }
 
-    if (user) {
+    // Check setup_complete — metadata first (fast), then DB as fallback
+    const metaComplete = user?.user_metadata?.setup_complete;
+    if (!metaComplete) {
         const { data: profile } = await supabase
             .from('profiles')
-            .select('id')
-            .eq('id', user.id)
-            .maybeSingle();
+            .select('setup_complete')
+            .eq('id', user!.id)
+            .single();
 
-        if (!profile) {
-            revalidatePath("/setup", "layout");
-            redirect("/setup");
+        if (!profile?.setup_complete) {
+            redirect('/register?step=2');
         }
     }
 
@@ -38,34 +39,7 @@ export async function login(formData: FormData) {
 }
 
 
-export async function signup(formData: FormData) {
-    const supabase = await createClient();
-
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const fullName = formData.get("full-name") as string;
-    const userType = formData.get("user-type") as string;
-
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: {
-                full_name: fullName,
-                role: userType,
-                email: email,
-            },
-        },
-    });
-
-    if (error) {
-        console.error("Signup error:", error.message);
-        redirect(`/error?message=${encodeURIComponent(error.message)}`);
-    }
-
-    revalidatePath("/setup", "layout");
-    redirect("/setup");
-}
+// signup is now handled client-side in /register — this action is kept for compatibility
 
 
 

@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
             if (profile?.setup_complete === true) {
                 return NextResponse.redirect(new URL(next, origin))
             } else {
-                return NextResponse.redirect(new URL('/setup', origin))
+                // Send OAuth users to register page with email pre-filled
+                const registerUrl = new URL('/register', origin)
+                registerUrl.searchParams.set('oauth', 'true')
+                registerUrl.searchParams.set('email', data.user.email ?? '')
+                return NextResponse.redirect(registerUrl)
             }
         }
     }
@@ -42,7 +46,10 @@ export async function GET(request: NextRequest) {
             if (profile?.setup_complete === true) {
                 return NextResponse.redirect(new URL(next, origin))
             } else {
-                return NextResponse.redirect(new URL('/setup', origin))
+                const registerUrl = new URL('/register', origin)
+                registerUrl.searchParams.set('oauth', 'true')
+                registerUrl.searchParams.set('email', data.user.email ?? '')
+                return NextResponse.redirect(registerUrl)
             }
         }
     }
