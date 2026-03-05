@@ -37,6 +37,7 @@ const ProfilePage = async () => {
             {/* 1. Fixed the conditional block here */}
             {role === 'donor' ? (
                 <DonorProfile
+                    userId={user.id}
                     user={{
                         name: profile?.full_name || 'Donor User',
                         email: user.email || '',
@@ -45,6 +46,7 @@ const ProfilePage = async () => {
                 />
             ) : (
                 <CharityProfile
+                    userId={user.id}
                     user={{
                         name: profile?.full_name || 'Organization User',
                         email: user.email || '',

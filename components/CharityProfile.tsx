@@ -1,7 +1,9 @@
 "use client"
 import React, { useState, useRef } from 'react';
+import AddressMap from '@/components/AddressMap'
 
 interface CharityProfileProps {
+    userId: string;
     user: {
         name: string;
         email: string;
@@ -14,7 +16,7 @@ interface CharityProfileProps {
     };
 }
 
-const CharityProfile = ({ user }: CharityProfileProps) => {
+const CharityProfile = ({ user, userId }: CharityProfileProps) => {
     // 3 Tabs matching the wireframe: Profile, Address, Contact
     const [activeTab, setActiveTab] = useState<'Profile' | 'Address' | 'Contact'>('Profile');
 
@@ -88,7 +90,7 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
             </div>
 
             {/* Container - Orange/Peach Gradient matching Charity Theme */}
-            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 min-h-[600px] flex flex-col relative overflow-hidden">
+            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 min-h-[600px] flex flex-col relative overflow-visible">
                 {/* Decorative background circle */}
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -300,130 +302,7 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
                 )}
 
                 {activeTab === 'Address' && (
-                    <div className="flex flex-col h-full w-full relative z-10 animate-in fade-in duration-500">
-                        {/* Map & Address Columns identically styled to Donor but painted Orange/Peach */}
-                        <div className="flex flex-col lg:flex-row h-full w-full gap-12">
-                            {/* Left Column: Map */}
-                            <div className="w-full lg:w-1/2 rounded-3xl overflow-hidden shadow-xl border border-white/60 min-h-[400px] relative bg-white/30 backdrop-blur-sm">
-                                {isAddressConfirmed && <div className="absolute inset-0 z-10 bg-white/20 backdrop-blur-[2px] cursor-not-allowed transition-all duration-300"></div>}
-                                <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15446.4632824982!2d121.0476839!3d14.5645063!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c8f2ba53de75%3A0x6bbaaaa9bb70be10!2sBonifacio%20Global%20City%2C%20Taguig%2C%20Metro%20Manila!5e0!3m2!1sen!2sph!4v1700000000000!5m2!1sen!2sph"
-                                    width="100%"
-                                    height="100%"
-                                    style={{ border: 0 }}
-                                    allowFullScreen={true}
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    className="opacity-90 hover:opacity-100 transition-opacity duration-300 absolute inset-0"
-                                />
-                            </div>
-
-                            {/* Right Column: Fields */}
-                            <div className="w-full lg:w-1/2 flex flex-col justify-between">
-                                {!isAddressConfirmed ? (
-                                    <div className="space-y-5 animate-in slide-in-from-right-4 duration-500 bg-white/40 backdrop-blur-md p-8 rounded-3xl shadow-lg border border-white/60">
-                                        <div>
-                                            <label className="text-[#5A2C10] font-bold text-lg tracking-wide mb-1.5 block">Address line 1</label>
-                                            <input
-                                                type="text"
-                                                value={addressForm.line1}
-                                                onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
-                                                placeholder="e.g. 123 Main Street"
-                                                className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/60 focus:bg-white focus:ring-2 focus:ring-[#FF944D]/50 focus:border-white focus:outline-none rounded-xl px-4 text-[#5A2C10] font-medium transition-all shadow-sm placeholder-[#5A2C10]/40"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[#5A2C10] font-bold text-lg tracking-wide mb-1.5 block">Address line 2</label>
-                                            <input
-                                                type="text"
-                                                value={addressForm.line2}
-                                                onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
-                                                placeholder="e.g. Unit 4B, Building Name, Subdivision"
-                                                className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/60 focus:bg-white focus:ring-2 focus:ring-[#FF944D]/50 focus:border-white focus:outline-none rounded-xl px-4 text-[#5A2C10] font-medium transition-all shadow-sm placeholder-[#5A2C10]/40"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-5">
-                                            <div>
-                                                <label className="text-[#5A2C10] font-bold text-lg tracking-wide mb-1.5 block">City</label>
-                                                <input
-                                                    type="text"
-                                                    value={addressForm.city}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                                    placeholder="e.g. Quezon City"
-                                                    className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/60 focus:bg-white focus:ring-2 focus:ring-[#FF944D]/50 focus:border-white focus:outline-none rounded-xl px-4 text-[#5A2C10] font-medium transition-all shadow-sm placeholder-[#5A2C10]/40"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-[#5A2C10] font-bold text-lg tracking-wide mb-1.5 block">Country</label>
-                                                <input
-                                                    type="text"
-                                                    value={addressForm.country}
-                                                    onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                                                    placeholder="e.g. Philippines"
-                                                    className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/60 focus:bg-white focus:ring-2 focus:ring-[#FF944D]/50 focus:border-white focus:outline-none rounded-xl px-4 text-[#5A2C10] font-medium transition-all shadow-sm placeholder-[#5A2C10]/40"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[#5A2C10] font-bold text-lg tracking-wide mb-1.5 block">Zip/Postal Code</label>
-                                            <input
-                                                type="text"
-                                                value={addressForm.zip}
-                                                onChange={(e) => setAddressForm({ ...addressForm, zip: e.target.value })}
-                                                placeholder="e.g. 1101"
-                                                className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/60 focus:bg-white focus:ring-2 focus:ring-[#FF944D]/50 focus:border-white focus:outline-none rounded-xl px-4 text-[#5A2C10] font-medium transition-all shadow-sm placeholder-[#5A2C10]/40"
-                                            />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-white/50 backdrop-blur-md p-10 rounded-3xl shadow-xl shadow-black/5 border border-white/60 animate-in fade-in duration-500 h-full transition-all hover:bg-white/60">
-                                        <div className="space-y-6 text-[#5A2C10]">
-                                            <div>
-                                                <p className="text-sm font-bold opacity-80 uppercase tracking-wider mb-2">Address Line 1</p>
-                                                <p className="text-2xl font-semibold border-b border-[#5A2C10]/10 pb-2">{addressForm.line1 || '...'}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold opacity-80 uppercase tracking-wider mb-2">Address Line 2</p>
-                                                <p className="text-xl font-medium border-b border-[#5A2C10]/10 pb-2">{addressForm.line2 || '...'}</p>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-8">
-                                                <div>
-                                                    <p className="text-sm font-bold opacity-80 uppercase tracking-wider mb-2">City</p>
-                                                    <p className="text-xl font-medium border-b border-[#5A2C10]/10 pb-2">{addressForm.city || '...'}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-bold opacity-80 uppercase tracking-wider mb-2">Country</p>
-                                                    <p className="text-xl font-medium border-b border-[#5A2C10]/10 pb-2">{addressForm.country || '...'}</p>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold opacity-80 uppercase tracking-wider mb-2">Zip Code</p>
-                                                <p className="text-xl font-medium">{addressForm.zip || '...'}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="mt-8 flex justify-center lg:justify-end">
-                                    {!isAddressConfirmed ? (
-                                        <button
-                                            onClick={handleConfirmAddress}
-                                            className="bg-[#FF944D] hover:bg-[#E87A30] text-white font-bold text-xl py-4 px-16 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 w-full lg:w-auto"
-                                        >
-                                            Confirm
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={handleEditAddress}
-                                            className="bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/60 text-[#5A2C10] font-bold text-xl py-4 px-16 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 w-full lg:w-auto"
-                                        >
-                                            Edit Address
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <AddressMap userId={userId} />
                 )}
 
                 {activeTab === 'Contact' && (
