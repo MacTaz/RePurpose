@@ -1,82 +1,150 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 const DiscoverCharitiesClient = () => {
     const mapRef = useRef<HTMLDivElement>(null)
+    const mapInstanceRef = useRef<any>(null)
     const [status, setStatus] = useState<'idle' | 'locating' | 'loaded' | 'error'>('idle')
     const [errorMsg, setErrorMsg] = useState('')
 
     const loadMap = (lat: number, lng: number) => {
-        if (!mapRef.current) return
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        if (!apiKey) {
-            setErrorMsg('Google Maps API key is not configured. Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your .env.local')
-            setStatus('error')
-            return
+        // Load Leaflet CSS
+        if (!document.getElementById('leaflet-css')) {
+            const link = document.createElement('link')
+            link.id = 'leaflet-css'
+            link.rel = 'stylesheet'
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+            document.head.appendChild(link)
         }
 
+        // Load Leaflet JS
         const initMap = () => {
-            const google = (window as any).google
-            if (!google?.maps) { setErrorMsg('Google Maps failed to load.'); setStatus('error'); return }
+            const L = (window as any).L
+            if (!L) { setErrorMsg('Failed to load map library.'); setStatus('error'); return }
 
-            const map = new google.maps.Map(mapRef.current!, {
-                center: { lat, lng },
-                zoom: 13,
-                styles: [
-                    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-                    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#DDE6ED' }] },
-                    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
-                    { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#F5F8FA' }] },
-                ],
+            // Destroy existing map instance if any
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove()
+                mapInstanceRef.current = null
+            }
+
+            const map = L.map(mapRef.current!).setView([lat, lng], 14)
+            mapInstanceRef.current = map
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(map)
+
+            // User location marker (blue dot)
+            const userIcon = L.divIcon({
+                className: '',
+                html: `<div style="width:14px;height:14px;background:#7BA4D5;border:3px solid white;border-radius:50%;box-shadow:0 0 0 3px rgba(123,164,213,0.3)"></div>`,
+                iconSize: [14, 14],
+                iconAnchor: [7, 7],
             })
+            L.marker([lat, lng], { icon: userIcon })
+                .addTo(map)
+                .bindPopup('<strong>Your Location</strong>')
+                .openPopup()
 
-            new google.maps.Marker({
-                position: { lat, lng }, map, title: 'Your Location',
-                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#7BA4D5', fillOpacity: 1, strokeColor: '#FFFFFF', strokeWeight: 2 },
+            const radius = 10000
+            const overpassQuery = `
+                [out:json][timeout:25];
+                (
+                  node["amenity"="social_facility"](around:${radius},${lat},${lng});
+                  node["office"="ngo"](around:${radius},${lat},${lng});
+                  node["office"="charity"](around:${radius},${lat},${lng});
+                  node["office"="foundation"](around:${radius},${lat},${lng});
+                  node["amenity"="community_centre"](around:${radius},${lat},${lng});
+                  node["social_facility"](around:${radius},${lat},${lng});
+                );
+                out body;
+            `
+
+            fetch('https://overpass-api.de/api/interpreter', {
+                method: 'POST',
+                body: overpassQuery,
             })
+                .then(r => r.json())
+                .then(data => {
+                    const results = data.elements || []
 
-            const service = new google.maps.places.PlacesService(map)
-            service.nearbySearch(
-                { location: { lat, lng }, radius: 5000, keyword: 'charity organization NGO foundation relief' },
-                (results: any[], s: string) => {
-                    if (s === google.maps.places.PlacesServiceStatus.OK && results) {
-                        results.slice(0, 10).forEach((place: any) => {
-                            const marker = new google.maps.Marker({
-                                position: place.geometry.location, map, title: place.name,
-                                icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                            })
-                            const iw = new google.maps.InfoWindow({
-                                content: `<div style="font-family:sans-serif;max-width:200px;padding:2px"><strong style="font-size:13px">${place.name}</strong><p style="font-size:11px;color:#666;margin:4px 0 0">${place.vicinity || ''}</p></div>`,
-                            })
-                            marker.addListener('click', () => iw.open(map, marker))
+                    // Red marker icon
+                    const redIcon = L.divIcon({
+                        className: '',
+                        html: `<div style="width:12px;height:12px;background:#e05252;border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`,
+                        iconSize: [12, 12],
+                        iconAnchor: [6, 6],
+                    })
+
+                    if (results.length === 0) {
+                        L.popup()
+                            .setLatLng([lat, lng])
+                            .setContent('<p style="font-size:12px;color:#666">No tagged charities found nearby on OpenStreetMap. Try zooming out.</p>')
+                            .openOn(map)
+                    } else {
+                        results.slice(0, 20).forEach((place: any) => {
+                            const name = place.tags?.name || 'Unnamed Organization'
+                            const type = place.tags?.amenity || place.tags?.office || place.tags?.social_facility || 'Organization'
+                            L.marker([place.lat, place.lon], { icon: redIcon })
+                                .addTo(map)
+                                .bindPopup(`
+                                    <div style="font-family:sans-serif;min-width:140px">
+                                        <strong style="font-size:13px">${name}</strong>
+                                        <p style="font-size:11px;color:#888;margin:3px 0 0;text-transform:capitalize">${type.replace('_', ' ')}</p>
+                                    </div>
+                                `)
                         })
                     }
-                }
-            )
+                })
+                .catch(() => {
+                    // Overpass failed — map still works, just no markers
+                })
+
             setStatus('loaded')
         }
 
-        if ((window as any).google?.maps) { initMap(); return }
-        const existing = document.getElementById('gmaps-script')
+        if ((window as any).L) { initMap(); return }
+
+        const existing = document.getElementById('leaflet-js')
         if (existing) { existing.addEventListener('load', initMap); return }
+
         const script = document.createElement('script')
-        script.id = 'gmaps-script'
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
+        script.id = 'leaflet-js'
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
         script.async = true
         script.onload = initMap
-        script.onerror = () => { setErrorMsg('Failed to load Google Maps. Check your API key.'); setStatus('error') }
+        script.onerror = () => { setErrorMsg('Failed to load map.'); setStatus('error') }
         document.head.appendChild(script)
     }
 
     const requestLocation = () => {
         setStatus('locating')
-        if (!navigator.geolocation) { setErrorMsg('Geolocation is not supported by your browser.'); setStatus('error'); return }
+        if (!navigator.geolocation) {
+            setErrorMsg('Geolocation is not supported by your browser.')
+            setStatus('error')
+            return
+        }
         navigator.geolocation.getCurrentPosition(
             (pos) => loadMap(pos.coords.latitude, pos.coords.longitude),
-            () => { setErrorMsg('Location access was denied. Please allow location access in your browser settings.'); setStatus('error') }
+            () => {
+                setErrorMsg('Location access was denied. Please allow location access in your browser settings.')
+                setStatus('error')
+            }
         )
     }
+
+    // Cleanup map on unmount
+    useEffect(() => {
+        return () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove()
+                mapInstanceRef.current = null
+            }
+        }
+    }, [])
 
     return (
         <div className="flex-[0.6] border-[6px] border-[#7BA4D5] rounded-xl overflow-hidden shadow-sm flex flex-col">
