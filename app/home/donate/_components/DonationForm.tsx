@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Link from 'next/link';
 
 export default function DonationForm() {
   const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ export default function DonationForm() {
     description: '',
     deliveryPreference: 'pickup'
   }); //
-  
+
   const [preview, setPreview] = useState<string | null>(null); //
   const [isDragging, setIsDragging] = useState(false); //
   const fileInputRef = useRef<HTMLInputElement>(null); //
@@ -47,9 +48,9 @@ export default function DonationForm() {
 
   return (
     <div className="min-h-screen bg-white py-12 px-4 font-['Inter'] font-normal">
-      
+
       <div className="max-w-6xl mx-auto bg-[#9dbcd4] rounded-[40px] p-8 lg:p-12 shadow-inner">
-        
+
         <div className="bg-white rounded-full py-2 px-10 shadow-sm mb-10 border border-gray-200">
           <h2 className="text-2xl font-bold text-[#30496E] text-center">
             RePurpose Donation Form
@@ -57,23 +58,23 @@ export default function DonationForm() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-          
+
           {/* Left Column: Image Upload Section */}
           <div className="w-full lg:w-1/3">
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200 h-full flex flex-col">
               <h3 className="text-center text-[#30496E] mb-6 border-b-4 border-[#304674] pb-2 text-xl font-bold">
                 Donation Item Image
               </h3>
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={(e) => e.target.files && handleFile(e.target.files[0])} 
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => e.target.files && handleFile(e.target.files[0])}
               />
 
-              <div 
+              <div
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
@@ -83,10 +84,10 @@ export default function DonationForm() {
                   ${preview ? 'p-0 bg-gray-100' : 'p-10'}`}
               >
                 {preview ? (
-                  <img 
-                      src={preview} 
-                      alt="Preview" 
-                      className="w-full h-full object-contain" 
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <>
@@ -107,45 +108,45 @@ export default function DonationForm() {
               <h3 className="text-center text-[#30496E] mb-6 border-b-4 border-[#304674] pb-2 text-xl font-bold">
                 Donation Item Details
               </h3>
-                {/* item name */}
+              {/* item name */}
               <form className="space-y-5">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-[#30496E] mb-1">Item Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="itemName"
                       placeholder="Enter Item Name Here"
                       className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none"
                       value={formData.itemName}
-                      onChange={handleChange}/>
+                      onChange={handleChange} />
                   </div>
-                  
+
                   {/* Qty */}
                   <div className="w-full md:w-1/3">
                     <label className="block text-sm font-medium text-[#30496E] mb-1">Quantity</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       name="quantity"
                       min="1"
                       placeholder="0"
                       value={formData.quantity}
                       onChange={handleChange}
                       onKeyDown={(e) => { if (['-', 'e', '.'].includes(e.key)) e.preventDefault(); }}
-                      className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none"/>
+                      className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none" />
                   </div>
                 </div>
-                
+
                 <div>
                   {/* Categories */}
                   <label className="block text-sm font-medium text-[#30496E] mb-1">Item Category</label>
-                  <select 
+                  <select
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
                     className="w-full p-2 border border-gray-400 rounded-md bg-white appearance-none focus:ring-2 focus:ring-blue-300 outline-none text-[#30496E]"
                     style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em' }}>
-                    
+
                     {/* Categories, you can add new ones here */}
                     <option value="" className="text-[#30496E]">Select Item Category</option>
                     <option value="clothing" className="text-[#30496E]">Clothing</option>
@@ -157,14 +158,14 @@ export default function DonationForm() {
                 <div>
                   {/* Description */}
                   <label className="block text-sm font-medium text-[#30496E] mb-1">Item Description / Comments</label>
-                  <textarea 
+                  <textarea
                     name="description"
                     rows={6}
                     placeholder="Describe Your Item Here"
                     className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none resize-none"
                     value={formData.description}
                     onChange={handleChange}>
-                    </textarea>
+                  </textarea>
                 </div>
 
                 <div>
@@ -172,23 +173,23 @@ export default function DonationForm() {
                   <label className="block text-sm font-medium text-[#30496E] mb-2">Item Delivery Preference</label>
                   <div className="flex gap-6 text-[#30496E]">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="deliveryPreference" 
-                        value="pickup" 
-                        checked={formData.deliveryPreference === 'pickup'} 
-                        onChange={handleChange} 
-                        className="w-4 h-4 accent-[#2d4373]"/>
+                      <input
+                        type="radio"
+                        name="deliveryPreference"
+                        value="pickup"
+                        checked={formData.deliveryPreference === 'pickup'}
+                        onChange={handleChange}
+                        className="w-4 h-4 accent-[#2d4373]" />
                       Pickup
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="deliveryPreference" 
-                        value="delivery" 
-                        checked={formData.deliveryPreference === 'delivery'} 
-                        onChange={handleChange} 
-                        className="w-4 h-4 accent-[#2d4373]"/>
+                      <input
+                        type="radio"
+                        name="deliveryPreference"
+                        value="delivery"
+                        checked={formData.deliveryPreference === 'delivery'}
+                        onChange={handleChange}
+                        className="w-4 h-4 accent-[#2d4373]" />
                       Delivery Service
                     </label>
                   </div>
@@ -199,11 +200,27 @@ export default function DonationForm() {
         </div>
 
 
-                {/* Match Button */}
+        {/* Match Button */}
         <div className="mt-12">
           <div className="border-t-2 border-dashed border-white mb-8 w-full"></div>
-          <button className="w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide">
-              Match
+          <button
+            onClick={() => {
+              if (!formData.category) {
+                alert('Please select a category first!');
+                return;
+              }
+              const params = new URLSearchParams({
+                category: formData.category,
+                quantity: formData.quantity || '1',
+                itemName: formData.itemName || 'Donation Item',
+                description: formData.description || '',
+                pref: formData.deliveryPreference
+              });
+              window.location.href = `/home/donate/match?${params.toString()}`;
+            }}
+            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide text-center"
+          >
+            Match
           </button>
         </div>
       </div>
