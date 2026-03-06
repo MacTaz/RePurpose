@@ -2,7 +2,8 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import MatchClient from './_components/MatchClient'
 
-export default async function MatchPage() {
+export default async function MatchPage({ searchParams }: { searchParams: Promise<{ category?: string, pref?: string }> }) {
+    const { category, pref } = await searchParams;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -43,7 +44,7 @@ export default async function MatchPage() {
         .eq('role', 'organization')
         .order('full_name', { ascending: true });
 
-    const organizations = (orgData || []).map((org: any) => {
+    let organizations = (orgData || []).map((org: any) => {
         const details = Array.isArray(org.organization_profiles)
             ? org.organization_profiles[0]
             : org.organization_profiles;
@@ -66,6 +67,18 @@ export default async function MatchPage() {
                 : 'Location not set'
         };
     });
+
+    if (category) {
+        organizations = organizations.filter(org => (org.categories_accepted || []).some((c: string) => c.toLowerCase() === category.toLowerCase()));
+    }
+
+    if (pref) {
+        organizations = organizations.filter(org => {
+            const method = org.donation_method?.toLowerCase();
+            if (method === 'both') return true;
+            return method === pref.toLowerCase();
+        });
+    }
 
     return (
         <div className="min-h-screen bg-[#9dbcd4] flex flex-col font-['Inter'] overflow-hidden">

@@ -5,10 +5,11 @@ import { createClient } from '@/utils/supabase/client';
 import {
     User, Mail, Phone, MapPin, Globe, Facebook, Instagram,
     Camera, CheckCircle2, AlertCircle, Save, X, Edit3,
-    Truck, Package, Info, Clock, Tag
+    Truck, Package, Info, Clock, Tag, Trash2, AlertTriangle, Lock
 } from 'lucide-react';
 import Image from 'next/image';
 import AddressMap from '@/components/AddressMap';
+import { deleteAccount } from '@/lib/auth-actions';
 
 interface ProfileClientProps {
     initialProfile: any;
@@ -22,6 +23,14 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Profile Data State
     const [profileData, setProfileData] = useState({
@@ -35,12 +44,16 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
     const [details, setDetails] = useState(initialProfile.details || {});
     const [address, setAddress] = useState(initialProfile.address || {});
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const role = profileData.role;
     const isDonor = role === 'donor';
     const themeColor = isDonor ? '#30496E' : '#FF9248';
     const bgColor = isDonor ? 'bg-[#30496E]' : 'bg-[#FF9248]';
-
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const textColor = isDonor ? 'text-[#30496E]' : 'text-[#FF9248]';
+    const borderColor = isDonor ? 'border-[#30496E]' : 'border-[#FF9248]';
+    const focusBorder = isDonor ? 'focus:border-[#30496E]/20' : 'focus:border-[#FF9248]/20';
+    const accentBg = isDonor ? 'bg-[#30496E]/10' : 'bg-[#FF9248]/10';
 
     const handleSave = async () => {
         setIsLoading(true);
@@ -103,27 +116,37 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
         setIsLoading(true);
         try {
             const fileExt = file.name.split('.').pop();
-            const filePath = `${userId}/avatar.${fileExt}`;
+            const fileName = `avatar-${Date.now()}.${fileExt}`;
+            const filePath = `${userId}/${fileName}`;
 
+            // 1. Upload new image
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
-                .upload(filePath, file, { upsert: true });
+                .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
+            // 2. Get URL with cache buster
             const { data: { publicUrl } } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
 
+            const finalUrl = `${publicUrl}?t=${Date.now()}`;
+
+            // 3. Update profile record
             const { error: updateError } = await supabase
                 .from('profiles')
-                .update({ profile_pic: publicUrl })
+                .update({ profile_pic: finalUrl })
                 .eq('id', userId);
 
             if (updateError) throw updateError;
 
-            setProfileData(prev => ({ ...prev, profile_pic: publicUrl }));
+            // 4. Update state
+            setProfileData(prev => ({ ...prev, profile_pic: finalUrl }));
             setMessage({ type: 'success', text: 'Profile picture updated!' });
+
+            // 5. Optionally refresh to ensure everything is synced
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error: any) {
             setMessage({ type: 'error', text: 'Failed to upload image' });
         } finally {
@@ -138,6 +161,31 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
         );
         window.location.href = `mailto:micotazarte@gmail.com?subject=${subject}&body=${body}`;
     };
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            const res = await deleteAccount(confirmPassword);
+            if (res?.success) {
+                window.location.href = '/';
+            } else {
+                setMessage({ type: 'error', text: res?.error || 'Failed to delete account' });
+                setIsDeleting(false);
+            }
+        } catch (err: any) {
+            console.error('Client delete error:', err);
+            setMessage({ type: 'error', text: `System error: ${err.message || 'Unknown error'}` });
+            setIsDeleting(false);
+        }
+    };
+
+    if (!isMounted) {
+        return (
+            <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+                <div className="size-12 border-4 border-[#30496E] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full w-full flex flex-col bg-[#F8FAFC]">
@@ -173,10 +221,10 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
 
                     <div className="flex-1 text-center lg:text-left">
                         <div className="flex flex-col lg:flex-row items-center gap-3 lg:gap-4 mb-2">
-                            <h1 className="text-3xl lg:text-4xl font-black text-[#30496E]">
+                            <h1 className={`text-3xl lg:text-4xl font-black ${textColor}`}>
                                 {profileData.full_name || 'Your Name'}
                             </h1>
-                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${isDonor ? 'bg-[#30496E]/10 text-[#30496E]' : 'bg-[#FF9248]/10 text-[#FF9248]'}`}>
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${accentBg} ${textColor}`}>
                                 {profileData.role}
                             </span>
                         </div>
@@ -215,7 +263,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                 <button
                                     onClick={handleSave}
                                     disabled={isLoading}
-                                    className="px-8 py-3 bg-[#30496E] text-white rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                                    className={`px-8 py-3 ${bgColor} text-white rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50`}
                                 >
                                     <Save className="size-5" /> {isLoading ? 'Saving...' : 'Save Changes'}
                                 </button>
@@ -238,7 +286,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                         ) : (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="px-8 py-3 bg-white text-[#30496E] rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border border-[#30496E]/10"
+                                className={`px-8 py-3 bg-white ${textColor} rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border ${isDonor ? 'border-[#30496E]/10' : 'border-[#FF9248]/10'}`}
                             >
                                 <Edit3 className="size-5" /> Edit Profile
                             </button>
@@ -275,8 +323,8 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                     <div className="lg:col-span-2 space-y-8">
                         {activeTab === 'Profile' ? (
                             <div className="bg-white rounded-[40px] p-8 lg:p-12 shadow-sm border border-gray-100">
-                                <h2 className="text-2xl font-black text-[#30496E] mb-8 flex items-center gap-3">
-                                    <Info className="size-6 text-[#30496E]" />
+                                <h2 className={`text-2xl font-black ${textColor} mb-8 flex items-center gap-3`}>
+                                    <Info className={`size-6 ${textColor}`} />
                                     General Information
                                 </h2>
 
@@ -289,10 +337,10 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                     type="text"
                                                     value={profileData.full_name}
                                                     onChange={e => setProfileData({ ...profileData, full_name: e.target.value })}
-                                                    className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all"
+                                                    className={`w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all`}
                                                 />
                                             ) : (
-                                                <p className="px-5 h-14 flex items-center bg-gray-50 rounded-2xl font-bold text-[#30496E]">{profileData.full_name || 'Not set'}</p>
+                                                <p className={`px-5 h-14 flex items-center bg-gray-50 rounded-2xl font-bold ${textColor}`}>{profileData.full_name || 'Not set'}</p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
@@ -302,10 +350,10 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                     type="text"
                                                     value={profileData.phone}
                                                     onChange={e => setProfileData({ ...profileData, phone: e.target.value })}
-                                                    className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all"
+                                                    className={`w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all`}
                                                 />
                                             ) : (
-                                                <p className="px-5 h-14 flex items-center bg-gray-50 rounded-2xl font-bold text-[#30496E]">{profileData.phone || 'Not set'}</p>
+                                                <p className={`px-5 h-14 flex items-center bg-gray-50 rounded-2xl font-bold ${textColor}`}>{profileData.phone || 'Not set'}</p>
                                             )}
                                         </div>
                                     </div>
@@ -318,11 +366,11 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                 <textarea
                                                     value={details.bio}
                                                     onChange={e => setDetails({ ...details, bio: e.target.value })}
-                                                    className="w-full min-h-[160px] bg-gray-50 border-2 border-gray-100 rounded-2xl p-5 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all resize-none"
+                                                    className={`w-full min-h-[160px] bg-gray-50 border-2 border-gray-100 rounded-2xl p-5 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all resize-none`}
                                                     placeholder="Tell us about yourself..."
                                                 />
                                             ) : (
-                                                <div className="p-6 bg-gray-50 rounded-2xl font-bold text-[#30496E] min-h-[120px] whitespace-pre-wrap leading-relaxed">
+                                                <div className={`p-6 bg-gray-50 rounded-2xl font-bold ${textColor} min-h-[120px] whitespace-pre-wrap leading-relaxed`}>
                                                     {details.bio || 'Your bio is empty. Click edit to add one!'}
                                                 </div>
                                             )}
@@ -338,10 +386,10 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                             value={details.tagline || ''}
                                                             onChange={e => setDetails({ ...details, tagline: e.target.value })}
                                                             placeholder="e.g. Empowering local communities"
-                                                            className="w-full h-14 bg-gray-50 border-2 border-transparent rounded-2xl px-5 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all"
+                                                            className={`w-full h-14 bg-gray-50 border-2 border-transparent rounded-2xl px-5 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all`}
                                                         />
                                                     ) : (
-                                                        <p className="px-5 h-14 flex items-center bg-gray-50 rounded-2xl font-bold text-[#30496E] tracking-tight truncate">
+                                                        <p className={`px-5 h-14 flex items-center bg-gray-50 rounded-2xl font-bold ${textColor} tracking-tight truncate`}>
                                                             {details.tagline || 'No tagline set'}
                                                         </p>
                                                     )}
@@ -363,7 +411,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                                                 : [...current, cat];
                                                                             setDetails({ ...details, categories_accepted: updated });
                                                                         }}
-                                                                        className={`px-4 h-14 rounded-2xl font-bold transition-all border-2 ${isSelected ? 'bg-[#30496E] text-white border-[#30496E]' : 'bg-gray-50 text-gray-400 border-transparent hover:border-gray-200'}`}
+                                                                        className={`px-4 h-14 rounded-2xl font-bold transition-all border-2 ${isSelected ? `${bgColor} text-white ${borderColor}` : 'bg-gray-50 text-gray-400 border-transparent hover:border-gray-200'}`}
                                                                     >
                                                                         {cat}
                                                                     </button>
@@ -374,7 +422,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                         <div className="px-5 h-14 flex items-center bg-gray-50 rounded-2xl overflow-hidden">
                                                             <div className="flex gap-2 truncate">
                                                                 {(details.categories_accepted || []).map((cat: string) => (
-                                                                    <span key={cat} className="px-2 py-0.5 bg-[#30496E]/10 text-[#30496E] rounded text-[10px] font-black uppercase whitespace-nowrap">{cat}</span>
+                                                                    <span key={cat} className={`px-2 py-0.5 ${accentBg} ${textColor} rounded text-[10px] font-black uppercase whitespace-nowrap`}>{cat}</span>
                                                                 ))}
                                                                 {(details.categories_accepted || []).length === 0 && (
                                                                     <span className="text-gray-400 text-sm font-bold italic">No categories selected</span>
@@ -390,10 +438,10 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                     <textarea
                                                         value={details.description || ''}
                                                         onChange={e => setDetails({ ...details, description: e.target.value })}
-                                                        className="w-full min-h-[160px] bg-gray-50 border-2 border-transparent rounded-2xl p-5 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all resize-none"
+                                                        className={`w-full min-h-[160px] bg-gray-50 border-2 border-transparent rounded-2xl p-5 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all resize-none`}
                                                     />
                                                 ) : (
-                                                    <div className="p-6 bg-gray-50 rounded-2xl font-bold text-[#30496E] min-h-[120px] whitespace-pre-wrap leading-relaxed opacity-70">
+                                                    <div className={`p-6 bg-gray-50 rounded-2xl font-bold ${textColor} min-h-[120px] whitespace-pre-wrap leading-relaxed opacity-70`}>
                                                         {details.description || 'No description provided.'}
                                                     </div>
                                                 )}
@@ -404,7 +452,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                             </div>
                         ) : (
                             <div className="bg-white rounded-[40px] p-4 lg:p-8 shadow-sm border border-gray-100 min-h-[600px] overflow-hidden">
-                                <AddressMap userId={userId} />
+                                <AddressMap userId={userId} role={role} />
                             </div>
                         )}
                     </div>
@@ -427,9 +475,9 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                 onChange={e => setDetails({ ...details, donation_method: e.target.value })}
                                                 className="w-full h-12 bg-white/10 border border-white/20 rounded-xl px-4 font-black focus:outline-none"
                                             >
-                                                <option value="pickup" className="text-[#30496E]">Pickup Only</option>
-                                                <option value="delivery" className="text-[#30496E]">Delivery Only</option>
-                                                <option value="both" className="text-[#30496E]">Pickup & Delivery</option>
+                                                <option value="pickup" className={textColor}>Pickup Only</option>
+                                                <option value="delivery" className={textColor}>Delivery Only</option>
+                                                <option value="both" className={textColor}>Pickup & Delivery</option>
                                             </select>
                                         ) : (
                                             <div className="h-12 flex items-center bg-white/10 rounded-xl px-4 font-black uppercase tracking-wider text-sm">
@@ -474,7 +522,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
 
                         {/* Connectivity / Links */}
                         <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-100">
-                            <h3 className="text-xl font-black text-[#30496E] mb-8">Connectivity</h3>
+                            <h3 className={`text-xl font-black ${textColor} mb-8`}>Connectivity</h3>
                             <div className="space-y-6">
                                 {/* Sign-in Email (Read Only) */}
                                 <div className="group">
@@ -483,7 +531,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                         <div className="size-10 rounded-xl flex items-center justify-center bg-purple-50 text-purple-600 shadow-inner">
                                             <Mail className="size-5" />
                                         </div>
-                                        <p className="flex-1 font-bold text-[#30496E] truncate opacity-60 cursor-not-allowed">{email}</p>
+                                        <p className={`flex-1 font-bold ${textColor} truncate opacity-60 cursor-not-allowed`}>{email}</p>
                                     </div>
                                 </div>
 
@@ -500,45 +548,87 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                 value={details.website || ''}
                                                 onChange={e => setDetails({ ...details, website: e.target.value })}
                                                 placeholder="facebook.com/your-page"
-                                                className="flex-1 h-10 bg-gray-50 border-b-2 border-transparent focus:border-[#30496E]/20 focus:outline-none font-bold text-[#30496E] transition-all"
+                                                className={`flex-1 h-10 bg-gray-50 border-b-2 border-transparent ${focusBorder} focus:outline-none font-bold ${textColor} transition-all`}
                                             />
                                         ) : (
-                                            <p className="flex-1 font-bold text-[#30496E] truncate">{details.website || 'Not linked'}</p>
+                                            <p className={`flex-1 font-bold ${textColor} truncate`}>{details.website || 'Not linked'}</p>
                                         )}
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Danger Zone */}
+                        <div className="bg-red-50 rounded-[40px] p-10 border-2 border-dashed border-red-100 mt-8">
+                            <h3 className="text-xl font-black text-red-600 mb-2 flex items-center gap-2">
+                                <AlertTriangle className="size-5" /> Danger Zone
+                            </h3>
+                            <p className="text-red-600/60 font-bold text-xs mb-8">Beware: These actions are irreversible.</p>
+
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="w-full py-4 bg-white text-red-500 border-2 border-red-100 rounded-2xl font-black shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all flex items-center justify-center gap-3 group"
+                            >
+                                <Trash2 className="size-5 group-hover:scale-110 transition-transform" />
+                                Permanently Delete Account
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] shadow-2xl max-w-sm w-full p-8 text-center border-4 border-red-50 animate-in zoom-in-95 duration-500">
+                        <div className="size-20 bg-red-50 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-red-500 shadow-inner rotate-3">
+                            <AlertTriangle className="size-10" />
+                        </div>
+                        <h3 className="text-2xl font-black text-[#30496E] mb-3 tracking-tight">Serious Action.</h3>
+                        <p className="text-gray-500 font-bold leading-relaxed mb-6 text-sm">
+                            This will permanently delete your account, your profile data, and all your images. This action <span className="text-red-500">cannot be undone</span>.
+                        </p>
+
+                        <div className="space-y-4 mb-8">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block text-left ml-4">Confirm Password</label>
+                            <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-300" />
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={e => setConfirmPassword(e.target.value)}
+                                    placeholder="Enter your password"
+                                    className="w-full h-12 bg-gray-50 border-2 border-transparent focus:border-red-200 focus:outline-none rounded-2xl pl-10 pr-4 font-bold text-[#30496E] transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={isDeleting || !confirmPassword}
+                                className="w-full bg-red-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-red-600 active:scale-95 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isDeleting ? 'Deleting Forever...' : 'Yes, Delete Everything'}
+                            </button>
+                            <button
+                                onClick={() => { setShowDeleteConfirm(false); setConfirmPassword(''); }}
+                                className="w-full py-2 text-gray-400 font-black hover:text-[#30496E] transition-all text-[10px] uppercase tracking-widest"
+                            >
+                                I changed my mind
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style jsx global>{`
-                .no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .no-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-                @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slide-in-from-top {
-                    from { transform: translateY(-20px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                .animate-in {
-                    animation-fill-mode: forwards;
-                }
-                .fade-in {
-                    animation-name: fade-in;
-                }
-                .slide-in-from-top-4 {
-                    animation-name: slide-in-from-top;
-                }
-            `}</style>
+            @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            .animate-in { animation-fill-mode: forwards; }
+            .fade-in { animation-name: fade-in; }
+            .zoom-in-95 { animation-name: zoom-in-95; }
+        `}</style>
         </div>
     );
 }

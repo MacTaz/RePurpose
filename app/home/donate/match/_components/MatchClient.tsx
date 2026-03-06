@@ -3,8 +3,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signout } from '@/lib/auth-actions';
+import { createClient } from '@/utils/supabase/client';
 
 interface Organization {
     id: string;
@@ -29,10 +30,15 @@ interface MatchClientProps {
 
 export default function MatchClient({ organizations, role }: MatchClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const supabase = createClient();
+
     const [selectedId, setSelectedId] = useState<string>(organizations[0]?.id || '');
     const [showSidebar, setShowSidebar] = useState(true);
     const [showWarning, setShowWarning] = useState(false);
     const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     // Prevent accidental navigation via browser refresh/close
     useEffect(() => {
@@ -67,6 +73,46 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
         }
         setShowWarning(false);
         setPendingUrl(null);
+    };
+
+    const handleSubmitDonation = async () => {
+        if (!selectedOrg) return;
+
+        setIsSubmitting(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+
+            const category = searchParams.get('category');
+            const quantity = parseInt(searchParams.get('quantity') || '1');
+            const itemName = searchParams.get('itemName');
+
+            const { error } = await supabase
+                .from('donations')
+                .insert({
+                    donor_id: user.id,
+                    organization_id: selectedOrg.id,
+                    type: category || 'Other',
+                    quantity: quantity,
+                    status: 'pending',
+                    target_organization: selectedOrg.full_name
+                });
+
+            if (error) throw error;
+
+            setSuccess(true);
+            setTimeout(() => {
+                router.push('/home/manage');
+            }, 2000);
+        } catch (err) {
+            console.error('Donation error:', err);
+            alert('Failed to process donation. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -316,9 +362,19 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                             <p className="text-sm text-gray-400 font-bold uppercase tracking-tight">Handover Request for</p>
                             <h4 className="text-xl font-black text-[#30496E]">{selectedOrg?.full_name}</h4>
                         </div>
-                        <button className="w-full sm:w-auto bg-[#304674] text-white px-8 py-3.5 rounded-full text-lg font-black shadow-[0_8px_30px_rgba(48,70,116,0.25)] hover:bg-[#1e2e4f] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 border-[3px] border-white">
-                            Match & Contact <ArrowRight className="size-5" />
-                        </button>
+                        {success ? (
+                            <div className="flex items-center gap-2 text-green-600 font-black text-lg animate-in fade-in zoom-in-95">
+                                <CheckCircle2 className="size-6" /> Donation Processed! Redirecting...
+                            </div>
+                        ) : (
+                            <button
+                                onClick={handleSubmitDonation}
+                                disabled={isSubmitting || !selectedOrg}
+                                className="w-full sm:w-auto bg-[#304674] text-white px-8 py-3.5 rounded-full text-lg font-black shadow-[0_8px_30px_rgba(48,70,116,0.25)] hover:bg-[#1e2e4f] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 border-[3px] border-white disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'Processing...' : 'Match & Contact'} <ArrowRight className="size-5" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

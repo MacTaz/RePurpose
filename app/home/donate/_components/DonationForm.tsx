@@ -203,9 +203,25 @@ export default function DonationForm() {
         {/* Match Button */}
         <div className="mt-12">
           <div className="border-t-2 border-dashed border-white mb-8 w-full"></div>
-          <Link href="/home/donate/match" className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide text-center">
+          <button
+            onClick={() => {
+              if (!formData.category) {
+                alert('Please select a category first!');
+                return;
+              }
+              const params = new URLSearchParams({
+                category: formData.category,
+                quantity: formData.quantity || '1',
+                itemName: formData.itemName || 'Donation Item',
+                description: formData.description || '',
+                pref: formData.deliveryPreference
+              });
+              window.location.href = `/home/donate/match?${params.toString()}`;
+            }}
+            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide text-center"
+          >
             Match
-          </Link>
+          </button>
         </div>
       </div>
     </div>

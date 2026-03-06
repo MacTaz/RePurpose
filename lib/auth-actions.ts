@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 export async function login(formData: FormData) {
     const supabase = await createClient();
@@ -150,4 +150,67 @@ export async function signInWithFacebook() {
     }
 
     redirect(data.url);
+}
+
+export async function deleteAccount(password: string) {
+    try {
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) return { error: "Authentication required" };
+
+        // 1. Verify password (for email users) or expect "DELETE" (for social users)
+        const isOAuth = user.app_metadata.provider !== 'email';
+
+        if (isOAuth) {
+            if (password !== 'DELETE') return { error: 'For social accounts, please type "DELETE" to confirm removal.' };
+        } else {
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user.email!,
+                password: password
+            });
+            if (signInError) return { error: "Incorrect password. Please try again." };
+        }
+
+        // 2. Clean up storage (avatars)
+        try {
+            const { data: files } = await supabase.storage.from('avatars').list(user.id);
+            if (files && files.length > 0) {
+                const paths = files.map(f => `${user.id}/${f.name}`);
+                await supabase.storage.from('avatars').remove(paths);
+            }
+        } catch (e) {
+            console.error("Storage cleanup error:", e);
+        }
+
+        const adminSupabase = createAdminClient();
+
+        // 3. Manual cascade to avoid Foreign Key violations
+        await adminSupabase.from('donations').delete().or(`donor_id.eq.${user.id},organization_id.eq.${user.id}`);
+        await adminSupabase.from('addresses').delete().eq('user_id', user.id);
+        await adminSupabase.from('donor_profiles').delete().eq('profile_id', user.id);
+        await adminSupabase.from('organization_profiles').delete().eq('profile_id', user.id);
+
+        // Final Profile delete
+        const { error: dbDeleteError } = await adminSupabase.from('profiles').delete().eq('id', user.id);
+        if (dbDeleteError) {
+            console.error("DB Delete Error:", dbDeleteError);
+            return { error: `Database error: ${dbDeleteError.message}` };
+        }
+
+        // 4. Auth Delete (Uses Service Role Key)
+        const { error: authDeleteError } = await adminSupabase.auth.admin.deleteUser(user.id);
+        if (authDeleteError) {
+            console.error("Auth Delete Error:", authDeleteError);
+            return { error: `Auth service error: ${authDeleteError.message}` };
+        }
+
+        // 5. Sign out
+        await supabase.auth.signOut();
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Serious error during deletion:", err);
+        return { error: `Server error: ${err.message || 'Operation failed'}` };
+    }
 }

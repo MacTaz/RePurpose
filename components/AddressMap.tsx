@@ -6,9 +6,15 @@ import { MapPin, Navigation, CheckCircle2, Edit3, Loader2 } from 'lucide-react'
 
 interface AddressMapProps {
     userId: string
+    role?: 'donor' | 'organization'
 }
 
-export default function AddressMap({ userId }: AddressMapProps) {
+export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) {
+    const isDonor = role === 'donor'
+    const textColor = isDonor ? 'text-[#30496E]' : 'text-[#FF9248]'
+    const bgColor = isDonor ? 'bg-[#30496E]' : 'bg-[#FF9248]'
+    const focusBorder = isDonor ? 'focus:border-[#30496E]/20' : 'focus:border-[#FF9248]/20'
+
     const mapRef = useRef<any>(null)
     const markerRef = useRef<any>(null)
     const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -195,7 +201,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
             <div className="w-full lg:w-3/5 min-h-[400px] lg:min-h-full rounded-[32px] overflow-hidden shadow-inner border border-gray-100 relative group">
                 <div ref={mapContainerRef} className="h-full w-full" />
                 <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-gray-100">
-                    <p className="text-[10px] font-black text-[#30496E] uppercase tracking-widest flex items-center gap-2">
+                    <p className={`text-[10px] font-black ${textColor} uppercase tracking-widest flex items-center gap-2`}>
                         <Navigation className="size-3" /> Map Locator
                     </p>
                 </div>
@@ -204,8 +210,8 @@ export default function AddressMap({ userId }: AddressMapProps) {
             {/* Form Section */}
             <div className="w-full lg:w-2/5 flex flex-col space-y-6 lg:p-4">
                 <div className="space-y-6 flex-1 overflow-y-auto no-scrollbar pr-2">
-                    <h2 className="text-2xl font-black text-[#30496E] flex items-center gap-3">
-                        <MapPin className="size-6 text-[#30496E]" />
+                    <h2 className={`text-2xl font-black ${textColor} flex items-center gap-3`}>
+                        <MapPin className={`size-6 ${textColor}`} />
                         Dispatch Address
                     </h2>
 
@@ -218,7 +224,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                                 value={addressForm.line1}
                                 onChange={e => setAddressForm({ ...addressForm, line1: e.target.value })}
                                 onBlur={e => forwardGeocode(`${e.target.value}, ${addressForm.city}, ${addressForm.country}`)}
-                                className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                className={`w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all disabled:opacity-70`}
                                 placeholder="Street name and house number"
                             />
                         </div>
@@ -229,7 +235,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                                 type="text"
                                 value={addressForm.line2}
                                 onChange={e => setAddressForm({ ...addressForm, line2: e.target.value })}
-                                className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                className={`w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all disabled:opacity-70`}
                                 placeholder="Apartment, suite, unit, etc."
                             />
                         </div>
@@ -241,7 +247,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                                     type="text"
                                     value={addressForm.city}
                                     onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
-                                    className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                    className={`w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all disabled:opacity-70`}
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -251,7 +257,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                                     type="text"
                                     value={addressForm.country}
                                     onChange={e => setAddressForm({ ...addressForm, country: e.target.value })}
-                                    className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                    className={`w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all disabled:opacity-70`}
                                 />
                             </div>
                         </div>
@@ -262,7 +268,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                                 type="text"
                                 value={addressForm.zip}
                                 onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
-                                className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                className={`w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold ${textColor} ${focusBorder} focus:outline-none transition-all disabled:opacity-70`}
                             />
                         </div>
                     </div>
@@ -273,7 +279,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                         <button
                             onClick={handleConfirm}
                             disabled={isSaving}
-                            className="w-full py-4 bg-[#30496E] text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                            className={`w-full py-4 ${bgColor} text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50`}
                         >
                             {isSaving ? <Loader2 className="animate-spin size-5" /> : <CheckCircle2 className="size-5" />}
                             Confirm Location
@@ -281,7 +287,7 @@ export default function AddressMap({ userId }: AddressMapProps) {
                     ) : (
                         <button
                             onClick={handleEdit}
-                            className="w-full py-4 bg-white text-[#30496E] border border-[#30496E]/10 rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3"
+                            className={`w-full py-4 bg-white ${textColor} border ${isDonor ? 'border-[#30496E]/10' : 'border-[#FF9248]/10'} rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3`}
                         >
                             <Edit3 className="size-5" />
                             Update Address
