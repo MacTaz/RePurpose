@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import 'leaflet/dist/leaflet.css'
+import { MapPin, Navigation, CheckCircle2, Edit3, Loader2 } from 'lucide-react'
 
 interface AddressMapProps {
     userId: string
@@ -25,13 +26,18 @@ export default function AddressMap({ userId }: AddressMapProps) {
     })
     const [isSaved, setIsSaved] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
 
     // Initialize Leaflet map
     useEffect(() => {
         if (typeof window === 'undefined') return
-        if (mapRef.current) return
+        let mapInstance: any = null
 
         const initMap = async () => {
+            if (!mapContainerRef.current || mapRef.current) return
+            const container = mapContainerRef.current as any
+            if (container._leaflet_id) return
+
             const L = (await import('leaflet')).default
 
             delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -41,29 +47,22 @@ export default function AddressMap({ userId }: AddressMapProps) {
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
             })
 
-            if (!mapContainerRef.current) return
-
-            const container = mapContainerRef.current as any
-            if (container._leaflet_id) {
-                container._leaflet_id = null
-            }
-
-            const map = L.map(mapContainerRef.current, {
+            mapInstance = L.map(mapContainerRef.current, {
                 dragging: true,
                 touchZoom: true,
                 scrollWheelZoom: true,
                 doubleClickZoom: true,
             }).setView([14.5995, 120.9842], 13)
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }).addTo(mapInstance)
 
             const marker = L.marker([14.5995, 120.9842], {
                 draggable: true
-            }).addTo(map)
+            }).addTo(mapInstance)
 
-            map.on('click', async (e: any) => {
+            mapInstance.on('click', async (e: any) => {
                 if (isSavedRef.current) return
                 const { lat, lng } = e.latlng
                 marker.setLatLng([lat, lng])
@@ -76,25 +75,24 @@ export default function AddressMap({ userId }: AddressMapProps) {
                 await reverseGeocode(lat, lng)
             })
 
-            mapRef.current = map
+            mapRef.current = mapInstance
             markerRef.current = marker
 
-            // Load address AFTER map is ready
-            loadAddressData(map, marker)
+            loadAddressData(mapInstance, marker)
         }
 
         initMap()
 
         return () => {
-            if (mapRef.current) {
-                mapRef.current.remove()
+            if (mapInstance) {
+                mapInstance.remove()
                 mapRef.current = null
             }
         }
     }, [])
 
-    // Separate function to load address data
     const loadAddressData = async (map: any, marker: any) => {
+        setIsLoading(true)
         const { data } = await supabase
             .from('addresses')
             .select('*')
@@ -113,27 +111,24 @@ export default function AddressMap({ userId }: AddressMapProps) {
             })
             setIsSaved(true)
             isSavedRef.current = true
-            map.off('click')
             marker.dragging.disable()
-            map.setView([data.latitude, data.longitude], 13)
+            map.setView([data.latitude, data.longitude], 15)
             marker.setLatLng([data.latitude, data.longitude])
         }
+        setIsLoading(false)
     }
 
-    // Reverse geocode
     const reverseGeocode = async (lat: number, lng: number) => {
         try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
-            )
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
             const data = await res.json()
-            const address = data.address
+            const addr = data.address
             setAddressForm(prev => ({
                 ...prev,
-                line1: `${address.road || ''} ${address.house_number || ''}`.trim(),
-                city: address.city || address.town || address.municipality || '',
-                country: address.country || '',
-                zip: address.postcode || '',
+                line1: `${addr.road || ''} ${addr.house_number || ''}`.trim(),
+                city: addr.city || addr.town || addr.municipality || '',
+                country: addr.country || '',
+                zip: addr.postcode || '',
                 latitude: lat,
                 longitude: lng
             }))
@@ -142,20 +137,17 @@ export default function AddressMap({ userId }: AddressMapProps) {
         }
     }
 
-    // Forward geocode
     const forwardGeocode = async (query: string) => {
-        if (!query || query.length < 3) return
+        if (!query || query.length < 5) return
         try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
-            )
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`)
             const data = await res.json()
             if (data.length > 0) {
                 const lat = parseFloat(data[0].lat)
                 const lng = parseFloat(data[0].lon)
                 setAddressForm(prev => ({ ...prev, latitude: lat, longitude: lng }))
                 if (mapRef.current && markerRef.current) {
-                    mapRef.current.setView([lat, lng], 13)
+                    mapRef.current.setView([lat, lng], 15)
                     markerRef.current.setLatLng([lat, lng])
                 }
             }
@@ -164,9 +156,8 @@ export default function AddressMap({ userId }: AddressMapProps) {
         }
     }
 
-    // Save to Supabase
     const handleConfirm = async () => {
-        setIsLoading(true)
+        setIsSaving(true)
         try {
             const { error } = await supabase
                 .from('addresses')
@@ -182,132 +173,118 @@ export default function AddressMap({ userId }: AddressMapProps) {
                 }, { onConflict: 'user_id' })
 
             if (error) throw error
-
             setIsSaved(true)
             isSavedRef.current = true
-            if (mapRef.current) mapRef.current.off('click')
-            if (markerRef.current) markerRef.current.dragging.disable()
-
+            markerRef.current?.dragging.disable()
         } catch (err) {
-            console.error('Save error:', JSON.stringify(err))
+            console.error('Save error:', err)
         } finally {
-            setIsLoading(false)
+            setIsSaving(false)
         }
     }
 
-    // Handle edit
     const handleEdit = () => {
         setIsSaved(false)
         isSavedRef.current = false
-
-        if (mapRef.current) {
-            mapRef.current.on('click', async (e: any) => {
-                if (isSavedRef.current) return
-                const { lat, lng } = e.latlng
-                markerRef.current?.setLatLng([lat, lng])
-                await reverseGeocode(lat, lng)
-            })
-        }
-        if (markerRef.current) {
-            markerRef.current.dragging.enable()
-            console.log('dragging after enable:', markerRef.current?.dragging)
-        }
+        markerRef.current?.dragging.enable()
     }
 
     return (
-        <div className="flex flex-col lg:flex-row h-full w-full gap-12 relative z-10 animate-in fade-in duration-500">
-
-            {/* Left - Map */}
-            <div className="w-full lg:w-1/2 rounded-2xl shadow-xl border border-white/50" style={{ height: '500px' }}>
-                <div ref={mapContainerRef} style={{ height: '500px', width: '100%' }} />
+        <div className="flex flex-col lg:flex-row h-full w-full gap-8">
+            {/* Map Section */}
+            <div className="w-full lg:w-3/5 min-h-[400px] lg:min-h-full rounded-[32px] overflow-hidden shadow-inner border border-gray-100 relative group">
+                <div ref={mapContainerRef} className="h-full w-full" />
+                <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-gray-100">
+                    <p className="text-[10px] font-black text-[#30496E] uppercase tracking-widest flex items-center gap-2">
+                        <Navigation className="size-3" /> Map Locator
+                    </p>
+                </div>
             </div>
 
-            {/* Right - Address Fields */}
-            <div className="w-full lg:w-1/2 flex flex-col justify-between pt-2">
-                {!isSaved ? (
-                    <div className="space-y-5 animate-in slide-in-from-right-4 duration-500">
-                        <div>
-                            <label className="text-white font-medium text-lg tracking-wide mb-1.5 block">Address line 1</label>
+            {/* Form Section */}
+            <div className="w-full lg:w-2/5 flex flex-col space-y-6 lg:p-4">
+                <div className="space-y-6 flex-1 overflow-y-auto no-scrollbar pr-2">
+                    <h2 className="text-2xl font-black text-[#30496E] flex items-center gap-3">
+                        <MapPin className="size-6 text-[#30496E]" />
+                        Dispatch Address
+                    </h2>
+
+                    <div className="grid gap-6">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase text-gray-400 ml-1">Address Line 1</label>
                             <input
+                                disabled={isSaved}
                                 type="text"
                                 value={addressForm.line1}
-                                onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
-                                onBlur={(e) => forwardGeocode(e.target.value)}
-                                placeholder="e.g. 123 Main Street"
-                                className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/40 focus:bg-white focus:ring-2 focus:ring-white/80 focus:outline-none rounded-xl px-4 text-slate-800 font-medium transition-all shadow-sm placeholder-slate-400"
+                                onChange={e => setAddressForm({ ...addressForm, line1: e.target.value })}
+                                onBlur={e => forwardGeocode(`${e.target.value}, ${addressForm.city}, ${addressForm.country}`)}
+                                className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                placeholder="Street name and house number"
                             />
                         </div>
-                        <div>
-                            <label className="text-white font-medium text-lg tracking-wide mb-1.5 block">Address line 2</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase text-gray-400 ml-1">Address Line 2 (Optional)</label>
                             <input
+                                disabled={isSaved}
                                 type="text"
                                 value={addressForm.line2}
-                                onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
-                                placeholder="e.g. Unit 4B, Building Name, Subdivision"
-                                className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/40 focus:bg-white focus:ring-2 focus:ring-white/80 focus:outline-none rounded-xl px-4 text-slate-800 font-medium transition-all shadow-sm placeholder-slate-400"
+                                onChange={e => setAddressForm({ ...addressForm, line2: e.target.value })}
+                                className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
+                                placeholder="Apartment, suite, unit, etc."
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-5">
-                            <div>
-                                <label className="text-white font-medium text-lg tracking-wide mb-1.5 block">City</label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-black uppercase text-gray-400 ml-1">City</label>
                                 <input
+                                    disabled={isSaved}
                                     type="text"
                                     value={addressForm.city}
-                                    onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                    placeholder="e.g. Quezon City"
-                                    className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/40 focus:bg-white focus:ring-2 focus:ring-white/80 focus:outline-none rounded-xl px-4 text-slate-800 font-medium transition-all shadow-sm placeholder-slate-400"
+                                    onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
+                                    className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
                                 />
                             </div>
-                            <div>
-                                <label className="text-white font-medium text-lg tracking-wide mb-1.5 block">Country</label>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-black uppercase text-gray-400 ml-1">Country</label>
                                 <input
+                                    disabled={isSaved}
                                     type="text"
                                     value={addressForm.country}
-                                    onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-                                    placeholder="e.g. Philippines"
-                                    className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/40 focus:bg-white focus:ring-2 focus:ring-white/80 focus:outline-none rounded-xl px-4 text-slate-800 font-medium transition-all shadow-sm placeholder-slate-400"
+                                    onChange={e => setAddressForm({ ...addressForm, country: e.target.value })}
+                                    className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
                                 />
                             </div>
                         </div>
-                        <div>
-                            <label className="text-white font-medium text-lg tracking-wide mb-1.5 block">Zip/Postal Code</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase text-gray-400 ml-1">Zip / Postal Code</label>
                             <input
+                                disabled={isSaved}
                                 type="text"
                                 value={addressForm.zip}
-                                onChange={(e) => setAddressForm({ ...addressForm, zip: e.target.value })}
-                                placeholder="e.g. 1101"
-                                className="w-full h-12 bg-white/80 backdrop-blur-sm border border-white/40 focus:bg-white focus:ring-2 focus:ring-white/80 focus:outline-none rounded-xl px-4 text-slate-800 font-medium transition-all shadow-sm placeholder-slate-400"
+                                onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
+                                className="w-full h-12 bg-gray-50 border-2 border-transparent rounded-2xl px-4 font-bold text-[#30496E] focus:border-[#30496E]/20 focus:outline-none transition-all disabled:opacity-70"
                             />
                         </div>
                     </div>
-                ) : (
-                    <div className="bg-white/80 backdrop-blur-md rounded-2xl p-10 shadow-xl border border-white/50 text-[#30496E]">
-                        <h3 className="text-2xl font-extrabold tracking-wide mb-6 border-b border-[#30496E]/10 pb-4">Your Saved Address</h3>
-                        <div className="space-y-3 text-xl font-medium">
-                            <p>{addressForm.line1}</p>
-                            {addressForm.line2 && <p>{addressForm.line2}</p>}
-                            <p>{addressForm.city}, {addressForm.country}</p>
-                            <p className="text-slate-500 text-lg">{addressForm.zip}</p>
-                        </div>
-                    </div>
-                )}
+                </div>
 
-                {/* Confirm / Edit Button */}
-                <div className="flex justify-center mt-12 pb-2">
+                <div className="pt-6 border-t border-gray-100">
                     {!isSaved ? (
                         <button
                             onClick={handleConfirm}
-                            disabled={isLoading}
-                            className="w-64 bg-[#30496E] hover:bg-[#233855] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl rounded-full py-3.5 shadow-lg font-medium tracking-wide text-white text-xl disabled:opacity-50"
+                            disabled={isSaving}
+                            className="w-full py-4 bg-[#30496E] text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
-                            {isLoading ? 'Saving...' : 'Confirm'}
+                            {isSaving ? <Loader2 className="animate-spin size-5" /> : <CheckCircle2 className="size-5" />}
+                            Confirm Location
                         </button>
                     ) : (
                         <button
                             onClick={handleEdit}
-                            className="w-64 bg-white hover:bg-[#f0f4f8] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl rounded-full py-3.5 shadow-lg font-bold tracking-wide text-[#30496E] text-xl border border-white/50"
+                            className="w-full py-4 bg-white text-[#30496E] border border-[#30496E]/10 rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3"
                         >
-                            Edit Address
+                            <Edit3 className="size-5" />
+                            Update Address
                         </button>
                     )}
                 </div>
