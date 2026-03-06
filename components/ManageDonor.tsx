@@ -2,6 +2,21 @@
 import React, { useState } from 'react'
 import DonorDonationDashboard from './DonorDonationDashboard';
 
+interface Donation {
+    id: string
+    donor_id: string
+    organization_id: string | null
+    type: string
+    quantity: number | null
+    status: string | null
+    created_at: string
+    target_organization: string | null
+}
+
+interface Props {
+    donations: Donation[]
+}
+
 const FilterDropdown = ({ options, onSelect }: { options: string[], onSelect: (val: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
@@ -35,8 +50,38 @@ const FilterDropdown = ({ options, onSelect }: { options: string[], onSelect: (v
     );
 };
 
-const ManageDonor = () => {
+// Skeleton pulse row for empty state
+const SkeletonRow = () => (
+    <div className="flex w-full h-14 bg-white/40 backdrop-blur-sm rounded-xl border border-white/30 animate-pulse">
+        <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center">
+            <div className="h-3 w-10 bg-white/60 rounded-full" />
+        </div>
+        <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center">
+            <div className="h-3 w-16 bg-white/60 rounded-full" />
+        </div>
+        <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center">
+            <div className="h-3 w-20 bg-white/60 rounded-full" />
+        </div>
+        <div className="flex-[0.25] flex items-center justify-center">
+            <div className="h-3 w-16 bg-white/60 rounded-full" />
+        </div>
+    </div>
+)
+
+const ManageDonor = ({ donations }: Props) => {
     const [selectedRequest, setSelectedRequest] = useState<boolean>(false);
+    const isEmpty = donations.length === 0
+
+    // Build category summary: { type -> total quantity }
+    const categorySummary = donations.reduce<Record<string, number>>((acc, d) => {
+        const key = (d.type || 'other')
+        acc[key] = (acc[key] || 0) + (d.quantity || 1)
+        return acc
+    }, {})
+    const categoryEntries = Object.entries(categorySummary).sort((a, b) => b[1] - a[1])
+
+    // Total = sum of all quantities
+    const totalDonated = donations.reduce((sum, d) => sum + (d.quantity || 1), 0)
 
     if (selectedRequest) {
         return (
@@ -49,7 +94,7 @@ const ManageDonor = () => {
     return (
         <main className="w-full max-w-6xl mx-auto py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
             <div className="w-full bg-gradient-to-br from-[#9BBAD0] to-[#80A6C2] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#9BBAD0]/30 border border-white/20 flex flex-col gap-10 relative overflow-hidden min-h-[800px]">
-                {/* Decorative background circle */}
+                {/* Decorative background circles */}
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -74,58 +119,95 @@ const ManageDonor = () => {
                             <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Date</div>
                         </div>
 
-                        {/* Rows */}
-                        <div
-                            className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
-                            onClick={() => setSelectedRequest(true)}
-                        >
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">001</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Clothes</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Red Cross</div>
-                            <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">Nov 1, 2023</div>
-                        </div>
-                        {/* Row 2 */}
-                        <div
-                            className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
-                            onClick={() => setSelectedRequest(true)}
-                        >
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">002</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Food</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Local Shelter</div>
-                            <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">Nov 5, 2023</div>
-                        </div>
+                        {/* Empty state: skeleton rows + message */}
+                        {isEmpty && (
+                            <>
+                                <SkeletonRow />
+                                <SkeletonRow />
+                                <SkeletonRow />
+                                <p className="text-center text-white/60 text-sm pt-2">
+                                    No donations sent yet. Your records will appear here once you make a donation.
+                                </p>
+                            </>
+                        )}
+
+                        {/* Real rows from Supabase */}
+                        {donations.map((donation, index) => (
+                            <div
+                                key={donation.id}
+                                className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                                onClick={() => setSelectedRequest(true)}
+                            >
+                                <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">
+                                    {String(index + 1).padStart(3, '0')}
+                                </div>
+                                <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] capitalize">
+                                    {donation.type}
+                                </div>
+                                <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">
+                                    {donation.target_organization || '—'}
+                                </div>
+                                <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">
+                                    {new Date(donation.created_at).toLocaleDateString('en-PH', {
+                                        month: 'short', day: 'numeric', year: 'numeric'
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
                 {/* Bottom two boxes */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 w-full">
+
                     {/* Left box: Overview */}
                     <div className="bg-white/40 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-white/50 transition-all hover:bg-white/50 hover:-translate-y-1 flex flex-col items-center">
                         <h2 className="text-2xl font-extrabold text-[#30496E] mb-8 uppercase tracking-widest border-b border-white/40 pb-4 w-[80%] text-center">Overview</h2>
 
                         <div className="w-[80%] space-y-6">
-                            <div className="flex items-center justify-between group">
-                                <span className="text-xl font-bold text-white tracking-wide group-hover:text-[#30496E] transition-colors">Clothes</span>
-                                <div className="bg-white/90 rounded-full w-24 py-1.5 text-center font-extrabold text-[#30496E] shadow-sm transform group-hover:scale-110 transition-transform">15</div>
-                            </div>
-                            <div className="flex items-center justify-between group">
-                                <span className="text-xl font-bold text-white tracking-wide group-hover:text-[#30496E] transition-colors">Food</span>
-                                <div className="bg-white/90 rounded-full w-24 py-1.5 text-center font-extrabold text-[#30496E] shadow-sm transform group-hover:scale-110 transition-transform">30</div>
-                            </div>
-                            <div className="flex items-center justify-between group">
-                                <span className="text-xl font-bold text-white tracking-wide group-hover:text-[#30496E] transition-colors">Water</span>
-                                <div className="bg-white/90 rounded-full w-24 py-1.5 text-center font-extrabold text-[#30496E] shadow-sm transform group-hover:scale-110 transition-transform">50</div>
-                            </div>
+                            {isEmpty && (
+                                <>
+                                    {/* Skeleton category rows */}
+                                    {['', '', ''].map((_, i) => (
+                                        <div key={i} className="flex items-center justify-between animate-pulse">
+                                            <div className="h-4 w-20 bg-white/50 rounded-full" />
+                                            <div className="bg-white/50 rounded-full w-24 py-1.5 h-8" />
+                                        </div>
+                                    ))}
+                                    <p className="text-center text-white/50 text-xs pt-2">
+                                        Category totals will appear here
+                                    </p>
+                                </>
+                            )}
+
+                            {categoryEntries.map(([type, total]) => (
+                                <div key={type} className="flex items-center justify-between group">
+                                    <span className="text-xl font-bold text-white tracking-wide group-hover:text-[#30496E] transition-colors capitalize">
+                                        {type}
+                                    </span>
+                                    <div className="bg-white/90 rounded-full w-24 py-1.5 text-center font-extrabold text-[#30496E] shadow-sm transform group-hover:scale-110 transition-transform">
+                                        {total}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
                     {/* Right box: Total */}
                     <div className="bg-white/40 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-white/50 flex flex-col items-center justify-center transition-all hover:bg-white/50 hover:-translate-y-1">
                         <h2 className="text-xl font-extrabold text-[#30496E] mb-6 uppercase tracking-widest text-center">Total Donations Sent</h2>
-                        <div className="bg-white/90 rounded-full w-48 py-4 text-center shadow-lg border border-white/50 transform hover:scale-105 transition-all">
-                            <span className="text-4xl font-black text-[#30496E]">95</span>
-                        </div>
+                        {isEmpty ? (
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="bg-white/50 rounded-full w-48 py-4 animate-pulse h-16" />
+                                <p className="text-white/50 text-xs">No donations recorded yet</p>
+                            </div>
+                        ) : (
+                            <div className="bg-white/90 rounded-full w-48 py-4 text-center shadow-lg border border-white/50 transform hover:scale-105 transition-all">
+                                <span className="text-4xl font-black text-[#30496E]">{totalDonated}</span>
+                            </div>
+                        )}
                     </div>
+
                 </div>
             </div>
         </main>

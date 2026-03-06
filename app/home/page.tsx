@@ -20,8 +20,8 @@ const Home = async () => {
     // Fetch donations server-side and pass as props — no client supabase needed
     const { data: donations } = await supabase
         .from('donations')
-        .select('id, type, created_at, amount')
-        .eq('user_id', user.id)
+        .select('id, type, created_at, quantity')
+        .eq('donor_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20)
 
