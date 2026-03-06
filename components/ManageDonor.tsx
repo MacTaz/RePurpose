@@ -47,15 +47,15 @@ const ManageDonor = () => {
     }
 
     return (
-        <main className="w-full max-w-6xl mx-auto py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
-            <div className="w-full bg-gradient-to-br from-[#9BBAD0] to-[#80A6C2] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#9BBAD0]/30 border border-white/20 flex flex-col gap-10 relative overflow-hidden min-h-[800px]">
+        <main className="w-full max-w-6xl mx-auto py-4 md:py-8 px-2 md:px-4 font-sans animate-in fade-in duration-500 flex-grow">
+            <div className="w-full bg-gradient-to-br from-[#9BBAD0] to-[#80A6C2] rounded-[2rem] p-4 md:p-8 lg:p-12 shadow-2xl shadow-[#9BBAD0]/30 border border-white/20 flex flex-col gap-6 md:gap-10 relative overflow-hidden min-h-[600px] md:min-h-[800px]">
                 {/* Decorative background circle */}
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 
                 {/* Top box: Donations Sent */}
-                <div className="bg-white/30 backdrop-blur-md rounded-3xl overflow-hidden pb-12 shadow-lg border border-white/40 relative z-10 transition-all hover:bg-white/40">
-                    <div className="relative h-20 flex items-center justify-center border-b border-white/30 bg-white/20 px-8">
+                <div className="bg-white/30 backdrop-blur-md rounded-3xl overflow-hidden pb-6 md:pb-12 shadow-lg border border-white/40 relative z-10 transition-all hover:bg-white/40">
+                    <div className="relative h-16 md:h-20 flex items-center justify-center border-b border-white/30 bg-white/20 px-4 md:px-8">
                         <h1 className="text-2xl font-extrabold text-white tracking-wide w-full text-center">Donations Sent</h1>
                         <div className="absolute right-6 flex items-center h-full">
                             <FilterDropdown
@@ -65,43 +65,43 @@ const ManageDonor = () => {
                         </div>
                     </div>
 
-                    <div className="mt-8 px-8 space-y-4 relative z-10">
+                    <div className="mt-4 md:mt-8 px-2 md:px-8 space-y-3 md:space-y-4 relative z-10">
                         {/* Headers */}
-                        <div className="flex space-x-4 mb-3">
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Number</div>
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Type</div>
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Charity Sent To</div>
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Date</div>
+                        <div className="flex space-x-1 md:space-x-4 mb-2 md:mb-3">
+                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-1.5 md:py-2.5 px-1 text-center text-[#30496E] font-bold text-[10px] md:text-xs uppercase tracking-wider shadow-sm truncate">Num</div>
+                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-1.5 md:py-2.5 px-1 text-center text-[#30496E] font-bold text-[10px] md:text-xs uppercase tracking-wider shadow-sm truncate">Type</div>
+                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-1.5 md:py-2.5 px-1 text-center text-[#30496E] font-bold text-[10px] md:text-xs uppercase tracking-wider shadow-sm truncate">Charity</div>
+                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-1.5 md:py-2.5 px-1 text-center text-[#30496E] font-bold text-[10px] md:text-xs uppercase tracking-wider shadow-sm truncate">Date</div>
                         </div>
 
                         {/* Rows */}
                         <div
-                            className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                            className="flex w-full h-12 md:h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
                             onClick={() => setSelectedRequest(true)}
                         >
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">001</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Clothes</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Red Cross</div>
-                            <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">Nov 1, 2023</div>
+                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">001</div>
+                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">Clothes</div>
+                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">Red Cross</div>
+                            <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">Nov 1, 23</div>
                         </div>
                         {/* Row 2 */}
                         <div
-                            className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                            className="flex w-full h-12 md:h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
                             onClick={() => setSelectedRequest(true)}
                         >
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">002</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Food</div>
-                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">Local Shelter</div>
-                            <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">Nov 5, 2023</div>
+                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">002</div>
+                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">Food</div>
+                            <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">Local Shelter</div>
+                            <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E] text-xs md:text-base px-1 text-center break-words">Nov 5, 23</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Bottom two boxes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10 w-full">
                     {/* Left box: Overview */}
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-white/50 transition-all hover:bg-white/50 hover:-translate-y-1 flex flex-col items-center">
-                        <h2 className="text-2xl font-extrabold text-[#30496E] mb-8 uppercase tracking-widest border-b border-white/40 pb-4 w-[80%] text-center">Overview</h2>
+                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 md:p-10 shadow-xl border border-white/50 transition-all hover:bg-white/50 hover:-translate-y-1 flex flex-col items-center">
+                        <h2 className="text-xl md:text-2xl font-extrabold text-[#30496E] mb-6 md:mb-8 uppercase tracking-widest border-b border-white/40 pb-4 w-full md:w-[80%] text-center">Overview</h2>
 
                         <div className="w-[80%] space-y-6">
                             <div className="flex items-center justify-between group">

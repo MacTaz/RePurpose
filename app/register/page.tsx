@@ -7,15 +7,15 @@ const RegisterPage = () => {
     const [userType, setUserType] = useState<'donor' | 'organization'>('donor');
 
     return (
-        <div className="relative min-h-screen bg-[url('/login_sign_up_BG.png')] bg-cover bg-center flex">
+        <div className="relative min-h-screen bg-[url('/login_sign_up_BG.png')] bg-cover bg-center flex flex-col md:flex-row">
             {/* Left side spacer */}
-            <div className="w-1/2 flex items-center justify-center px-10">
-                <div className="bg-white rounded-3xl w-full h-[80%] opacity-20 border border-white/30 backdrop-blur-sm">
+            <div className="hidden md:flex md:w-1/2 items-center justify-center px-10 py-10">
+                <div className="bg-white rounded-3xl w-full h-full opacity-20 border border-white/30 backdrop-blur-sm">
                 </div>
             </div>
 
             {/* Right side form */}
-            <div className="w-1/2 flex flex-col px-16 pt-10">
+            <div className="w-full md:w-1/2 flex flex-col px-6 md:px-16 pt-10 pb-10 overflow-y-auto">
                 <div>
                     <Link href="/">
                         <h1 className="text-white font-['Inter'] text-5xl font-black mb-4 hover:text-[#647BD0] transition-all duration-300">RePurpose</h1>

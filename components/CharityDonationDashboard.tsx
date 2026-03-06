@@ -6,20 +6,20 @@ interface Props {
 
 const CharityDonationDashboard = ({ onClose }: Props) => {
     return (
-        <div className="w-full max-w-5xl mx-auto bg-[#FFEDE1] border-[6px] border-[#FFB27D] rounded-[2rem] p-10 shadow-sm relative flex flex-col items-center">
+        <div className="w-full max-w-5xl mx-auto bg-[#FFEDE1] border-[6px] border-[#FFB27D] rounded-[2rem] p-4 md:p-10 shadow-sm relative flex flex-col items-center">
             {/* Back / Close Button */}
             {onClose && (
                 <button
                     onClick={onClose}
-                    className="absolute top-8 left-8 font-extrabold text-black hover:opacity-70 text-lg"
+                    className="absolute top-4 md:top-8 left-4 md:left-8 font-extrabold text-black hover:opacity-70 text-base md:text-lg"
                 >
                     &larr; Back
                 </button>
             )}
 
             {/* Header */}
-            <div className="w-full text-center mt-4 mb-4">
-                <h1 className="text-4xl font-extrabold text-black">Name's Donation Request</h1>
+            <div className="w-full text-center mt-12 md:mt-4 mb-4">
+                <h1 className="text-2xl md:text-4xl font-extrabold text-black">Name's Donation Request</h1>
             </div>
 
             {/* Divider */}
@@ -68,19 +68,19 @@ const CharityDonationDashboard = ({ onClose }: Props) => {
 
                 {/* Right side: Details & Actions */}
                 <div className="flex flex-col w-full lg:w-1/2 justify-center space-y-12">
-                    <div className="space-y-6 flex flex-col items-center">
-                        <div className="w-80 bg-white rounded-full py-3.5 px-6 text-center shadow-sm">
+                    <div className="space-y-6 flex flex-col items-center w-full">
+                        <div className="w-full max-w-[320px] md:w-80 bg-white rounded-full py-3.5 px-6 text-center shadow-sm">
                             <span className="font-extrabold text-black text-lg">Optional Details</span>
                         </div>
-                        <div className="w-80 bg-white rounded-full py-3.5 px-6 text-center shadow-sm">
+                        <div className="w-full max-w-[320px] md:w-80 bg-white rounded-full py-3.5 px-6 text-center shadow-sm">
                             <span className="font-extrabold text-black text-lg">Sender Address</span>
                         </div>
                     </div>
 
                     {/* Delivery Section */}
-                    <div className="flex flex-col items-center mt-4">
+                    <div className="flex flex-col items-center mt-4 w-full">
                         <h3 className="text-center font-extrabold text-black mb-4 text-xl">Mode of Delivery</h3>
-                        <div className="flex items-center justify-center bg-[#ffcba4] rounded-full py-3.5 w-80 shadow-sm space-x-6 px-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-center bg-[#ffcba4] rounded-3xl sm:rounded-full py-4 sm:py-3.5 w-full max-w-[320px] md:w-80 shadow-sm gap-4 sm:gap-0 sm:space-x-6 px-4">
                             <label className="flex items-center space-x-3 font-extrabold text-black cursor-pointer">
                                 <span className="w-5 h-5 rounded-full border-[3px] border-black flex items-center justify-center">
                                     <span className="w-2.5 h-2.5 bg-black rounded-full"></span>
@@ -98,11 +98,11 @@ const CharityDonationDashboard = ({ onClose }: Props) => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex justify-center gap-6 mt-6">
-                        <button className="w-40 bg-[#ffcba4] hover:bg-[#ffb380] transition-colors rounded-full py-3 shadow-sm font-extrabold text-black text-xl">
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mt-6 w-full px-4 sm:px-0">
+                        <button className="w-full sm:w-40 bg-[#ffcba4] hover:bg-[#ffb380] transition-colors rounded-full py-3 shadow-sm font-extrabold text-black text-xl">
                             Accept
                         </button>
-                        <button className="w-40 bg-[#ffcba4] hover:bg-[#ffb380] transition-colors rounded-full py-3 shadow-sm font-extrabold text-black text-xl">
+                        <button className="w-full sm:w-40 bg-[#ffcba4] hover:bg-[#ffb380] transition-colors rounded-full py-3 shadow-sm font-extrabold text-black text-xl">
                             Reject
                         </button>
                     </div>

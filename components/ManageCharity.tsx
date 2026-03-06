@@ -57,15 +57,15 @@ const ManageCharity = () => {
     }
 
     return (
-        <main className="w-full max-w-6xl mx-auto py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
-            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 flex flex-col gap-10 relative overflow-hidden min-h-[800px]">
+        <main className="w-full max-w-6xl mx-auto py-4 md:py-8 px-2 md:px-4 font-sans animate-in fade-in duration-500 flex-grow">
+            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-4 md:p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 flex flex-col gap-6 md:gap-10 relative overflow-hidden min-h-[600px] md:min-h-[800px]">
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
 
                 {/* Container 1: Donations Request Received */}
-                <div className="bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden pb-12 shadow-lg border border-white/50 relative z-10 transition-all hover:bg-white/50">
-                    <div className="relative h-16 flex items-center justify-center border-b border-white/40 bg-white/30">
-                        <h2 className="text-xl font-extrabold text-[#5A2C10] tracking-wide">Donation Requests Received</h2>
+                <div className="bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden pb-6 md:pb-12 shadow-lg border border-white/50 relative z-10 transition-all hover:bg-white/50">
+                    <div className="relative h-16 flex items-center justify-center border-b border-white/40 bg-white/30 px-4 md:px-0">
+                        <h2 className="text-lg md:text-xl font-extrabold text-[#5A2C10] tracking-wide w-full text-center md:w-auto">Donation Requests Received</h2>
                         <div className="absolute right-4 flex items-center">
                             <FilterDropdown
                                 options={["All", "Type", "Quantity", "Date"]}
@@ -74,41 +74,41 @@ const ManageCharity = () => {
                         </div>
                     </div>
 
-                    <div className="mt-6 px-6 space-y-3">
+                    <div className="mt-4 md:mt-6 px-2 md:px-6 space-y-3">
                         {/* Headers */}
-                        <div className="flex space-x-4 mb-2">
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Number</div>
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Type</div>
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Quantity</div>
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Date</div>
+                        <div className="flex space-x-1 md:space-x-4 mb-2">
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Num</div>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Type</div>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Qty</div>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Date</div>
                         </div>
 
                         {/* Rows */}
                         <div
-                            className="flex w-full h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                            className="flex w-full h-12 md:h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
                             onClick={() => setSelectedRequest(true)}
                         >
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">001</div>
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">Clothes</div>
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">5 boxes</div>
-                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10]">Oct 24, 2023</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">001</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Clothes</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">5 boxes</div>
+                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Oct 24, 23</div>
                         </div>
                         <div
-                            className="flex w-full h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                            className="flex w-full h-12 md:h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
                             onClick={() => setSelectedRequest(true)}
                         >
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">002</div>
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">Food</div>
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">10 kg</div>
-                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10]">Oct 25, 2023</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">002</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Food</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">10 kg</div>
+                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Oct 25, 23</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Container 2: Accepted Donation Requests */}
-                <div className="bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden pb-12 shadow-lg border border-white/50 relative z-10 transition-all hover:bg-white/50">
-                    <div className="relative h-16 flex items-center justify-center border-b border-white/40 bg-white/30">
-                        <h2 className="text-xl font-extrabold text-[#5A2C10] tracking-wide">Accepted Donation Requests</h2>
+                <div className="bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden pb-6 md:pb-12 shadow-lg border border-white/50 relative z-10 transition-all hover:bg-white/50">
+                    <div className="relative h-16 flex items-center justify-center border-b border-white/40 bg-white/30 px-4 md:px-0">
+                        <h2 className="text-lg md:text-xl font-extrabold text-[#5A2C10] tracking-wide w-full text-center md:w-auto">Accepted Donation Requests</h2>
                         <div className="absolute right-4 flex items-center">
                             <FilterDropdown
                                 options={["All", "Type", "Status"]}
@@ -117,40 +117,40 @@ const ManageCharity = () => {
                         </div>
                     </div>
 
-                    <div className="mt-6 px-6 space-y-3">
+                    <div className="mt-4 md:mt-6 px-2 md:px-6 space-y-3">
                         {/* Headers */}
-                        <div className="flex space-x-4 mb-2">
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Number</div>
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Type</div>
-                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-2 text-center text-[#5A2C10] text-xs font-bold uppercase tracking-wider shadow-sm">Status</div>
+                        <div className="flex space-x-1 md:space-x-4 mb-2">
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Num</div>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Type</div>
+                            <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-full py-1.5 md:py-2 px-1 text-center text-[#5A2C10] text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-sm truncate">Status</div>
                         </div>
 
                         {/* Rows */}
                         <div
-                            className="flex w-full h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                            className="flex w-full h-12 md:h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
                             onClick={() => setSelectedAcceptedRequest(true)}
                         >
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">003</div>
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">Water</div>
-                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10]">In Transit</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">003</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Water</div>
+                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">In Transit</div>
                         </div>
                         <div
-                            className="flex w-full h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                            className="flex w-full h-12 md:h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
                             onClick={() => setSelectedAcceptedRequest(true)}
                         >
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">004</div>
-                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10]">Clothes</div>
-                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10]">Picked Up</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">004</div>
+                            <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Clothes</div>
+                            <div className="flex-1 flex items-center justify-center font-medium text-[#5A2C10] text-xs md:text-base px-1 text-center break-words">Picked Up</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Bottom Section */}
-                <div className="relative z-10 pt-4">
-                    <div className="flex flex-col md:flex-row justify-center gap-8">
+                <div className="relative z-10 pt-4 w-full">
+                    <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 w-full">
                         {/* Overview Card */}
-                        <div className="bg-white/50 backdrop-blur-md rounded-3xl p-8 w-full md:w-[450px] shadow-xl border border-white/60 transition-all hover:bg-white/60 hover:-translate-y-1">
-                            <h3 className="text-2xl font-extrabold text-[#5A2C10] text-center mb-8 uppercase tracking-widest border-b border-white/50 pb-4">Overview</h3>
+                        <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 md:p-8 w-full md:w-[450px] shadow-xl border border-white/60 transition-all hover:bg-white/60 hover:-translate-y-1">
+                            <h3 className="text-xl md:text-2xl font-extrabold text-[#5A2C10] text-center mb-6 md:mb-8 uppercase tracking-widest border-b border-white/50 pb-4">Overview</h3>
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between group">
                                     <span className="text-xl font-bold text-[#8A4A20] tracking-wide group-hover:text-[#5A2C10] transition-colors">Clothes</span>

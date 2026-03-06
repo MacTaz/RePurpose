@@ -38,10 +38,10 @@ const Home = async () => {
 
             {role === 'donor' ? (
                 /* DONOR VIEW (BLUE THEME) */
-                <main className="flex-1 p-8 lg:p-12 flex flex-col lg:flex-row gap-10 max-w-[1600px] mx-auto w-full">
+                <main className="flex-1 p-4 md:p-8 lg:p-12 flex flex-col xl:flex-row gap-6 md:gap-10 max-w-[1600px] mx-auto w-full">
                     {/* LEFT: Disaster Watch */}
                     <div className="flex-[1.2] flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden shadow-sm bg-white">
-                        <div className="bg-[#7BA4D5] px-8 py-5 flex items-center justify-between">
+                        <div className="bg-[#7BA4D5] px-5 md:px-8 py-4 md:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <h2 className="text-white text-2xl font-extrabold tracking-wide flex items-center gap-3">
                                 <AlertTriangle className="w-7 h-7" /> Disaster Watch
                             </h2>
@@ -50,7 +50,7 @@ const Home = async () => {
                             </span>
                         </div>
 
-                        <div className="flex-1 p-6 flex flex-col xl:flex-row gap-6">
+                        <div className="flex-1 p-4 md:p-6 flex flex-col lg:flex-row gap-6">
                             {/* Main Image Placeholder */}
                             <div className="flex-[3] bg-[#DDE6ED] rounded-2xl relative overflow-hidden group/image min-h-[300px]">
                                 <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
@@ -82,12 +82,12 @@ const Home = async () => {
                     <div className="flex-1 flex flex-col gap-10">
                         {/* Top: Discover Charities */}
                         <div className="flex-[0.6] flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden shadow-sm bg-white">
-                            <div className="bg-[#7BA4D5] px-8 py-4">
+                            <div className="bg-[#7BA4D5] px-5 md:px-8 py-4">
                                 <h2 className="text-white text-xl font-bold flex items-center gap-3">
                                     <HomeIcon className="w-6 h-6" /> Discover Charities
                                 </h2>
                             </div>
-                            <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
+                            <div className="flex-1 p-4 md:p-6 flex flex-col gap-4 overflow-y-auto max-h-[400px]">
                                 {[1, 2, 3, 4, 5].map((i) => (
                                     <div key={i} className="bg-[#F8FAFC] border border-[#DDE6ED] hover:border-[#7BA4D5]/50 h-16 min-h-[64px] rounded-2xl w-full flex items-center px-6 transition-colors cursor-pointer group/charity shrink-0">
                                         <div className="w-10 h-10 rounded-full bg-[#DDE6ED] mr-4 flex items-center justify-center text-[#7BA4D5] font-bold group-hover/charity:bg-[#7BA4D5] group-hover/charity:text-white transition-colors">C{i}</div>
@@ -105,12 +105,12 @@ const Home = async () => {
 
                         {/* Bottom: Recent Donations */}
                         <div className="flex-1 flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden shadow-sm bg-white">
-                            <div className="bg-[#7BA4D5] px-8 py-4">
+                            <div className="bg-[#7BA4D5] px-5 md:px-8 py-4">
                                 <h2 className="text-white text-xl font-bold flex items-center gap-3">
                                     <Clock className="w-6 h-6" /> Recent Donations
                                 </h2>
                             </div>
-                            <div className="flex-1 p-6">
+                            <div className="flex-1 p-4 md:p-6">
                                 <div className="w-full h-full bg-[#F4F7FA] border border-[#DDE6ED] rounded-2xl flex items-center justify-center p-8">
                                     <div className="text-center flex flex-col items-center">
                                         <div className="w-16 h-16 bg-[#DDE6ED] rounded-full mb-4 flex items-center justify-center text-[#7BA4D5]">
@@ -126,16 +126,15 @@ const Home = async () => {
                 </main>
             ) : (
                 /* ORGANIZATION VIEW (ORANGE THEME) */
-                <main className="flex-1 p-8 lg:p-12 flex flex-col gap-10 max-w-[1600px] mx-auto w-full">
+                <main className="flex-1 p-4 md:p-8 lg:p-12 flex flex-col gap-6 md:gap-10 max-w-[1600px] mx-auto w-full">
                     {/* TOP: Status Management */}
                     <div className="flex-[0.8] flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden shadow-sm bg-white">
-                        <div className="bg-[#FFD1B3] px-8 py-4 border-b-2 border-[#FFB27D] flex items-center justify-between">
+                        <div className="bg-[#FFD1B3] px-5 md:px-8 py-4 border-b-2 border-[#FFB27D] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <h2 className="text-[#5A2C10] text-xl font-black uppercase tracking-widest flex items-center gap-3">
                                 <Activity className="w-6 h-6" /> Status Management
                             </h2>
-                            <button className="text-[#FF944D] bg-white px-4 py-1.5 rounded-full text-sm font-bold shadow-sm hover:bg-[#FFF5F0] border border-[#FFB27D]/30 transition-colors">View All</button>
                         </div>
-                        <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="flex-1 p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                             {[
                                 { title: "Pending Pickups", count: 12, icon: <Truck className="w-7 h-7" /> },
                                 { title: "Awaiting Matches", count: 5, icon: <HomeIcon className="w-7 h-7" /> },
@@ -156,12 +155,12 @@ const Home = async () => {
                     <div className="flex-[1.2] flex flex-col lg:flex-row gap-10">
                         {/* Inventory Needs */}
                         <div className="flex-[0.4] flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden shadow-sm bg-white">
-                            <div className="bg-[#FFD1B3] px-8 py-4 border-b-2 border-[#FFB27D]">
+                            <div className="bg-[#FFD1B3] px-5 md:px-8 py-4 border-b-2 border-[#FFB27D]">
                                 <h2 className="text-[#5A2C10] text-lg font-black uppercase tracking-wider flex items-center gap-3">
                                     <ClipboardList className="w-6 h-6" /> Inventory Needs
                                 </h2>
                             </div>
-                            <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
+                            <div className="flex-1 p-4 md:p-6 flex flex-col gap-4 overflow-y-auto max-h-[400px]">
                                 {['Canned Goods', 'Bottled Water', 'Blankets'].map((item, i) => (
                                     <div key={i} className="bg-[#FFF5F0] h-16 rounded-xl border border-[#FFD1B3] flex items-center justify-between px-5 hover:bg-[#FFEDE1] transition-colors cursor-pointer">
                                         <div className="flex items-center gap-3">
@@ -176,12 +175,12 @@ const Home = async () => {
 
                         {/* Incoming Matches */}
                         <div className="flex-1 flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden shadow-sm bg-white">
-                            <div className="bg-[#FFD1B3] px-8 py-4 border-b-2 border-[#FFB27D]">
+                            <div className="bg-[#FFD1B3] px-5 md:px-8 py-4 border-b-2 border-[#FFB27D]">
                                 <h2 className="text-[#5A2C10] text-lg font-black uppercase tracking-wider flex items-center gap-3">
                                     <Zap className="w-6 h-6" /> Incoming Matches
                                 </h2>
                             </div>
-                            <div className="flex-1 p-6">
+                            <div className="flex-1 p-4 md:p-6 min-h-[250px] flex items-center justify-center">
                                 <div className="w-full h-full bg-[#FFF5F0] border border-[#FFD1B3] rounded-2xl flex items-center justify-center p-8">
                                     <div className="text-center flex flex-col items-center">
                                         <div className="w-20 h-20 bg-white rounded-full mb-5 flex items-center justify-center shadow-sm border border-[#FFD1B3]">

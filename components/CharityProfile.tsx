@@ -11,6 +11,7 @@ interface CharityProfileProps {
         instagram?: string;
         website?: string;
         description?: string;
+        isVerified?: boolean;
     };
 }
 
@@ -28,9 +29,10 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
     const [description, setDescription] = useState(user.description || '');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Delivery / Pick-up Toggles (Wireframe specifics)
-    const [isDelivery, setIsDelivery] = useState(false);
+    // Delivery Options
+    const [isDropOff, setIsDropOff] = useState(false);
     const [isPickUp, setIsPickUp] = useState(false);
+    const [isBoth, setIsBoth] = useState(false);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -66,29 +68,29 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
     return (
         <div className="w-full max-w-5xl mx-auto min-h-screen py-8 px-4 font-sans">
             {/* Tabs */}
-            <div className="flex space-x-8 border-b-2 border-transparent mb-2 pl-4">
+            <div className="flex flex-wrap gap-4 md:space-x-8 border-b-2 border-transparent mb-2 pl-4">
                 <button
                     onClick={() => setActiveTab('Profile')}
-                    className={`text-2xl font-extrabold pb-2 px-2 transition-colors ${activeTab === 'Profile' ? 'border-b-4 border-[#FFB27D] text-[#FFB27D]' : 'text-[#FFB27D]/70 hover:text-[#FFB27D]'}`}
+                    className={`text-lg md:text-2xl font-extrabold pb-2 px-2 transition-colors ${activeTab === 'Profile' ? 'border-b-4 border-[#FFB27D] text-[#FFB27D]' : 'text-[#FFB27D]/70 hover:text-[#FFB27D]'}`}
                 >
                     Profile
                 </button>
                 <button
                     onClick={() => setActiveTab('Address')}
-                    className={`text-2xl font-extrabold pb-2 px-2 transition-colors ${activeTab === 'Address' ? 'border-b-4 border-[#FFB27D] text-[#FFB27D]' : 'text-[#FFB27D]/70 hover:text-[#FFB27D]'}`}
+                    className={`text-lg md:text-2xl font-extrabold pb-2 px-2 transition-colors ${activeTab === 'Address' ? 'border-b-4 border-[#FFB27D] text-[#FFB27D]' : 'text-[#FFB27D]/70 hover:text-[#FFB27D]'}`}
                 >
                     Address
                 </button>
                 <button
                     onClick={() => setActiveTab('Contact')}
-                    className={`text-2xl font-extrabold pb-2 px-2 transition-colors ${activeTab === 'Contact' ? 'border-b-4 border-[#FFB27D] text-[#FFB27D]' : 'text-[#FFB27D]/70 hover:text-[#FFB27D]'}`}
+                    className={`text-lg md:text-2xl font-extrabold pb-2 px-2 transition-colors ${activeTab === 'Contact' ? 'border-b-4 border-[#FFB27D] text-[#FFB27D]' : 'text-[#FFB27D]/70 hover:text-[#FFB27D]'}`}
                 >
                     Contact
                 </button>
             </div>
 
             {/* Container - Orange/Peach Gradient matching Charity Theme */}
-            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 min-h-[600px] flex flex-col relative overflow-hidden">
+            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-4 md:p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 min-h-[600px] flex flex-col relative overflow-hidden">
                 {/* Decorative background circle */}
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -182,6 +184,7 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
                                         <div className="space-y-4 text-[#5A2C10] bg-white/50 backdrop-blur-md p-10 rounded-2xl shadow-xl shadow-black/5 border border-white/60 w-full transition-all hover:bg-white/60">
                                             <p className="text-lg flex items-center"><span className="w-36 font-bold opacity-80 uppercase tracking-wider text-sm">Org Name</span> <span className="text-2xl font-semibold">{orgName || 'NA'}</span></p>
                                             <p className="text-lg flex items-center"><span className="w-36 font-bold opacity-80 uppercase tracking-wider text-sm">Email</span> <span className="text-xl font-medium">{user.email || 'NA'}</span></p>
+                                            <p className="text-lg flex items-center"><span className="w-36 font-bold opacity-80 uppercase tracking-wider text-sm">Verified</span> <span className="text-xl font-medium">{user.isVerified ? 'Yes ✅' : 'No ❌'}</span></p>
 
                                             <div className="text-lg flex items-start pt-1">
                                                 <span className="w-36 font-bold opacity-80 uppercase tracking-wider text-sm mt-1 shrink-0">Address</span>
@@ -191,18 +194,24 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
                                             </div>
 
                                             {/* Read-Only Toggles */}
-                                            <div className="mt-8 pt-6 border-t border-[#5A2C10]/10 flex gap-12">
+                                            <div className="mt-8 pt-6 border-t border-[#5A2C10]/10 flex gap-8 flex-wrap lg:flex-nowrap">
                                                 <div className="flex items-center space-x-4">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isDelivery ? 'bg-[#FF944D] text-white shadow-md' : 'bg-white/50'}`}>
-                                                        {isDelivery && '✓'}
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isDropOff ? 'bg-[#FF944D] text-white shadow-md' : 'bg-white/50'}`}>
+                                                        {isDropOff && '✓'}
                                                     </div>
-                                                    <span className="font-bold uppercase tracking-wider text-sm opacity-80">Delivery</span>
+                                                    <span className="font-bold uppercase tracking-wider text-sm opacity-80">Drop-off</span>
                                                 </div>
                                                 <div className="flex items-center space-x-4">
                                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isPickUp ? 'bg-[#FF944D] text-white shadow-md' : 'bg-white/50'}`}>
                                                         {isPickUp && '✓'}
                                                     </div>
                                                     <span className="font-bold uppercase tracking-wider text-sm opacity-80">Pick-Up</span>
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isBoth ? 'bg-[#FF944D] text-white shadow-md' : 'bg-white/50'}`}>
+                                                        {isBoth && '✓'}
+                                                    </div>
+                                                    <span className="font-bold uppercase tracking-wider text-sm opacity-80">Pickup/Dropoff</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -220,18 +229,24 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
                                             </div>
 
                                             {/* Edit Toggles */}
-                                            <div className="mt-6 flex gap-12 pt-4">
+                                            <div className="mt-6 flex flex-wrap gap-8 pt-4">
                                                 <label className="flex items-center space-x-4 cursor-pointer group">
-                                                    <div className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center transition-all group-hover:scale-105 ${isDelivery ? 'bg-[#FF944D]' : 'bg-white/50'}`} onClick={() => setIsDelivery(!isDelivery)}>
-                                                        {isDelivery && <span className="text-white font-bold">✓</span>}
+                                                    <div className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center transition-all group-hover:scale-105 ${isDropOff ? 'bg-[#FF944D]' : 'bg-white/50'}`} onClick={() => setIsDropOff(!isDropOff)}>
+                                                        {isDropOff && <span className="text-white font-bold">✓</span>}
                                                     </div>
-                                                    <span className="text-[#5A2C10] font-bold tracking-wide">Delivery</span>
+                                                    <span className="text-[#5A2C10] font-bold tracking-wide">Drop-off</span>
                                                 </label>
                                                 <label className="flex items-center space-x-4 cursor-pointer group">
                                                     <div className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center transition-all group-hover:scale-105 ${isPickUp ? 'bg-[#FF944D]' : 'bg-white/50'}`} onClick={() => setIsPickUp(!isPickUp)}>
                                                         {isPickUp && <span className="text-white font-bold">✓</span>}
                                                     </div>
                                                     <span className="text-[#5A2C10] font-bold tracking-wide">Pick-Up</span>
+                                                </label>
+                                                <label className="flex items-center space-x-4 cursor-pointer group">
+                                                    <div className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center transition-all group-hover:scale-105 ${isBoth ? 'bg-[#FF944D]' : 'bg-white/50'}`} onClick={() => setIsBoth(!isBoth)}>
+                                                        {isBoth && <span className="text-white font-bold">✓</span>}
+                                                    </div>
+                                                    <span className="text-[#5A2C10] font-bold tracking-wide">Pickup/Dropoff</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -304,7 +319,7 @@ const CharityProfile = ({ user }: CharityProfileProps) => {
                         {/* Map & Address Columns identically styled to Donor but painted Orange/Peach */}
                         <div className="flex flex-col lg:flex-row h-full w-full gap-12">
                             {/* Left Column: Map */}
-                            <div className="w-full lg:w-1/2 rounded-3xl overflow-hidden shadow-xl border border-white/60 min-h-[400px] relative bg-white/30 backdrop-blur-sm">
+                            <div className="w-full lg:w-1/2 rounded-3xl overflow-hidden shadow-xl border border-white/60 min-h-[250px] lg:min-h-[400px] relative bg-white/30 backdrop-blur-sm">
                                 {isAddressConfirmed && <div className="absolute inset-0 z-10 bg-white/20 backdrop-blur-[2px] cursor-not-allowed transition-all duration-300"></div>}
                                 <iframe
                                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15446.4632824982!2d121.0476839!3d14.5645063!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c8f2ba53de75%3A0x6bbaaaa9bb70be10!2sBonifacio%20Global%20City%2C%20Taguig%2C%20Metro%20Manila!5e0!3m2!1sen!2sph!4v1700000000000!5m2!1sen!2sph"

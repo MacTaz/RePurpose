@@ -11,7 +11,7 @@ const DonationStatus = ({ onClose }: Props) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
     return (
-        <div className="w-full max-w-5xl mx-auto bg-[#FFEDE1] border-[6px] border-[#FFB27D] rounded-[2rem] p-10 shadow-sm relative flex flex-col items-center">
+        <div className="w-full max-w-5xl mx-auto bg-[#FFEDE1] border-[6px] border-[#FFB27D] rounded-[2rem] p-6 md:p-10 shadow-sm relative flex flex-col items-center">
             {/* Back / Close Button */}
             {onClose && (
                 <button
@@ -23,8 +23,8 @@ const DonationStatus = ({ onClose }: Props) => {
             )}
 
             {/* Header */}
-            <div className="w-full text-center mt-4 mb-4">
-                <h1 className="text-4xl font-extrabold text-black">Name's Donation Request</h1>
+            <div className="w-full text-center mt-8 md:mt-4 mb-4">
+                <h1 className="text-2xl md:text-4xl font-extrabold text-black">Name's Donation Request</h1>
             </div>
 
             {/* Divider */}

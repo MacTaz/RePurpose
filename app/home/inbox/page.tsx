@@ -18,12 +18,12 @@ const InboxPage = async () => {
     return (
         <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-['Inter']">
             <Navbar role={role} />
-            <main className="flex-1 p-6 lg:p-10 flex flex-col max-w-[1600px] mx-auto w-full h-[calc(100vh-80px)]">
+            <main className="flex-1 p-4 md:p-6 lg:p-10 flex flex-col max-w-[1600px] mx-auto w-full min-h-[calc(100vh-[4rem])] md:h-[calc(100vh-80px)]">
                 {role === 'donor' ? (
                     /* DONOR VIEW (BLUE THEME) */
-                    <div className="flex-1 flex flex-col md:flex-row gap-6 h-full overflow-hidden">
+                    <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6 h-full md:overflow-hidden">
                         {/* LEFT PANE: Conversations List */}
-                        <div className="w-full md:w-[380px] flex-shrink-0 flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden bg-white shadow-sm h-full">
+                        <div className="w-full md:w-[380px] flex-shrink-0 flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden bg-white shadow-sm h-[400px] md:h-full">
                             <div className="bg-[#7BA4D5] px-6 py-5 flex items-center justify-between">
                                 <h2 className="text-white text-xl font-bold flex items-center gap-2">
                                     <MessageSquare className="w-6 h-6" /> Messages
@@ -52,9 +52,9 @@ const InboxPage = async () => {
                         </div>
 
                         {/* RIGHT PANE: Active Chat */}
-                        <div className="flex-1 flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden bg-white shadow-sm h-full max-md:hidden">
+                        <div className="flex-1 flex flex-col border-[6px] border-[#7BA4D5] rounded-[2rem] overflow-hidden bg-white shadow-sm h-[500px] md:h-full mt-2 md:mt-0">
                             {/* Chat Header */}
-                            <div className="bg-white border-b-2 border-[#DDE6ED] px-8 py-5 flex items-center justify-between">
+                            <div className="bg-white border-b-2 border-[#DDE6ED] px-4 md:px-8 py-4 md:py-5 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-full bg-[#7BA4D5] flex items-center justify-center text-white font-bold text-lg">C1</div>
                                     <div>
@@ -111,9 +111,9 @@ const InboxPage = async () => {
                     </div>
                 ) : (
                     /* ORGANIZATION VIEW (ORANGE THEME) */
-                    <div className="flex-1 flex flex-col md:flex-row gap-6 h-full overflow-hidden">
+                    <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6 h-full md:overflow-hidden">
                         {/* LEFT PANE: Conversations List */}
-                        <div className="w-full md:w-[380px] flex-shrink-0 flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden bg-white shadow-sm h-full">
+                        <div className="w-full md:w-[380px] flex-shrink-0 flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden bg-white shadow-sm h-[400px] md:h-full">
                             <div className="bg-[#FFD1B3] px-6 py-5 flex items-center justify-between border-b-2 border-[#FFB27D]">
                                 <h2 className="text-[#5A2C10] text-lg font-black uppercase tracking-widest flex items-center gap-2">
                                     <MessageSquare className="w-6 h-6" /> Inquiries
@@ -142,9 +142,9 @@ const InboxPage = async () => {
                         </div>
 
                         {/* RIGHT PANE: Active Chat */}
-                        <div className="flex-1 flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden bg-white shadow-sm h-full max-md:hidden">
+                        <div className="flex-1 flex flex-col border-[6px] border-[#FFB27D] rounded-[2rem] overflow-hidden bg-white shadow-sm h-[500px] md:h-full mt-2 md:mt-0">
                             {/* Chat Header */}
-                            <div className="bg-[#FFF5F0] border-b-2 border-[#FFB27D] px-8 py-5 flex items-center justify-between">
+                            <div className="bg-[#FFF5F0] border-b-2 border-[#FFB27D] px-4 md:px-8 py-4 md:py-5 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-full bg-white border-2 border-[#FFB27D] flex items-center justify-center text-[#FF944D] font-black text-lg shadow-sm">D1</div>
                                     <div>
