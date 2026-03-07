@@ -11,6 +11,12 @@ export interface Contact {
     lastMessage: string;
     time: string;
     unread: number;
+    donation?: {
+        id: string;
+        type: string;
+        status: string;
+        quantity: number;
+    };
 }
 
 export interface ChatMessage {
@@ -203,7 +209,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         const fetchConversations = async () => {
             const { data: convos, error } = await supabase
                 .from('conversations')
-                .select(`id, donor_id, org_id, messages(content, created_at, sender_id)`)
+                .select(`id, donor_id, org_id, donation_id, messages(content, created_at, sender_id)`)
                 .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
                 .order('created_at', { referencedTable: 'messages', ascending: false });
 
@@ -215,6 +221,18 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                     const { data: profile } = await supabase
                         .from('profiles').select('full_name').eq('id', partnerId).single();
                     const partnerName = profile?.full_name || (isOrg ? 'Donor' : 'Organization');
+
+                    // Fetch donation details 
+                    let donationDetails = undefined;
+                    if (convo.donation_id) {
+                        const { data: don } = await supabase
+                            .from('donations')
+                            .select('id, type, status, quantity')
+                            .eq('id', convo.donation_id)
+                            .single();
+                        if (don) donationDetails = don;
+                    }
+
                     const msgs = convo.messages || [];
                     const lastMsg = msgs[0];
                     return {
@@ -225,6 +243,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                             ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                             : '',
                         unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
+                        donation: donationDetails
                     };
                 })
             );
@@ -408,6 +427,22 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                         <p className={`text-sm truncate ${contact.unread > 0 ? 'text-slate-900 font-semibold' : 'text-slate-500 font-light'}`}>
                                             {contact.lastMessage}
                                         </p>
+                                        {/* Mini Progress Indicator */}
+                                        {contact.donation && (
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden max-w-[80px]">
+                                                    <div
+                                                        className={`h-full transition-all duration-700 ${contact.donation.status === 'delivered' ? 'w-full bg-green-500' :
+                                                            contact.donation.status === 'in_progress' ? 'w-2/3 bg-blue-500' :
+                                                                contact.donation.status === 'accepted' ? 'w-1/3 bg-orange-400' : 'w-[10%] bg-slate-300'
+                                                            }`}
+                                                    />
+                                                </div>
+                                                <span className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">
+                                                    {contact.donation.status.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                     {contact.unread > 0 && (
                                         <div className="flex items-center">
@@ -452,10 +487,31 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-slate-900 leading-none">{selectedContact.name}</h3>
-                                        <span className="text-xs text-green-500 font-medium flex items-center gap-1 mt-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                            Online
-                                        </span>
+                                        <div className="flex items-center gap-3 mt-1.5">
+                                            <span className="text-xs text-green-500 font-medium flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                                Online
+                                            </span>
+                                            {selectedContact.donation && (
+                                                <>
+                                                    <div className="h-3 w-[1px] bg-slate-200" />
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#5A2C10]/40">Donation Progress:</span>
+                                                        <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full transition-all duration-700 ${selectedContact.donation.status === 'delivered' ? 'w-full bg-green-500' :
+                                                                    selectedContact.donation.status === 'in_progress' ? 'w-2/3 bg-blue-500' :
+                                                                        selectedContact.donation.status === 'accepted' ? 'w-1/3 bg-orange-400' : 'w-[10%] bg-slate-300'
+                                                                    }`}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider px-2 py-0.5 bg-slate-50 rounded-md border border-slate-100">
+                                                            {selectedContact.donation.status.replace('_', ' ')}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 {/* Delete button in chat header */}

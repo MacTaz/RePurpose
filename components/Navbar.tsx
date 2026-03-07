@@ -11,10 +11,11 @@ interface NavbarProps {
 
 const Navbar = ({ role }: NavbarProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const normalizedRole = role.toLowerCase().trim()
 
     return (
         <div className="font-inter">
-            {role === 'donor' ? (
+            {normalizedRole === 'donor' ? (
                 /* DONOR VIEW (BLUE THEME) */
                 <nav className="bg-[#3D5082] text-white px-4 md:px-8 py-3 relative shadow-lg">
                     <div className="flex justify-between items-center">
