@@ -48,19 +48,27 @@ export default async function Manage() {
                 id, donor_id, organization_id, type, quantity, status, created_at, target_organization, description, delivery_preference,
                 profiles!donations_donor_id_fkey(
                     full_name,
-                    addresses(city, country)
+                    addresses(city, country, latitude, longitude, address_line1, address_line2, zip)
                 )
             `)
             .eq('organization_id', user.id)
             .order('created_at', { ascending: false })
 
-        const mappedDonations = donations?.map((d: any) => ({
-            ...d,
-            donor_name: d.profiles?.full_name || 'Anonymous Donor',
-            donor_address: d.profiles?.addresses?.[0]
-                ? `${d.profiles.addresses[0].city}, ${d.profiles.addresses[0].country}`
-                : 'Central City'
-        })) || []
+        const mappedDonations = donations?.map((d: any) => {
+            const addr = d.profiles?.addresses?.[0] || {};
+            return {
+                ...d,
+                donor_name: d.profiles?.full_name || 'Anonymous Donor',
+                donor_address: addr.city ? `${addr.city}, ${addr.country}` : 'City Not Set',
+                donor_city: addr.city || 'City Not Set',
+                donor_country: addr.country || 'Country Not Set',
+                donor_lat: addr.latitude,
+                donor_lng: addr.longitude,
+                donor_line1: addr.address_line1 || 'Missing Street Address',
+                donor_line2: addr.address_line2,
+                donor_zip: addr.zip || '----'
+            };
+        }) || []
 
         return (
             <div className="min-h-screen bg-white flex flex-col font-inter">
