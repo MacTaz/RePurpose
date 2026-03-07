@@ -38,6 +38,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
         phone: initialProfile.phone || '',
         profile_pic: initialProfile.profile_pic || '',
         role: initialProfile.role || 'donor',
+        facebook_url: initialProfile.facebook_url || '',
     });
 
     // Role Specific Data
@@ -66,6 +67,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                 .update({
                     full_name: profileData.full_name,
                     phone: profileData.phone,
+                    facebook_url: profileData.facebook_url,
                 })
                 .eq('id', userId);
 
@@ -275,6 +277,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                             phone: initialProfile.phone || '',
                                             profile_pic: initialProfile.profile_pic || '',
                                             role: initialProfile.role || 'donor',
+                                            facebook_url: initialProfile.facebook_url || '',
                                         });
                                         setDetails(initialProfile.details || {});
                                     }}
@@ -545,13 +548,24 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                         {isEditing ? (
                                             <input
                                                 type="text"
-                                                value={details.website || ''}
-                                                onChange={e => setDetails({ ...details, website: e.target.value })}
+                                                value={profileData.facebook_url || ''}
+                                                onChange={e => setProfileData({ ...profileData, facebook_url: e.target.value })}
                                                 placeholder="facebook.com/your-page"
                                                 className={`flex-1 h-10 bg-gray-50 border-b-2 border-transparent ${focusBorder} focus:outline-none font-bold ${textColor} transition-all`}
                                             />
                                         ) : (
-                                            <p className={`flex-1 font-bold ${textColor} truncate`}>{details.website || 'Not linked'}</p>
+                                            profileData.facebook_url ? (
+                                                <a
+                                                    href={profileData.facebook_url.startsWith('http') ? profileData.facebook_url : `https://${profileData.facebook_url}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`flex-1 font-bold ${textColor} underline hover:opacity-70 transition-all`}
+                                                >
+                                                    Facebook
+                                                </a>
+                                            ) : (
+                                                <p className={`flex-1 font-bold ${textColor} truncate`}>Not linked</p>
+                                            )
                                         )}
                                     </div>
                                 </div>

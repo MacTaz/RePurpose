@@ -11,6 +11,7 @@ export interface Contact {
     lastMessage: string;
     time: string;
     unread: number;
+    facebookUrl?: string;
     donation?: {
         id: string;
         type: string;
@@ -182,6 +183,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                     id: existing.id, partnerId: org.id,
                     name: org.full_name, avatar: org.full_name.charAt(0).toUpperCase(),
                     lastMessage: 'No messages yet', time: '', unread: 0,
+                    facebookUrl: (org as any).facebook_url // Cast if needed or fetch
                 }, ...prev]);
             }
             return;
@@ -199,6 +201,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
             id: newConvo.id, partnerId: org.id,
             name: org.full_name, avatar: org.full_name.charAt(0).toUpperCase(),
             lastMessage: 'No messages yet', time: '', unread: 0,
+            facebookUrl: (org as any).facebook_url
         };
         setContacts(prev => [newContact, ...prev]);
         handleSelectContact(newConvo.id);
@@ -219,8 +222,9 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 convos.map(async (convo: any) => {
                     const partnerId = isOrg ? convo.donor_id : convo.org_id;
                     const { data: profile } = await supabase
-                        .from('profiles').select('full_name').eq('id', partnerId).single();
+                        .from('profiles').select('full_name, facebook_url').eq('id', partnerId).single();
                     const partnerName = profile?.full_name || (isOrg ? 'Donor' : 'Organization');
+                    const partnerFacebook = profile?.facebook_url;
 
                     // Fetch donation details 
                     let donationDetails = undefined;
@@ -243,7 +247,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                             ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                             : '',
                         unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
-                        donation: donationDetails
+                        donation: donationDetails,
+                        facebookUrl: partnerFacebook
                     };
                 })
             );
@@ -492,6 +497,20 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                                 Online
                                             </span>
+                                            {selectedContact.facebookUrl && (
+                                                <>
+                                                    <div className="h-1 w-1 rounded-full bg-slate-300" />
+                                                    <a
+                                                        href={selectedContact.facebookUrl.startsWith('http') ? selectedContact.facebookUrl : `https://${selectedContact.facebookUrl}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 underline flex items-center gap-1"
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796V23.927C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                                                        Facebook
+                                                    </a>
+                                                </>
+                                            )}
                                             {selectedContact.donation && (
                                                 <>
                                                     <div className="h-3 w-[1px] bg-slate-200" />

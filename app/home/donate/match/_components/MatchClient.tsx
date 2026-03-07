@@ -32,6 +32,7 @@ interface Organization {
     availability?: string;
     categories_accepted?: string[];
     website?: string;
+    facebook_url?: string;
     email?: string;
     tagline?: string;
     location: string;

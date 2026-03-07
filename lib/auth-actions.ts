@@ -121,6 +121,7 @@ export async function setupProfile(payload: {
                 description: payload.description,
                 donation_method: payload.donationMethod,
                 is_verified: false,
+                categories_accepted: ['Clothes', 'Food', 'Water'],
             });
         if (orgError) return { error: orgError.message };
     }
@@ -159,17 +160,22 @@ export async function deleteAccount(password: string) {
 
         if (userError || !user) return { error: "Authentication required" };
 
-        // 1. Verify password (for email users) or expect "DELETE" (for social users)
-        const isOAuth = user.app_metadata.provider !== 'email';
+        // 1. Verify password
+        // Since we now enforce passwords for all users (including OAuth) on Step 1, 
+        // we can prioritize password verification.
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email!,
+            password: password
+        });
 
-        if (isOAuth) {
-            if (password !== 'DELETE') return { error: 'For social accounts, please type "DELETE" to confirm removal.' };
-        } else {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-                email: user.email!,
-                password: password
-            });
-            if (signInError) return { error: "Incorrect password. Please try again." };
+        if (signInError) {
+            // Fallback for very old social accounts without passwords
+            const isOAuth = user.app_metadata.provider !== 'email';
+            if (isOAuth && password === 'DELETE') {
+                // Allow 'DELETE' as fallback
+            } else {
+                return { error: "Incorrect password. Please try again." };
+            }
         }
 
         const adminSupabase = createAdminClient();
