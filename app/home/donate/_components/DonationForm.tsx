@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -12,50 +11,123 @@ export default function DonationForm() {
     category: '',
     description: '',
     deliveryPreference: 'pickup'
-  });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-
+  }); //
+  
+  const [imageFile, setImageFile] = useState<File | null>(null); //
+  const [uploading, setUploading] = useState(false); //
   const [preview, setPreview] = useState<string | null>(null); //
   const [isDragging, setIsDragging] = useState(false); //
-  const fileInputRef = useRef<HTMLInputElement>(null); //
+  
+  // Validation state
+  const [errors, setErrors] = useState<Record<string, boolean>>({}); //
+  const [showErrorMsg, setShowErrorMsg] = useState(false); //
 
-  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null); //
+  const router = useRouter(); //
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: false }));
+    }
+    
     if (name === 'quantity') {
       const cleanValue = value.replace(/[^0-9]/g, '');
       setFormData(prev => ({ ...prev, [name]: cleanValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-  };
+  }; //
 
   const handleFile = (file: File) => {
     if (file && file.type.startsWith('image/')) {
-      setImageFile(file);
-      setPreview(URL.createObjectURL(file));
+      setImageFile(file); //
+      setPreview(URL.createObjectURL(file)); //
+      if (errors.image) setErrors(prev => ({ ...prev, image: false }));
     }
-  };
+  }; //
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
-  };
+  }; //
 
-  const onDragLeave = () => setIsDragging(false);
+  const onDragLeave = () => setIsDragging(false); //
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     handleFile(file);
-  };
+  }; //
+
+  const validateForm = () => {
+    const newErrors: Record<string, boolean> = {};
+    if (!formData.itemName.trim()) newErrors.itemName = true;
+    if (!formData.quantity.trim() || parseInt(formData.quantity) <= 0) newErrors.quantity = true;
+    if (!formData.category) newErrors.category = true;
+    if (!formData.description.trim()) newErrors.description = true;
+    if (!imageFile) newErrors.image = true;
+
+    setErrors(newErrors);
+    const hasErrors = Object.keys(newErrors).length > 0;
+    setShowErrorMsg(hasErrors);
+    return !hasErrors;
+  }; //
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setUploading(true);
+    try {
+      const supabase = createClient(); //
+      const { data: { user } } = await supabase.auth.getUser(); //
+
+      if (!user) {
+        alert('Please log in to continue.');
+        router.push('/login');
+        return;
+      }
+
+      if (imageFile) {
+        const { error: uploadError } = await supabase.storage
+          .from('donations')
+          .upload(`${user.id}/temp/current.jpg`, imageFile, {
+            upsert: true,
+            contentType: imageFile.type,
+            cacheControl: '3600'
+          }); //
+
+        if (uploadError) {
+          console.error('Upload error details:', uploadError);
+          alert(`Image upload failed: ${uploadError.message}`);
+          setUploading(false);
+          return;
+        }
+      }
+
+      const params = new URLSearchParams({
+        category: formData.category,
+        quantity: formData.quantity,
+        itemName: formData.itemName,
+        description: formData.description,
+        pref: formData.deliveryPreference,
+        hasImage: 'true'
+      }); //
+
+      router.push(`/home/donate/match?${params.toString()}`); //
+    } catch (err: any) {
+      console.error('Submit Error:', err);
+      alert('An error occurred while preparing your donation.');
+      setUploading(false);
+    }
+  }; //
 
   return (
     <div className="min-h-screen bg-white py-12 px-4 font-['Inter'] font-normal">
       <div className="max-w-6xl mx-auto bg-[#9dbcd4] rounded-[40px] p-8 lg:p-12 shadow-inner">
+        
         <div className="bg-white rounded-full py-2 px-10 shadow-sm mb-10 border border-gray-200">
           <h2 className="text-2xl font-bold text-[#30496E] text-center">
             RePurpose Donation Form
@@ -65,7 +137,8 @@ export default function DonationForm() {
         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
           {/* Left Column: Image Upload Section */}
           <div className="w-full lg:w-1/3">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200 h-full flex flex-col">
+            {/* Removed errors.image condition from this main container class */}
+            <div className={`bg-white rounded-3xl p-8 shadow-sm border border-gray-200 h-full flex flex-col transition-colors`}>
               <h3 className="text-center text-[#30496E] mb-6 border-b-4 border-[#304674] pb-2 text-xl font-bold">
                 Donation Item Image
               </h3>
@@ -85,14 +158,11 @@ export default function DonationForm() {
                 onClick={() => fileInputRef.current?.click()}
                 className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-colors cursor-pointer overflow-hidden min-h-[300px]
                   ${isDragging ? 'border-[#304674] bg-blue-50' : 'border-[#9dbcd4] bg-gray-50'} 
-                  ${preview ? 'p-0 bg-gray-100' : 'p-10'}`}
+                  ${preview ? 'p-0 bg-gray-100' : 'p-10'}
+                  ${errors.image ? 'border-red-500' : 'border-[#9dbcd4]'}`} /* Updated only the dashed box border color here */
               >
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="w-full h-full object-contain"
-                  />
+                  <img src={preview} alt="Preview" className="w-full h-full object-contain" />
                 ) : (
                   <>
                     <div className="mb-2">
@@ -120,7 +190,7 @@ export default function DonationForm() {
                       type="text"
                       name="itemName"
                       placeholder="Enter Item Name Here"
-                      className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none"
+                      className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 outline-none transition-colors ${errors.itemName ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
                       value={formData.itemName}
                       onChange={handleChange} />
                   </div>
@@ -132,10 +202,10 @@ export default function DonationForm() {
                       name="quantity"
                       min="1"
                       placeholder="0"
+                      className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 outline-none transition-colors ${errors.quantity ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
                       value={formData.quantity}
                       onChange={handleChange}
-                      onKeyDown={(e) => { if (['-', 'e', '.'].includes(e.key)) e.preventDefault(); }}
-                      className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none" />
+                      onKeyDown={(e) => { if (['-', 'e', '.'].includes(e.key)) e.preventDefault(); }} />
                   </div>
                 </div>
 
@@ -145,12 +215,13 @@ export default function DonationForm() {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    className="w-full p-2 border border-gray-400 rounded-md bg-white appearance-none focus:ring-2 focus:ring-blue-300 outline-none text-[#30496E]"
+                    className={`w-full p-2 border rounded-md bg-white appearance-none focus:ring-2 focus:ring-blue-300 outline-none text-[#30496E] transition-colors ${errors.category ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
                     style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em' }}>
-                    <option value="" className="text-[#30496E]">Select Item Category</option>
-                    <option value="clothing" className="text-[#30496E]">Clothing</option>
-                    <option value="Food" className="text-[#30496E]">Food</option>
-                    <option value="Water" className="text-[#30496E]">Water</option>
+                    <option value="">Select Item Category</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="Food">Food</option>
+                    <option value="Water">Water</option>
+                    <option value="Medical">Medical Supplies</option>
                   </select>
                 </div>
 
@@ -160,7 +231,7 @@ export default function DonationForm() {
                     name="description"
                     rows={6}
                     placeholder="Describe Your Item Here"
-                    className="w-full p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-blue-300 outline-none resize-none"
+                    className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 outline-none resize-none transition-colors ${errors.description ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
                     value={formData.description}
                     onChange={handleChange}>
                   </textarea>
@@ -196,65 +267,21 @@ export default function DonationForm() {
           </div>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-12 text-center">
           <div className="border-t-2 border-dashed border-white mb-8 w-full"></div>
           <button
-            onClick={async () => {
-              if (!formData.category) {
-                alert('Please select a category first!');
-                return;
-              }
-
-              setUploading(true);
-              try {
-                const supabase = createClient();
-                const { data: { user } } = await supabase.auth.getUser();
-
-                if (!user) {
-                  alert('Please log in to continue.');
-                  router.push('/login');
-                  return;
-                }
-
-                if (imageFile) {
-                  // Upload to a temp path for this user
-                  const { error: uploadError } = await supabase.storage
-                    .from('donations')
-                    .upload(`${user.id}/temp/current.jpg`, imageFile, {
-                      upsert: true,
-                      contentType: imageFile.type,
-                      cacheControl: '3600'
-                    });
-
-                  if (uploadError) {
-                    console.error('Upload error details:', uploadError);
-                    alert(`Image upload failed: ${uploadError.message}`);
-                    setUploading(false);
-                    return;
-                  }
-                }
-
-                const params = new URLSearchParams({
-                  category: formData.category,
-                  quantity: formData.quantity || '1',
-                  itemName: formData.itemName || 'Donation Item',
-                  description: formData.description || '',
-                  pref: formData.deliveryPreference,
-                  hasImage: imageFile ? 'true' : 'false'
-                });
-
-                router.push(`/home/donate/match?${params.toString()}`);
-              } catch (err: any) {
-                console.error('Submit Error:', err);
-                alert('An error occurred while preparing your donation.');
-                setUploading(false);
-              }
-            }}
+            onClick={handleSubmit}
             disabled={uploading}
-            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide text-center disabled:opacity-50"
+            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-all uppercase tracking-wide disabled:opacity-50"
           >
             {uploading ? 'Preparing...' : 'Match'}
           </button>
+          
+          {showErrorMsg && (
+            <p className="text-red-600 font-bold mt-4 text-lg">
+              Please fill out the form first before proceeding.
+            </p>
+          )}
         </div>
       </div>
     </div>
