@@ -56,7 +56,7 @@ const RegisterPage = () => {
     // Redirected from login when setup_complete is false
     const resumeStep = searchParams.get('step') === '2';
 
-    const [step, setStep] = useState<1 | 2>((isOAuth || resumeStep) ? 2 : 1);
+    const [step, setStep] = useState<1 | 2>(resumeStep ? 2 : 1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -80,9 +80,12 @@ const RegisterPage = () => {
         // Pre-fill from session for: OAuth users, incomplete-registration resumers
         if (isOAuth || resumeStep) {
             supabase.auth.getUser().then(({ data: { user } }) => {
-                if (user?.email) setEmail(user.email);
-                if (user?.user_metadata?.full_name) setFullName(user.user_metadata.full_name);
-                if (user?.user_metadata?.avatar_url) setProfilePic(user.user_metadata.avatar_url);
+                if (user) {
+                    if (user.email) setEmail(user.email);
+                    if (user.user_metadata?.full_name) setFullName(user.user_metadata.full_name);
+                    if (user.user_metadata?.avatar_url) setProfilePic(user.user_metadata.avatar_url);
+                    if (user.user_metadata?.role) setUserType(user.user_metadata.role);
+                }
             });
         }
     }, [isOAuth, resumeStep]);
@@ -112,11 +115,24 @@ const RegisterPage = () => {
         if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
         setLoading(true);
         try {
-            const { error: signUpError } = await supabase.auth.signUp({
-                email, password,
-                options: { data: { full_name: fullName, role: userType, email } },
-            });
-            if (signUpError) throw signUpError;
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (user) {
+                // If user already exists (OAuth), we just update their password and metadata
+                const { error: updateError } = await supabase.auth.updateUser({
+                    password,
+                    data: { full_name: fullName, role: userType, email: email || user.email }
+                });
+                if (updateError) throw updateError;
+            } else {
+                // Standard signup
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { full_name: fullName, role: userType, email } },
+                });
+                if (signUpError) throw signUpError;
+            }
             setStep(2);
         } catch (err: any) {
             setError(err.message);
@@ -223,8 +239,8 @@ const RegisterPage = () => {
                     <hr className="border-white/40" />
                 </div>
 
-                {/* Step indicator — hidden for OAuth and resume flows */}
-                {!isOAuth && !resumeStep && (
+                {/* Step indicator — hidden for resume flows */}
+                {!resumeStep && (
                     <div className="flex items-center gap-3 mb-8">
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all duration-500 ${step >= 1 ? `${accentBg} text-white` : 'bg-white/10 text-white/40'}`}>1</div>
                         <div className={`flex-1 h-[2px] rounded-full transition-all duration-700 ${accentBg} ${step === 2 ? 'opacity-100' : 'opacity-20'}`} />
@@ -237,7 +253,9 @@ const RegisterPage = () => {
                 {/* ── STEP 1 ── */}
                 {step === 1 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-6">Create Account</h2>
+                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-6">
+                            {isOAuth ? 'Finalize Your Account' : 'Create Account'}
+                        </h2>
                         <RoleTabs />
 
                         <form onSubmit={handleStep1} className="flex flex-col">
@@ -247,13 +265,22 @@ const RegisterPage = () => {
                                 className={`${inputClass} mb-4`} />
 
                             <label className="text-white font-['Inter'] mb-2">Email</label>
-                            <input value={email} onChange={e => setEmail(e.target.value)} required type="email"
-                                placeholder="Enter your email" className={`${inputClass} mb-4`} />
+                            <input
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                required
+                                type="email"
+                                placeholder="Enter your email"
+                                readOnly={isOAuth}
+                                className={`${inputClass} mb-4 ${isOAuth ? 'opacity-60 cursor-not-allowed bg-white/10' : ''}`} />
 
-                            <label className="text-white font-['Inter'] mb-2">Password</label>
+                            <label className="text-white font-['Inter'] mb-2">
+                                {isOAuth ? 'Create Account Password' : 'Password'}
+                            </label>
                             <div className="mb-4">
                                 <PasswordInput value={password} onChange={e => setPassword(e.target.value)}
                                     placeholder="Enter your password" className={inputClass} />
+                                {isOAuth && <p className="text-[10px] text-white/40 mt-1 uppercase tracking-widest font-black">Secure your account for future email logins</p>}
                             </div>
 
                             <label className="text-white font-['Inter'] mb-2">Confirm Password</label>
