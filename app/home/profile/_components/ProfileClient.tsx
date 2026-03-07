@@ -27,6 +27,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showCatError, setShowCatError] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
@@ -83,6 +84,13 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                     }, { onConflict: 'profile_id' });
                 if (donorError) throw donorError;
             } else {
+                // Validation: At least one category required for organizations
+                if (!details.categories_accepted || details.categories_accepted.length === 0) {
+                    setMessage({ type: 'error', text: 'At least one accepted category is required for organizations.' });
+                    setIsLoading(false);
+                    return;
+                }
+
                 const { error: orgError } = await supabase
                     .from('organization_profiles')
                     .upsert({
@@ -93,7 +101,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                         email: details.email,
                         availability: details.availability,
                         donation_method: details.donation_method,
-                        categories_accepted: details.categories_accepted || []
+                        categories_accepted: details.categories_accepted
                     }, { onConflict: 'profile_id' });
                 if (orgError) throw orgError;
             }
@@ -264,8 +272,8 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                             <>
                                 <button
                                     onClick={handleSave}
-                                    disabled={isLoading}
-                                    className={`px-8 py-3 ${bgColor} text-white rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50`}
+                                    disabled={isLoading || (!isDonor && (!details.categories_accepted || details.categories_accepted.length === 0))}
+                                    className={`px-8 py-3 ${bgColor} text-white rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
                                 >
                                     <Save className="size-5" /> {isLoading ? 'Saving...' : 'Save Changes'}
                                 </button>
@@ -409,6 +417,8 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                                                         type="button"
                                                                         onClick={() => {
                                                                             const current = details.categories_accepted || [];
+                                                                            if (isSelected && current.length <= 1) return; // Prevent deselecting the last category
+
                                                                             const updated = isSelected
                                                                                 ? current.filter((c: string) => c !== cat)
                                                                                 : [...current, cat];
@@ -639,6 +649,12 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
             <style jsx global>{`
             @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
             @keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-4px); }
+                75% { transform: translateX(4px); }
+            }
+            .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
             .animate-in { animation-fill-mode: forwards; }
             .fade-in { animation-name: fade-in; }
             .zoom-in-95 { animation-name: zoom-in-95; }

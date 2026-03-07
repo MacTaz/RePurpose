@@ -272,7 +272,9 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] bg-[#30496E]/10 text-[#30496E] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
-                                            {org.donation_method?.toLowerCase() === 'both' ? 'Delivery & Pickup' : (org.donation_method || 'Organization')}
+                                            {org.donation_method?.toLowerCase() === 'both'
+                                                ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
+                                                : (org.donation_method || 'Organization')}
                                         </span>
                                         <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
                                             <MapPin className="size-2.5" /> {org.location.split(',')[0]}
@@ -380,7 +382,13 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                                 { icon: Mail, val: selectedOrg?.email, label: 'Email' },
                                                 { icon: Phone, val: selectedOrg?.phone, label: 'Phone' },
                                                 { icon: Clock, val: selectedOrg?.availability, label: 'Availability' },
-                                                { icon: Truck, val: selectedOrg?.donation_method?.toLowerCase() === 'both' ? 'Delivery & Pickup' : selectedOrg?.donation_method, label: 'Handover Method' }
+                                                {
+                                                    icon: Truck,
+                                                    val: selectedOrg?.donation_method?.toLowerCase() === 'both'
+                                                        ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
+                                                        : selectedOrg?.donation_method,
+                                                    label: 'Handover Method'
+                                                }
                                             ].map((item, i) => (
                                                 <div key={i} className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4 group text-center sm:text-left">
                                                     <div className="size-10 lg:size-12 rounded-xl lg:rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#30496E] border border-white group-hover:border-[#30496E]/20 group-hover:scale-105 transition-all">
@@ -402,7 +410,9 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                         <div>
                                             <p className="text-[9px] lg:text-[10px] font-black text-blue-200 uppercase tracking-widest">Support Mode</p>
                                             <p className="font-bold text-base lg:text-lg">
-                                                {selectedOrg?.donation_method?.toLowerCase() === 'both' ? 'Delivery & Pickup' : (selectedOrg?.donation_method || 'Pickup/Delivery')}
+                                                {selectedOrg?.donation_method?.toLowerCase() === 'both'
+                                                    ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
+                                                    : (selectedOrg?.donation_method || 'Pickup/Delivery')}
                                             </p>
                                         </div>
                                     </div>
