@@ -14,6 +14,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
     const textColor = isDonor ? 'text-[#30496E]' : 'text-[#FF9248]'
     const bgColor = isDonor ? 'bg-[#30496E]' : 'bg-[#FF9248]'
     const focusBorder = isDonor ? 'focus:border-[#30496E]/20' : 'focus:border-[#FF9248]/20'
+    const borderColor = isDonor ? 'border-[#30496E]' : 'border-[#FF9248]'
 
     const mapRef = useRef<any>(null)
     const markerRef = useRef<any>(null)
@@ -38,6 +39,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
     useEffect(() => {
         if (typeof window === 'undefined') return
         let mapInstance: any = null
+        let isMounted = true
 
         const initMap = async () => {
             if (!mapContainerRef.current || mapRef.current) return
@@ -45,6 +47,10 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
             if (container._leaflet_id) return
 
             const L = (await import('leaflet')).default
+
+            // Double check after async import completes to handle React Strict Mode concurrent calls
+            if (!isMounted || !mapContainerRef.current) return
+            if ((mapContainerRef.current as any)._leaflet_id) return
 
             delete (L.Icon.Default.prototype as any)._getIconUrl
             L.Icon.Default.mergeOptions({
@@ -90,6 +96,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
         initMap()
 
         return () => {
+            isMounted = false
             if (mapInstance) {
                 mapInstance.remove()
                 mapRef.current = null
@@ -198,7 +205,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
     return (
         <div className="flex flex-col lg:flex-row h-full w-full gap-8">
             {/* Map Section */}
-            <div className="w-full lg:w-3/5 min-h-[400px] lg:min-h-full rounded-[32px] overflow-hidden shadow-inner border border-gray-100 relative group">
+            <div className={`w-full lg:w-3/5 min-h-[400px] lg:min-h-full rounded-[32px] overflow-hidden shadow-inner border-2 ${borderColor} relative group`}>
                 <div ref={mapContainerRef} className="h-full w-full" />
                 <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-gray-100">
                     <p className={`text-[10px] font-black ${textColor} uppercase tracking-widest flex items-center gap-2`}>
@@ -287,7 +294,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                     ) : (
                         <button
                             onClick={handleEdit}
-                            className={`w-full py-4 bg-white ${textColor} border ${isDonor ? 'border-[#30496E]/10' : 'border-[#FF9248]/10'} rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3`}
+                            className={`w-full py-4 bg-white ${textColor} border-2 ${borderColor} rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3`}
                         >
                             <Edit3 className="size-5" />
                             Update Address

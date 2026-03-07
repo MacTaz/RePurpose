@@ -32,7 +32,7 @@ const Home = async () => {
             <Navbar role={role} />
 
             {role === 'donor' ? (
-                <main className="flex-1 p-10 flex gap-8">
+                <main className="flex-1 p-4 md:p-10 flex flex-col md:flex-row gap-6 md:gap-8 overflow-x-hidden">
                     {/* LEFT: Disaster Watch */}
                     <DisasterWatchClient />
 
@@ -43,7 +43,7 @@ const Home = async () => {
                     </div>
                 </main>
             ) : (
-                <main className="flex-1 p-10 flex flex-col gap-8">
+                <main className="flex-1 p-4 md:p-10 flex flex-col gap-6 md:gap-8 overflow-x-hidden">
                     <div className="flex-[0.8] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
                         <div className="bg-[#FFD1B3] px-6 py-2 border-b-2 border-[#FFB27D]">
                             <h2 className="text-black text-lg font-extrabold">Status Management</h2>
@@ -54,7 +54,7 @@ const Home = async () => {
                             <div className="flex-1 bg-[#FFEDE1] rounded-lg"></div>
                         </div>
                     </div>
-                    <div className="flex-[1.2] flex gap-8">
+                    <div className="flex-[1.2] flex flex-col md:flex-row gap-6 md:gap-8">
                         <div className="flex-[0.4] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
                             <div className="bg-[#FFD1B3] px-4 py-2 border-b-2 border-[#FFB27D]">
                                 <h2 className="text-black text-lg font-extrabold">Inventory Needs</h2>
