@@ -12,12 +12,12 @@ export default function DonationForm() {
     description: '',
     deliveryPreference: 'pickup'
   }); //
-  
+
   const [imageFile, setImageFile] = useState<File | null>(null); //
   const [uploading, setUploading] = useState(false); //
   const [preview, setPreview] = useState<string | null>(null); //
   const [isDragging, setIsDragging] = useState(false); //
-  
+
   // Validation state
   const [errors, setErrors] = useState<Record<string, boolean>>({}); //
   const [showErrorMsg, setShowErrorMsg] = useState(false); //
@@ -31,7 +31,7 @@ export default function DonationForm() {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: false }));
     }
-    
+
     if (name === 'quantity') {
       const cleanValue = value.replace(/[^0-9]/g, '');
       setFormData(prev => ({ ...prev, [name]: cleanValue }));
@@ -127,7 +127,7 @@ export default function DonationForm() {
   return (
     <div className="min-h-screen bg-white py-12 px-4 font-['Inter'] font-normal">
       <div className="max-w-6xl mx-auto bg-[#9dbcd4] rounded-[40px] p-8 lg:p-12 shadow-inner">
-        
+
         <div className="bg-white rounded-full py-2 px-10 shadow-sm mb-10 border border-gray-200">
           <h2 className="text-2xl font-bold text-[#30496E] text-center">
             RePurpose Donation Form
@@ -218,10 +218,9 @@ export default function DonationForm() {
                     className={`w-full p-2 border rounded-md bg-white appearance-none focus:ring-2 focus:ring-blue-300 outline-none text-[#30496E] transition-colors ${errors.category ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
                     style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em' }}>
                     <option value="">Select Item Category</option>
-                    <option value="clothing">Clothing</option>
+                    <option value="Clothes">Clothes</option>
                     <option value="Food">Food</option>
                     <option value="Water">Water</option>
-                    <option value="Medical">Medical Supplies</option>
                   </select>
                 </div>
 
@@ -276,7 +275,7 @@ export default function DonationForm() {
           >
             {uploading ? 'Preparing...' : 'Match'}
           </button>
-          
+
           {showErrorMsg && (
             <p className="text-red-600 font-bold mt-4 text-lg">
               Please fill out the form first before proceeding.

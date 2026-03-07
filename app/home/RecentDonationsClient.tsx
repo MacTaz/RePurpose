@@ -14,9 +14,8 @@ interface Props {
 }
 
 const TYPE_ICONS: Record<string, string> = {
-    food: '🍱', clothes: '👕', clothing: '👕', money: '💰',
-    cash: '💰', medicine: '💊', medical: '💊', shelter: '🏠',
-    blood: '🩸', other: '📦',
+    food: '🍱', Clothes: '👕', clothes: '👕', clothing: '👕',
+    Food: '🍱', Water: '💧', water: '💧', other: '📦',
 }
 
 const getIcon = (type: string) => {
