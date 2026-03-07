@@ -16,6 +16,12 @@ interface Donation {
     donor_name: string
     description: string | null
     delivery_preference: string | null
+    donor_address?: string
+    donor_city?: string
+    donor_country?: string
+    donor_line1?: string
+    donor_line2?: string
+    donor_zip?: string
 }
 
 interface Props {
@@ -79,7 +85,7 @@ const ManageCharity = ({ donations }: Props) => {
 
     if (mode === 'request' && selectedDonation) {
         return (
-            <main className="w-full py-8 px-4 flex justify-center animate-in fade-in zoom-in-95 duration-500">
+            <main className="w-full min-h-screen animate-in fade-in duration-500">
                 <CharityDonationDashboard donation={selectedDonation} onClose={() => { setSelectedDonation(null); setMode(null); }} />
             </main>
         );
@@ -87,7 +93,7 @@ const ManageCharity = ({ donations }: Props) => {
 
     if (mode === 'status' && selectedDonation) {
         return (
-            <main className="w-full py-8 px-4 flex justify-center animate-in fade-in zoom-in-95 duration-500">
+            <main className="w-full min-h-screen animate-in fade-in duration-500">
                 <DonationStatus donation={selectedDonation} onClose={() => { setSelectedDonation(null); setMode(null); }} />
             </main>
         );

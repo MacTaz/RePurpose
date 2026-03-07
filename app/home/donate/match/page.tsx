@@ -69,7 +69,10 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
     });
 
     if (category) {
-        organizations = organizations.filter(org => (org.categories_accepted || []).some((c: string) => c.toLowerCase() === category.toLowerCase()));
+        organizations = organizations.filter(org => {
+            const accepted = org.categories_accepted || [];
+            return accepted.some((c: string) => c.trim().toLowerCase() === category.trim().toLowerCase());
+        });
     }
 
     if (pref) {
