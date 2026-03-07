@@ -1,9 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import DisasterWatchClient from './DisasterWatchClient'
-import DiscoverCharitiesClient from './DiscoverCharitiesClient'
-import RecentDonationsClient from './RecentDonationsClient'
+import DonorHome from './_components/DonorHome'
+import OrgHome from './_components/OrgHome'
 
 const Home = async () => {
     const supabase = await createClient()
@@ -11,8 +10,7 @@ const Home = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
-    // Safety check for incomplete setup (backup for middleware)
-    const setupDone = user.user_metadata?.setup_complete === true;
+    const setupDone = user.user_metadata?.setup_complete === true
 
     const { data: profile } = await supabase
         .from('profiles')
@@ -29,65 +27,57 @@ const Home = async () => {
         }
     }
 
-    // Fetch donations server-side and pass as props — no client supabase needed
+    const role = (profile?.role || 'donor') as 'donor' | 'organization'
+
+    if (role === 'donor') {
+        const { data: donations } = await supabase
+            .from('donations')
+            .select('id, type, created_at, quantity')
+            .eq('donor_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        return (
+            <div className="min-h-screen bg-white flex flex-col font-['Inter']">
+                <Navbar role={role} />
+                <DonorHome donations={donations || []} />
+            </div>
+        )
+    }
+
+    // Organization — fetch pending donations with donor info + address
     const { data: donations } = await supabase
         .from('donations')
-        .select('id, type, created_at, quantity')
-        .eq('donor_id', user.id)
+        .select(`
+            id, donor_id, organization_id, type, quantity, status, created_at, description, delivery_preference,
+            profiles!donations_donor_id_fkey(
+                full_name,
+                addresses(city, country, latitude, longitude, address_line1, address_line2, zip)
+            )
+        `)
+        .eq('organization_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(20)
 
-    const role = (profile?.role || 'donor') as 'donor' | 'organization'
+    const mappedDonations = (donations || []).map((d: any) => {
+        const addr = d.profiles?.addresses?.[0] || {}
+        return {
+            ...d,
+            donor_name: d.profiles?.full_name || 'Anonymous Donor',
+            donor_address: addr.city ? `${addr.city}, ${addr.country}` : 'City Not Set',
+            donor_city: addr.city || 'City Not Set',
+            donor_country: addr.country || 'Country Not Set',
+            donor_lat: addr.latitude,
+            donor_lng: addr.longitude,
+            donor_line1: addr.address_line1 || 'Missing Street Address',
+            donor_line2: addr.address_line2,
+            donor_zip: addr.zip || '----',
+        }
+    })
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-['Inter']">
-            <Navbar role={role} />
-
-            {role === 'donor' ? (
-                <main className="flex-1 p-4 md:p-10 flex flex-col md:flex-row gap-6 md:gap-8 overflow-x-hidden">
-                    {/* LEFT: Disaster Watch */}
-                    <DisasterWatchClient />
-
-                    {/* RIGHT: Discover & Recent */}
-                    <div className="flex-1 flex flex-col gap-8">
-                        <DiscoverCharitiesClient />
-                        <RecentDonationsClient donations={donations || []} />
-                    </div>
-                </main>
-            ) : (
-                <main className="flex-1 p-4 md:p-10 flex flex-col gap-6 md:gap-8 overflow-x-hidden">
-                    <div className="flex-[0.8] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
-                        <div className="bg-[#FFD1B3] px-6 py-2 border-b-2 border-[#FFB27D]">
-                            <h2 className="text-black text-lg font-extrabold">Status Management</h2>
-                        </div>
-                        <div className="flex-1 bg-white p-5 flex flex-col gap-4">
-                            <div className="flex-1 bg-[#FFEDE1] rounded-lg"></div>
-                            <div className="flex-1 bg-[#FFEDE1] rounded-lg"></div>
-                            <div className="flex-1 bg-[#FFEDE1] rounded-lg"></div>
-                        </div>
-                    </div>
-                    <div className="flex-[1.2] flex flex-col md:flex-row gap-6 md:gap-8">
-                        <div className="flex-[0.4] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
-                            <div className="bg-[#FFD1B3] px-4 py-2 border-b-2 border-[#FFB27D]">
-                                <h2 className="text-black text-lg font-extrabold">Inventory Needs</h2>
-                            </div>
-                            <div className="flex-1 bg-white p-4 flex flex-col gap-3">
-                                <div className="bg-[#FFEDE1] h-12 rounded-lg"></div>
-                                <div className="bg-[#FFEDE1] h-12 rounded-lg"></div>
-                                <div className="bg-[#FFEDE1] h-12 rounded-lg"></div>
-                            </div>
-                        </div>
-                        <div className="flex-1 border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
-                            <div className="bg-[#FFD1B3] px-6 py-2 border-b-2 border-[#FFB27D]">
-                                <h2 className="text-black text-lg font-extrabold">Incoming Matches</h2>
-                            </div>
-                            <div className="flex-1 bg-white p-4">
-                                <div className="bg-[#FFEDE1] w-full h-full rounded-lg"></div>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-            )}
+            <Navbar role="organization" />
+            <OrgHome orgId={user.id} donations={mappedDonations} />
         </div>
     )
 }
