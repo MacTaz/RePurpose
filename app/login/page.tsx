@@ -6,7 +6,7 @@ import { login, signInWithGoogle, signInWithFacebook } from '@/lib/auth-actions'
 const page = () => {
     const [showPassword, setShowPassword] = useState(false);
     return (
-        <div className="relative min-h-screen bg-[#2D3561] flex">
+        <div className="relative min-h-screen bg-[#2D3561] flex flex-col md:flex-row">
             {/* Topographic Wave Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <svg className="absolute w-[200%] md:w-full h-[200%] md:h-full object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-70" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900">
@@ -25,22 +25,22 @@ const page = () => {
                 </svg>
             </div>
 
-            <div className="w-1/2 flex items-center justify-center px-10">
-                <div className="bg-white rounded-3xl w-full h-full">
+            <div className="hidden md:flex md:w-1/2 items-center justify-center px-10">
+                <div className="bg-white rounded-3xl w-full h-full my-10">
                 </div>
             </div>
 
-            <div className="w-1/2 flex flex-col px-16 pt-10">
+            <div className="w-full md:w-1/2 flex flex-col px-8 md:px-16 py-10 z-10">
 
-                <div>
+                <div className="text-center md:text-left">
                     <Link href="/">
-                        <h1 className="text-white font-['Inter'] text-5xl font-black mb-4 hover:text-[#647BD0] transition-all duration-300">RePurpose</h1>
+                        <h1 className="text-white font-['Inter'] text-4xl md:text-5xl font-black mb-4 hover:text-[#647BD0] transition-all duration-300">RePurpose</h1>
                     </Link>
                     <hr className="border-white/40" />
                 </div>
 
-                <div className="flex flex-col justify-center pt-17">
-                    <h2 className="text-white font-['Inter'] text-4xl font-bold mb-6">Login</h2>
+                <div className="flex flex-col justify-center pt-10 md:pt-17">
+                    <h2 className="text-white font-['Inter'] text-3xl md:text-4xl font-bold mb-6 text-center md:text-left">Login</h2>
                     <div className="flex flex-col gap-4 mb-8">
                         <button
                             onClick={() => signInWithGoogle()}
