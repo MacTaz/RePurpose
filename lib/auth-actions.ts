@@ -172,18 +172,33 @@ export async function deleteAccount(password: string) {
             if (signInError) return { error: "Incorrect password. Please try again." };
         }
 
-        // 2. Clean up storage (avatars)
+        const adminSupabase = createAdminClient();
+
+        // 2. Clean up storage (Avatars and Donations)
         try {
-            const { data: files } = await supabase.storage.from('avatars').list(user.id);
-            if (files && files.length > 0) {
-                const paths = files.map(f => `${user.id}/${f.name}`);
-                await supabase.storage.from('avatars').remove(paths);
+            // Avatars cleanup
+            const { data: avatarFiles } = await adminSupabase.storage.from('avatars').list(user.id);
+            if (avatarFiles && avatarFiles.length > 0) {
+                const paths = avatarFiles.map(f => `${user.id}/${f.name}`);
+                await adminSupabase.storage.from('avatars').remove(paths);
+            }
+
+            // Donations cleanup: Root user folder
+            const { data: donationFiles } = await adminSupabase.storage.from('donations').list(user.id);
+            if (donationFiles && donationFiles.length > 0) {
+                const paths = donationFiles.map(f => `${user.id}/${f.name}`);
+                await adminSupabase.storage.from('donations').remove(paths);
+            }
+
+            // Donations cleanup: 'temp' subfolder (common in our app)
+            const { data: tempFiles } = await adminSupabase.storage.from('donations').list(`${user.id}/temp`);
+            if (tempFiles && tempFiles.length > 0) {
+                const paths = tempFiles.map(f => `${user.id}/temp/${f.name}`);
+                await adminSupabase.storage.from('donations').remove(paths);
             }
         } catch (e) {
             console.error("Storage cleanup error:", e);
         }
-
-        const adminSupabase = createAdminClient();
 
         // 3. Manual cascade to avoid Foreign Key violations
         await adminSupabase.from('donations').delete().or(`donor_id.eq.${user.id},organization_id.eq.${user.id}`);

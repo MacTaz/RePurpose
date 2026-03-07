@@ -11,11 +11,23 @@ const Home = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
+    // Safety check for incomplete setup (backup for middleware)
+    const setupDone = user.user_metadata?.setup_complete === true;
+
     const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
+
+    if (!setupDone || !profile?.setup_complete) {
+        const isOAuth = user.app_metadata.provider !== 'email'
+        if (isOAuth) {
+            redirect(`/register?oauth=true&email=${user.email || ''}`)
+        } else {
+            redirect('/register?step=2')
+        }
+    }
 
     // Fetch donations server-side and pass as props — no client supabase needed
     const { data: donations } = await supabase
