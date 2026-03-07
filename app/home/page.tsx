@@ -11,8 +11,8 @@ const Home = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
-    // Safety check for incomplete setup
-    const isMetaComplete = user.user_metadata?.setup_complete === true;
+    // Safety check for incomplete setup (backup for middleware)
+    const setupDone = user.user_metadata?.setup_complete === true;
 
     const { data: profile } = await supabase
         .from('profiles')
@@ -20,13 +20,12 @@ const Home = async () => {
         .eq('id', user.id)
         .maybeSingle()
 
-    if (!isMetaComplete && !profile?.setup_complete) {
-        // If not complete, decide where to send them
-        const isOAuth = user.app_metadata.provider !== 'email';
+    if (!setupDone || !profile?.setup_complete) {
+        const isOAuth = user.app_metadata.provider !== 'email'
         if (isOAuth) {
-            redirect(`/register?oauth=true&email=${user.email || ''}`);
+            redirect(`/register?oauth=true&email=${user.email || ''}`)
         } else {
-            redirect('/register?step=2');
+            redirect('/register?step=2')
         }
     }
 

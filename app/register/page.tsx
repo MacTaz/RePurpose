@@ -118,24 +118,36 @@ const RegisterPage = () => {
             const { data: { user } } = await supabase.auth.getUser();
 
             if (user) {
-                // If user already exists (OAuth), we just update their password and metadata
+                // If user already exists (OAuth), we update password AND set the role metadata
                 const { error: updateError } = await supabase.auth.updateUser({
                     password,
-                    data: { full_name: fullName, role: userType, email: email || user.email }
+                    data: {
+                        full_name: fullName,
+                        role: userType,
+                        email: email || user.email,
+                        identity_confirmed: true // Custom flag to mark Step 1 completion
+                    }
                 });
                 if (updateError) throw updateError;
             } else {
-                // Standard signup
+                // Standard email signup
                 const { error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
-                    options: { data: { full_name: fullName, role: userType, email } },
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            role: userType,
+                            email,
+                            identity_confirmed: true
+                        }
+                    },
                 });
                 if (signUpError) throw signUpError;
             }
             setStep(2);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'An error occurred during account creation');
         } finally {
             setLoading(false);
         }
