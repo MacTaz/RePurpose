@@ -1,77 +1,74 @@
-import React from 'react'
+'use client';
 
-interface Props {
-    onClose?: () => void;
-}
+import React from 'react';
 
-const DonorDonationDashboard = ({ onClose }: Props) => {
+const DonorDonationDashboard = ({ donation, onClose }: any) => {
     return (
-        <div className="w-full max-w-5xl mx-auto bg-[#DDE6ED] border-[6px] border-[#7BA4D5] rounded-[2rem] p-10 shadow-sm relative flex flex-col items-center">
-            {/* Back / Close Button */}
+        <div className="w-full max-w-7xl mx-auto bg-[#DDE6ED] border-[10px] border-[#7BA4D5] rounded-[4rem] p-10 lg:p-16 shadow-2xl relative flex flex-col items-center animate-in zoom-in-95 duration-500 min-h-[90vh]">
+            {/* Back Button */}
             {onClose && (
                 <button
                     onClick={onClose}
-                    className="absolute top-8 left-8 font-extrabold text-black hover:opacity-70 text-lg"
+                    className="absolute top-10 left-10 flex items-center gap-2 font-black text-[#2D3561] hover:scale-105 active:scale-95 transition-all group"
                 >
-                    &larr; Back
+                    <div className="size-10 bg-[#7BA4D5] rounded-full flex items-center justify-center group-hover:bg-[#5A8CC9] text-white transition-colors">←</div>
+                    <span className="text-xl uppercase tracking-widest">Back</span>
                 </button>
             )}
 
             {/* Header */}
-            <div className="w-full text-center mt-4 mb-4">
-                <h1 className="text-4xl font-extrabold text-black">Donation Form #</h1>
+            <div className="w-full text-center mt-8 mb-4">
+                <h1 className="text-5xl lg:text-7xl font-black text-[#2D3561] tracking-tighter lowercase">
+                    charity <span className="text-[#7BA4D5]">details</span>
+                </h1>
             </div>
 
-            {/* Divider */}
-            <div className="w-full h-[6px] bg-black mb-10"></div>
+            <div className="w-full h-2 bg-[#2D3561] my-8 rounded-full"></div>
 
-            {/* Top Section */}
-            <div className="flex flex-col lg:flex-row w-full gap-8 mb-8">
-                {/* Left side: Empty Pills */}
-                <div className="flex flex-col gap-6 w-full lg:w-1/4">
-                    <div className="bg-white rounded-full py-4 px-6 shadow-sm w-48"></div>
-                    <div className="bg-white rounded-full py-4 px-6 shadow-sm w-48 mt-2"></div>
-                </div>
-
-                {/* Right side: Description */}
-                <div className="bg-white rounded-3xl py-8 px-10 flex-1 flex flex-col justify-center text-center shadow-sm h-[140px]">
-                    <div className="w-full h-full overflow-y-auto pr-2 custom-scrollbar">
-                        <p className="font-extrabold text-black text-lg leading-relaxed">
-                            Blablabla blebleble bluhbluhbluhh<br />
-                            avawefawdawdawdawdaw
-                        </p>
+            <div className="flex flex-col lg:flex-row w-full gap-12 mt-4 flex-1">
+                <div className="w-full lg:w-5/12 animate-in slide-in-from-left-8 duration-700">
+                    <div className="w-full aspect-[4/5] rounded-[3rem] overflow-hidden bg-white shadow-2xl border-4 border-[#7BA4D5]">
+                        <img
+                            src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1000"
+                            alt="Organization"
+                            className="w-full h-full object-cover"
+                        />
                     </div>
                 </div>
-            </div>
 
-            {/* Bottom Section */}
-            <div className="flex flex-col lg:flex-row w-full gap-12 mt-4">
-                {/* Left side: Image placeholder */}
-                <div className="w-full lg:w-1/2 aspect-[4/5] rounded-[2rem] bg-white shadow-sm">
-                    {/* Placeholder for the user's actual image */}
-                </div>
+                <div className="flex-1 flex flex-col gap-10 animate-in slide-in-from-right-8 duration-700">
+                    <div className="bg-white rounded-[3rem] p-12 shadow-2xl flex-1 border-4 border-[#7BA4D5]/50">
+                        <h3 className="text-[#2D3561]/40 text-xs font-black uppercase tracking-[0.3em] mb-6">Tracking Information</h3>
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-6">
+                                <span className="size-16 rounded-3xl bg-[#7BA4D5] text-white flex items-center justify-center text-3xl font-black shadow-lg block px-4 py-2">01</span>
+                                <div className="flex-1">
+                                    <h4 className="text-3xl font-black text-[#2D3561] lowercase leading-none">Status: <span className="text-[#7BA4D5] uppercase">{donation?.status?.replace('_', ' ') || 'PENDING'}</span></h4>
+                                    <div className="w-full h-2 bg-[#2D3561]/10 rounded-full mt-4 overflow-hidden">
+                                        <div className={`h-full bg-[#7BA4D5] transition-all duration-1000 ${donation?.status === 'delivered' ? 'w-full' : donation?.status === 'in_progress' ? 'w-2/3' : 'w-1/3'}`} />
+                                    </div>
+                                </div>
+                            </div>
 
-                {/* Right side: Details & Actions */}
-                <div className="flex flex-col w-full lg:w-1/2 justify-center items-center">
-
-                    <div className="space-y-6 flex flex-col items-center flex-grow pt-4">
-                        <div className="w-80 bg-white rounded-full py-3.5 px-6 text-center shadow-sm">
-                            <span className="font-extrabold text-black text-lg">Other Details</span>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-[#DDE6ED] p-6 rounded-2xl border-2 border-dashed border-[#7BA4D5] text-center">
+                                    <span className="text-[10px] font-black uppercase text-[#2D3561]/40 block mb-1">Items</span>
+                                    <span className="text-2xl font-black text-[#2D3561] lowercase">{donation?.type}</span>
+                                </div>
+                                <div className="bg-[#DDE6ED] p-6 rounded-2xl border-2 border-dashed border-[#7BA4D5] text-center">
+                                    <span className="text-[10px] font-black uppercase text-[#2D3561]/40 block mb-1">To</span>
+                                    <span className="text-2xl font-black text-[#2D3561] lowercase truncate block">{donation?.target_organization}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="w-80 bg-white rounded-[2rem] py-6 px-6 text-center shadow-sm min-h-[100px] flex items-center justify-center">
-                            <span className="font-extrabold text-black text-lg">Address</span>
-                        </div>
                     </div>
 
-                    {/* Cancel Button */}
-                    <div className="flex justify-center mt-auto pb-4 pt-16">
-                        <button
-                            onClick={onClose}
-                            className="w-40 bg-white hover:bg-gray-100 transition-colors rounded-full py-2 shadow-sm font-extrabold text-black text-xl"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-full py-10 bg-[#2D3561] hover:bg-black active:scale-[0.98] text-white rounded-[2.5rem] shadow-2xl transition-all cursor-pointer font-black text-4xl uppercase tracking-tighter border-8 border-white"
+                    >
+                        Close
+                    </button>
                 </div>
             </div>
         </div>

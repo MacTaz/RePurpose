@@ -2,6 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 
 export default function DonationForm() {
   const [formData, setFormData] = useState({
@@ -10,11 +12,15 @@ export default function DonationForm() {
     category: '',
     description: '',
     deliveryPreference: 'pickup'
-  }); //
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [preview, setPreview] = useState<string | null>(null); //
   const [isDragging, setIsDragging] = useState(false); //
   const fileInputRef = useRef<HTMLInputElement>(null); //
+
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -24,33 +30,32 @@ export default function DonationForm() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-  }; //
+  };
 
   const handleFile = (file: File) => {
     if (file && file.type.startsWith('image/')) {
+      setImageFile(file);
       setPreview(URL.createObjectURL(file));
     }
-  }; //
+  };
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
-  }; //
+  };
 
-  const onDragLeave = () => setIsDragging(false); //
+  const onDragLeave = () => setIsDragging(false);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     handleFile(file);
-  }; //
+  };
 
   return (
     <div className="min-h-screen bg-white py-12 px-4 font-['Inter'] font-normal">
-
       <div className="max-w-6xl mx-auto bg-[#9dbcd4] rounded-[40px] p-8 lg:p-12 shadow-inner">
-
         <div className="bg-white rounded-full py-2 px-10 shadow-sm mb-10 border border-gray-200">
           <h2 className="text-2xl font-bold text-[#30496E] text-center">
             RePurpose Donation Form
@@ -58,7 +63,6 @@ export default function DonationForm() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-
           {/* Left Column: Image Upload Section */}
           <div className="w-full lg:w-1/3">
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200 h-full flex flex-col">
@@ -108,7 +112,6 @@ export default function DonationForm() {
               <h3 className="text-center text-[#30496E] mb-6 border-b-4 border-[#304674] pb-2 text-xl font-bold">
                 Donation Item Details
               </h3>
-              {/* item name */}
               <form className="space-y-5">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
@@ -122,7 +125,6 @@ export default function DonationForm() {
                       onChange={handleChange} />
                   </div>
 
-                  {/* Qty */}
                   <div className="w-full md:w-1/3">
                     <label className="block text-sm font-medium text-[#30496E] mb-1">Quantity</label>
                     <input
@@ -138,7 +140,6 @@ export default function DonationForm() {
                 </div>
 
                 <div>
-                  {/* Categories */}
                   <label className="block text-sm font-medium text-[#30496E] mb-1">Item Category</label>
                   <select
                     name="category"
@@ -146,8 +147,6 @@ export default function DonationForm() {
                     onChange={handleChange}
                     className="w-full p-2 border border-gray-400 rounded-md bg-white appearance-none focus:ring-2 focus:ring-blue-300 outline-none text-[#30496E]"
                     style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em' }}>
-
-                    {/* Categories, you can add new ones here */}
                     <option value="" className="text-[#30496E]">Select Item Category</option>
                     <option value="clothing" className="text-[#30496E]">Clothing</option>
                     <option value="Food" className="text-[#30496E]">Food</option>
@@ -156,7 +155,6 @@ export default function DonationForm() {
                 </div>
 
                 <div>
-                  {/* Description */}
                   <label className="block text-sm font-medium text-[#30496E] mb-1">Item Description / Comments</label>
                   <textarea
                     name="description"
@@ -169,7 +167,6 @@ export default function DonationForm() {
                 </div>
 
                 <div>
-                  {/* delivery pref */}
                   <label className="block text-sm font-medium text-[#30496E] mb-2">Item Delivery Preference</label>
                   <div className="flex gap-6 text-[#30496E]">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -199,28 +196,64 @@ export default function DonationForm() {
           </div>
         </div>
 
-
-        {/* Match Button */}
         <div className="mt-12">
           <div className="border-t-2 border-dashed border-white mb-8 w-full"></div>
           <button
-            onClick={() => {
+            onClick={async () => {
               if (!formData.category) {
                 alert('Please select a category first!');
                 return;
               }
-              const params = new URLSearchParams({
-                category: formData.category,
-                quantity: formData.quantity || '1',
-                itemName: formData.itemName || 'Donation Item',
-                description: formData.description || '',
-                pref: formData.deliveryPreference
-              });
-              window.location.href = `/home/donate/match?${params.toString()}`;
+
+              setUploading(true);
+              try {
+                const supabase = createClient();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (!user) {
+                  alert('Please log in to continue.');
+                  router.push('/login');
+                  return;
+                }
+
+                if (imageFile) {
+                  // Upload to a temp path for this user
+                  const { error: uploadError } = await supabase.storage
+                    .from('donations')
+                    .upload(`${user.id}/temp/current.jpg`, imageFile, {
+                      upsert: true,
+                      contentType: imageFile.type,
+                      cacheControl: '3600'
+                    });
+
+                  if (uploadError) {
+                    console.error('Upload error details:', uploadError);
+                    alert(`Image upload failed: ${uploadError.message}`);
+                    setUploading(false);
+                    return;
+                  }
+                }
+
+                const params = new URLSearchParams({
+                  category: formData.category,
+                  quantity: formData.quantity || '1',
+                  itemName: formData.itemName || 'Donation Item',
+                  description: formData.description || '',
+                  pref: formData.deliveryPreference,
+                  hasImage: imageFile ? 'true' : 'false'
+                });
+
+                router.push(`/home/donate/match?${params.toString()}`);
+              } catch (err: any) {
+                console.error('Submit Error:', err);
+                alert('An error occurred while preparing your donation.');
+                setUploading(false);
+              }
             }}
-            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide text-center"
+            disabled={uploading}
+            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-colors uppercase tracking-wide text-center disabled:opacity-50"
           >
-            Match
+            {uploading ? 'Preparing...' : 'Match'}
           </button>
         </div>
       </div>

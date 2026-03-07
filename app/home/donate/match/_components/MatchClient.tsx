@@ -7,6 +7,20 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signout } from '@/lib/auth-actions';
 import { createClient } from '@/utils/supabase/client';
 
+interface Donation {
+    id: string;
+    donor_id: string;
+    organization_id: string | null;
+    type: string;
+    quantity: number | null;
+    status: string | null;
+    created_at: string;
+    donor_name: string;
+    description: string | null;
+    delivery_preference: string | null;
+    donor_address?: string;
+}
+
 interface Organization {
     id: string;
     full_name: string;
@@ -89,8 +103,11 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
             const category = searchParams.get('category');
             const quantity = parseInt(searchParams.get('quantity') || '1');
             const itemName = searchParams.get('itemName');
+            const description = searchParams.get('description');
+            const pref = searchParams.get('pref');
+            const hasImage = searchParams.get('hasImage') === 'true';
 
-            const { error } = await supabase
+            const { data: newDonations, error } = await supabase
                 .from('donations')
                 .insert({
                     donor_id: user.id,
@@ -98,18 +115,54 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                     type: category || 'Other',
                     quantity: quantity,
                     status: 'pending',
-                    target_organization: selectedOrg.full_name
-                });
+                    target_organization: selectedOrg.full_name,
+                    description: description,
+                    delivery_preference: pref
+                })
+                .select();
 
             if (error) throw error;
+
+            const newDonation = newDonations?.[0];
+
+            if (hasImage && newDonation) {
+                // Defensive check to avoid "Object not found" if temp file is already gone
+                const tempPath = `${user.id}/temp`;
+                const { data: files, error: listError } = await supabase.storage
+                    .from('donations')
+                    .list(tempPath, {
+                        limit: 100,
+                        offset: 0,
+                        sortBy: { column: 'name', order: 'asc' },
+                        search: 'current.jpg'
+                    });
+
+                if (listError) {
+                    console.error('List temp files error:', listError);
+                } else if (files && files.length > 0) {
+                    const finalPath = `${user.id}/donation-${newDonation.id}/picture.jpg`;
+                    const { error: moveError } = await supabase.storage
+                        .from('donations')
+                        .move(`${tempPath}/current.jpg`, finalPath);
+
+                    if (moveError) {
+                        console.error('Storage move error:', moveError);
+                        alert(`Warning: Donation saved but image move failed: ${moveError.message}`);
+                    }
+                } else {
+                    console.warn('Temp image not found for moving. Path tried:', tempPath);
+                }
+            }
 
             setSuccess(true);
             setTimeout(() => {
                 router.push('/home/manage');
             }, 2000);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Donation error:', err);
-            alert('Failed to process donation. Please try again.');
+            // More descriptive error for the user to help debug
+            const msg = err.message || 'Unknown error';
+            alert(`Failed to process donation: ${msg}`);
         } finally {
             setIsSubmitting(false);
         }
