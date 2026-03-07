@@ -102,7 +102,7 @@ const DisasterWatchClient = () => {
                     </div>
                 )}
                 {!loading && !error && article && (
-                    <div className="flex flex-1 gap-4 p-4 overflow-hidden">
+                    <div className="flex flex-col md:flex-row flex-1 gap-4 p-4 overflow-y-auto md:overflow-hidden">
                         {/* Main article — fades in/out on transition */}
                         <div
                             className="flex-[3] flex flex-col rounded-xl overflow-hidden border border-gray-100 shadow-sm relative group"
@@ -150,7 +150,7 @@ const DisasterWatchClient = () => {
                         </div>
 
                         {/* Sidebar thumbnails */}
-                        <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                        <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 min-h-[200px] md:min-h-0" style={{ scrollbarWidth: 'thin' }}>
                             {articles.map((a, idx) => (
                                 <button key={idx} onClick={() => goTo(idx)}
                                     className={`text-left rounded-lg border-2 p-2.5 transition-all duration-200 flex-shrink-0 ${idx === current ? 'border-[#7BA4D5] bg-[#EEF3F9]' : 'border-transparent bg-[#DDE6ED] hover:border-[#7BA4D5]/50'}`}>

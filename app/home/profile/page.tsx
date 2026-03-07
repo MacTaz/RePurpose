@@ -2,10 +2,9 @@ import React from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import DonorProfile from '@/components/DonorProfile'
-import CharityProfile from '@/components/CharityProfile'
+import ProfileClient from './_components/ProfileClient'
 
-const ProfilePage = async () => {
+export default async function ProfilePage() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -13,69 +12,43 @@ const ProfilePage = async () => {
         redirect('/login');
     }
 
+    // Fetch comprehensive profile data
     const { data: profile } = await supabase
         .from('profiles')
         .select(`
             *,
-            donor_profiles(bio),
-            organization_profiles(description, donation_method, is_verified)
+            donor_profiles(*),
+            organization_profiles(*),
+            addresses(*)
         `)
         .eq('id', user.id)
         .maybeSingle();
 
-    const role = (profile?.role || 'donor') as 'donor' | 'organization';
-    
-    // Accessing nested data safely
-    const details = role === 'donor' 
-        ? profile?.donor_profiles?.[0] 
-        : profile?.organization_profiles?.[0];
+    if (!profile) {
+        redirect('/home');
+    }
+
+    const role = (profile.role || 'donor') as 'donor' | 'organization';
+
+    // Flatten data for the client component
+    const processedProfile = {
+        ...profile,
+        details: role === 'donor'
+            ? (Array.isArray(profile.donor_profiles) ? profile.donor_profiles[0] : profile.donor_profiles) || {}
+            : (Array.isArray(profile.organization_profiles) ? profile.organization_profiles[0] : profile.organization_profiles) || {},
+        address: (Array.isArray(profile.addresses) ? profile.addresses[0] : profile.addresses) || {}
+    };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-inter">
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-inter overflow-hidden">
             <Navbar role={role} />
-
-            {/* 1. Fixed the conditional block here */}
-            {role === 'donor' ? (
-                <DonorProfile
+            <main className="flex-1 overflow-hidden">
+                <ProfileClient
+                    initialProfile={processedProfile}
                     userId={user.id}
-                    user={{
-                        name: profile?.full_name || 'Donor User',
-                        email: user.email || '',
-                        role: role
-                    }}
+                    email={user.email || ''}
                 />
-            ) : (
-                <CharityProfile
-                    userId={user.id}
-                    user={{
-                        name: profile?.full_name || 'Organization User',
-                        email: user.email || '',
-                        role: role
-                    }}
-                />
-            )}
-
-            {/* 2. Moved the main content outside the ternary so it actually displays */}
-            <main className="flex-1 p-10">
-                <h1 className="text-3xl font-bold text-slate-800">Profile</h1>
-                <div className="mt-8 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
-                    <p className="text-slate-600"><strong>Name:</strong> {profile?.full_name}</p>
-                    <p className="text-slate-600"><strong>Email:</strong> {user.email}</p>
-                    <p className="text-slate-600 capitalize"><strong>Role:</strong> {role}</p>
-                    
-                    {role === 'donor' ? (
-                        <p className="text-slate-600"><strong>Bio:</strong> {details?.bio || 'No bio added'}</p>
-                    ) : (
-                        <>
-                            <p className="text-slate-600"><strong>Description:</strong> {details?.description || 'No description added'}</p>
-                            <p className="text-slate-600 capitalize"><strong>Donation Method:</strong> {details?.donation_method}</p>
-                            <p className="text-slate-600"><strong>Verified:</strong> {details?.is_verified ? 'Yes ✅' : 'No ❌'}</p>
-                        </>
-                    )}
-                </div>
             </main>
         </div>
     )
 }
-
-export default ProfilePage;

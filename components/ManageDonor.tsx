@@ -99,10 +99,10 @@ const ManageDonor = ({ donations }: Props) => {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 
                 {/* Top box: Donations Sent */}
-                <div className="bg-white/30 backdrop-blur-md rounded-3xl overflow-hidden pb-12 shadow-lg border border-white/40 relative z-10 transition-all hover:bg-white/40">
-                    <div className="relative h-20 flex items-center justify-center border-b border-white/30 bg-white/20 px-8">
-                        <h1 className="text-2xl font-extrabold text-white tracking-wide w-full text-center">Donations Sent</h1>
-                        <div className="absolute right-6 flex items-center h-full">
+                <div className="bg-white/30 backdrop-blur-md rounded-3xl overflow-hidden pb-8 md:pb-12 shadow-lg border border-white/40 relative z-10 transition-all hover:bg-white/40">
+                    <div className="relative h-auto min-h-[5rem] py-4 flex flex-col md:flex-row items-center justify-center border-b border-white/30 bg-white/20 px-4 md:px-8 gap-4">
+                        <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-wide w-full text-center md:text-left">Donations Sent</h1>
+                        <div className="md:absolute right-4 md:right-6 flex items-center h-full">
                             <FilterDropdown
                                 options={["All", "Type", "Charity Sent To", "Date"]}
                                 onSelect={(val) => console.log("Selected filter:", val)}
@@ -110,50 +110,52 @@ const ManageDonor = ({ donations }: Props) => {
                         </div>
                     </div>
 
-                    <div className="mt-8 px-8 space-y-4 relative z-10">
-                        {/* Headers */}
-                        <div className="flex space-x-4 mb-3">
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Number</div>
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Type</div>
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Charity Sent To</div>
-                            <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Date</div>
-                        </div>
-
-                        {/* Empty state: skeleton rows + message */}
-                        {isEmpty && (
-                            <>
-                                <SkeletonRow />
-                                <SkeletonRow />
-                                <SkeletonRow />
-                                <p className="text-center text-white/60 text-sm pt-2">
-                                    No donations sent yet. Your records will appear here once you make a donation.
-                                </p>
-                            </>
-                        )}
-
-                        {/* Real rows from Supabase */}
-                        {donations.map((donation, index) => (
-                            <div
-                                key={donation.id}
-                                className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
-                                onClick={() => setSelectedRequest(true)}
-                            >
-                                <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">
-                                    {String(index + 1).padStart(3, '0')}
-                                </div>
-                                <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] capitalize">
-                                    {donation.type}
-                                </div>
-                                <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">
-                                    {donation.target_organization || '—'}
-                                </div>
-                                <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">
-                                    {new Date(donation.created_at).toLocaleDateString('en-PH', {
-                                        month: 'short', day: 'numeric', year: 'numeric'
-                                    })}
-                                </div>
+                    <div className="mt-6 md:mt-8 px-4 md:px-8 pb-4 overflow-x-auto relative z-10">
+                        <div className="min-w-[600px] space-y-4">
+                            {/* Headers */}
+                            <div className="flex space-x-4 mb-3">
+                                <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Number</div>
+                                <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Type</div>
+                                <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Charity Sent To</div>
+                                <div className="flex-[0.25] bg-white/80 backdrop-blur-sm rounded-full py-2.5 text-center text-[#30496E] font-bold text-xs uppercase tracking-wider shadow-sm">Date</div>
                             </div>
-                        ))}
+
+                            {/* Empty state: skeleton rows + message */}
+                            {isEmpty && (
+                                <>
+                                    <SkeletonRow />
+                                    <SkeletonRow />
+                                    <SkeletonRow />
+                                    <p className="text-center text-white/60 text-sm pt-2">
+                                        No donations sent yet. Your records will appear here once you make a donation.
+                                    </p>
+                                </>
+                            )}
+
+                            {/* Real rows from Supabase */}
+                            {donations.map((donation, index) => (
+                                <div
+                                    key={donation.id}
+                                    className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                                    onClick={() => setSelectedRequest(true)}
+                                >
+                                    <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">
+                                        {String(index + 1).padStart(3, '0')}
+                                    </div>
+                                    <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E] capitalize">
+                                        {donation.type}
+                                    </div>
+                                    <div className="flex-[0.25] border-r border-[#9BBAD0]/30 flex items-center justify-center font-medium text-[#30496E]">
+                                        {donation.target_organization || '—'}
+                                    </div>
+                                    <div className="flex-[0.25] flex items-center justify-center font-medium text-[#30496E]">
+                                        {new Date(donation.created_at).toLocaleDateString('en-PH', {
+                                            month: 'short', day: 'numeric', year: 'numeric'
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -161,10 +163,10 @@ const ManageDonor = ({ donations }: Props) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 w-full">
 
                     {/* Left box: Overview */}
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-white/50 transition-all hover:bg-white/50 hover:-translate-y-1 flex flex-col items-center">
-                        <h2 className="text-2xl font-extrabold text-[#30496E] mb-8 uppercase tracking-widest border-b border-white/40 pb-4 w-[80%] text-center">Overview</h2>
+                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 md:p-10 shadow-xl border border-white/50 transition-all hover:bg-white/50 hover:-translate-y-1 flex flex-col items-center">
+                        <h2 className="text-xl md:text-2xl font-extrabold text-[#30496E] mb-6 md:mb-8 uppercase tracking-widest border-b border-white/40 pb-4 w-full md:w-[80%] text-center">Overview</h2>
 
-                        <div className="w-[80%] space-y-6">
+                        <div className="w-full md:w-[80%] space-y-4 md:space-y-6">
                             {isEmpty && (
                                 <>
                                     {/* Skeleton category rows */}
@@ -194,8 +196,8 @@ const ManageDonor = ({ donations }: Props) => {
                     </div>
 
                     {/* Right box: Total */}
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-white/50 flex flex-col items-center justify-center transition-all hover:bg-white/50 hover:-translate-y-1">
-                        <h2 className="text-xl font-extrabold text-[#30496E] mb-6 uppercase tracking-widest text-center">Total Donations Sent</h2>
+                    <div className="bg-white/40 backdrop-blur-md rounded-3xl p-6 md:p-10 shadow-xl border border-white/50 flex flex-col items-center justify-center transition-all hover:bg-white/50 hover:-translate-y-1">
+                        <h2 className="text-lg md:text-xl font-extrabold text-[#30496E] mb-6 uppercase tracking-widest text-center">Total Donations Sent</h2>
                         {isEmpty ? (
                             <div className="flex flex-col items-center gap-3">
                                 <div className="bg-white/50 rounded-full w-48 py-4 animate-pulse h-16" />

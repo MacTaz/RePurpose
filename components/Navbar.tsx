@@ -1,51 +1,98 @@
+'use client'
+
 import Link from 'next/link'
 import { signout } from '@/lib/auth-actions'
+import { useState } from 'react'
+import { Menu, X } from 'lucide-react'
 
 interface NavbarProps {
     role: 'donor' | 'organization'
 }
 
 const Navbar = ({ role }: NavbarProps) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
+
     return (
         <div className="font-inter">
             {role === 'donor' ? (
                 /* DONOR VIEW (BLUE THEME) */
-                <nav className="bg-[#3D5082] text-white px-8 py-3 flex justify-between items-center shadow-lg">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-black tracking-tight">
-                            <Link href="/home">RePurpose</Link>
-                        </h1>
+                <nav className="bg-[#3D5082] text-white px-4 md:px-8 py-3 relative shadow-lg">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-black tracking-tight">
+                                <Link href="/home">RePurpose</Link>
+                            </h1>
+                        </div>
+                        {/* Mobile Menu Toggle */}
+                        <button className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                        {/* Desktop Menu */}
+                        <div className="hidden lg:flex items-center gap-8 font-konkhmer text-xl font-normal">
+                            <Link href="/home/profile" className="hover:text-blue-200 transition-colors">Profile</Link>
+                            <Link href="/home/manage" className="hover:text-blue-200 transition-colors">Manage</Link>
+                            <Link href="/home/donate" className="hover:text-blue-200 transition-colors">Donate</Link>
+                            <Link href="/home/inbox" className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </Link>
+                            <form action={signout} className="ml-4 font-inter">
+                                <button type="submit" className="text-sm bg-white/20 px-4 py-1.5 rounded-lg hover:bg-white/30 transition-all font-bold shadow-sm">Logout</button>
+                            </form>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-8 font-konkhmer text-xl font-normal">
-                        <Link href="/home/profile" className="hover:text-blue-200 transition-colors">Profile</Link>
-                        <Link href="/home/manage" className="hover:text-blue-200 transition-colors">Manage</Link>
-                        <Link href="/home/donate" className="hover:text-blue-200 transition-colors">Donate</Link>
-                        <Link href="/home/inbox" className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </Link>
-                        <form action={signout} className="ml-4 font-inter">
-                            <button type="submit" className="text-sm bg-white/20 px-4 py-1.5 rounded-lg hover:bg-white/30 transition-all font-bold shadow-sm">Logout</button>
-                        </form>
-                    </div>
+                    {/* Mobile Menu Dropdown */}
+                    {isMenuOpen && (
+                        <div className="lg:hidden mt-4 pb-4 flex flex-col gap-4 font-konkhmer text-xl font-normal border-t border-white/10 pt-4">
+                            <Link href="/home/profile" className="hover:text-blue-200 transition-colors px-2" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                            <Link href="/home/manage" className="hover:text-blue-200 transition-colors px-2" onClick={() => setIsMenuOpen(false)}>Manage</Link>
+                            <Link href="/home/donate" className="hover:text-blue-200 transition-colors px-2" onClick={() => setIsMenuOpen(false)}>Donate</Link>
+                            <Link href="/home/inbox" className="hover:text-blue-200 transition-colors px-2 flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                                Inbox <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </Link>
+                            <form action={signout} className="font-inter mt-2 px-2">
+                                <button type="submit" className="w-full text-left text-sm bg-white/20 px-4 py-3 rounded-lg hover:bg-white/30 transition-all font-bold shadow-sm">Logout</button>
+                            </form>
+                        </div>
+                    )}
                 </nav>
             ) : (
                 /* ORGANIZATION VIEW (ORANGE THEME) */
-                <nav className="bg-[#FF9248] text-black px-8 py-3 flex justify-between items-center shadow-md">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-black tracking-tight">
-                            <Link href="/home">RePurpose</Link>
-                        </h1>
+                <nav className="bg-[#FF9248] text-black px-4 md:px-8 py-3 relative shadow-md">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-black tracking-tight">
+                                <Link href="/home">RePurpose</Link>
+                            </h1>
+                        </div>
+                        {/* Mobile Menu Toggle */}
+                        <button className="lg:hidden p-2 hover:bg-black/5 rounded-lg transition-colors text-black" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                        {/* Desktop Menu */}
+                        <div className="hidden lg:flex items-center gap-8 font-konkhmer text-xl font-normal text-[#111]">
+                            <Link href="/home/profile" className="hover:opacity-70 transition-opacity">Profile</Link>
+                            <Link href="/home/manage" className="hover:opacity-70 transition-opacity">Manage</Link>
+                            <Link href="/home/inbox" className="p-1 hover:bg-black/5 rounded-lg transition-colors">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </Link>
+                            <form action={signout} className="ml-4 font-inter">
+                                <button type="submit" className="text-sm border-2 border-black/20 px-4 py-1.5 rounded-lg hover:bg-black/5 transition-all font-bold shadow-sm">Logout</button>
+                            </form>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-8 font-konkhmer text-xl font-normal text-[#111]">
-                        <Link href="/home/profile" className="hover:opacity-70 transition-opacity">Profile</Link>
-                        <Link href="/home/manage" className="hover:opacity-70 transition-opacity">Manage</Link>
-                        <Link href="/home/inbox" className="p-1 hover:bg-black/5 rounded-lg transition-colors">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </Link>
-                        <form action={signout} className="ml-4 font-inter">
-                            <button type="submit" className="text-sm border-2 border-black/20 px-4 py-1.5 rounded-lg hover:bg-black/5 transition-all font-bold shadow-sm">Logout</button>
-                        </form>
-                    </div>
+                    {/* Mobile Menu Dropdown */}
+                    {isMenuOpen && (
+                        <div className="lg:hidden mt-4 pb-4 flex flex-col gap-4 font-konkhmer text-xl font-normal text-[#111] border-t border-black/10 pt-4">
+                            <Link href="/home/profile" className="hover:opacity-70 transition-opacity px-2" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                            <Link href="/home/manage" className="hover:opacity-70 transition-opacity px-2" onClick={() => setIsMenuOpen(false)}>Manage</Link>
+                            <Link href="/home/inbox" className="hover:opacity-70 transition-opacity px-2 flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                                Inbox <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </Link>
+                            <form action={signout} className="font-inter mt-2 px-2">
+                                <button type="submit" className="w-full text-left text-sm border-2 border-black/20 px-4 py-3 rounded-lg hover:bg-black/5 transition-all font-bold shadow-sm">Logout</button>
+                            </form>
+                        </div>
+                    )}
                 </nav>
             )}
         </div>
