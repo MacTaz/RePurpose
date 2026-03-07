@@ -192,9 +192,9 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
             {/* Content Area */}
             <div className="flex-1 px-6 lg:px-16 py-12 overflow-y-auto no-scrollbar">
                 {/* Compact Profile Info */}
-                <div className="mb-12 flex flex-col lg:flex-row items-center lg:items-end gap-8 bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                <div className={`mb-12 flex flex-col lg:flex-row items-center lg:items-end gap-8 bg-white p-8 rounded-[40px] shadow-sm border-2 ${borderColor}`}>
                     <div className="relative group">
-                        <div className="size-32 lg:size-40 rounded-[40px] bg-gray-50 p-1 shadow-inner overflow-hidden relative border-2 border-white">
+                        <div className={`size-32 lg:size-40 rounded-[40px] bg-gray-50 p-1 shadow-inner overflow-hidden relative border-4 ${borderColor}`}>
                             {profileData.profile_pic ? (
                                 <Image
                                     src={profileData.profile_pic}
@@ -278,7 +278,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                         });
                                         setDetails(initialProfile.details || {});
                                     }}
-                                    className="px-6 py-3 bg-white text-gray-400 rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center gap-2 border border-gray-100"
+                                    className="px-6 py-3 bg-white text-gray-400 rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center gap-2 border-2 border-transparent hover:border-gray-200"
                                 >
                                     <X className="size-5" /> Cancel
                                 </button>
@@ -286,7 +286,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                         ) : (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className={`px-8 py-3 bg-white ${textColor} rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border ${isDonor ? 'border-[#30496E]/10' : 'border-[#FF9248]/10'}`}
+                                className={`px-8 py-3 bg-white ${textColor} rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border-2 ${borderColor}`}
                             >
                                 <Edit3 className="size-5" /> Edit Profile
                             </button>
@@ -310,7 +310,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`px-8 py-4 rounded-3xl font-black flex items-center gap-3 transition-all ${activeTab === tab.id ? `${bgColor} text-white shadow-xl scale-105` : 'bg-white text-gray-400 hover:text-gray-600 shadow-sm'}`}
+                            className={`px-8 py-4 rounded-3xl font-black flex items-center gap-3 transition-all border-2 ${activeTab === tab.id ? `${bgColor} text-white shadow-xl scale-105 ${borderColor}` : 'bg-white text-gray-400 border-transparent hover:text-gray-600 shadow-sm hover:border-gray-200'}`}
                         >
                             <tab.icon className="size-5" />
                             {tab.id}
@@ -322,7 +322,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                     {/* Left Panel: Primary Info */}
                     <div className="lg:col-span-2 space-y-8">
                         {activeTab === 'Profile' ? (
-                            <div className="bg-white rounded-[40px] p-8 lg:p-12 shadow-sm border border-gray-100">
+                            <div className={`bg-white rounded-[40px] p-8 lg:p-12 shadow-sm border-2 ${borderColor}`}>
                                 <h2 className={`text-2xl font-black ${textColor} mb-8 flex items-center gap-3`}>
                                     <Info className={`size-6 ${textColor}`} />
                                     General Information
@@ -451,7 +451,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-white rounded-[40px] p-4 lg:p-8 shadow-sm border border-gray-100 min-h-[600px] overflow-hidden">
+                            <div className={`bg-white rounded-[40px] p-4 lg:p-8 shadow-sm border-2 ${borderColor} min-h-[600px] overflow-hidden`}>
                                 <AddressMap userId={userId} role={role} />
                             </div>
                         )}
@@ -521,7 +521,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                         )}
 
                         {/* Connectivity / Links */}
-                        <div className="bg-white rounded-[40px] p-10 shadow-sm border border-gray-100">
+                        <div className={`bg-white rounded-[40px] p-10 shadow-sm border-2 ${borderColor}`}>
                             <h3 className={`text-xl font-black ${textColor} mb-8`}>Connectivity</h3>
                             <div className="space-y-6">
                                 {/* Sign-in Email (Read Only) */}

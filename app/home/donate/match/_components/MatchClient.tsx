@@ -172,7 +172,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
 
                 {/* Sidebar - Organization List */}
                 <div className={`
-                    ${showSidebar ? 'flex' : 'hidden lg:flex'} 
+                    ${showSidebar ? 'flex flex-1 lg:flex-none' : 'hidden lg:flex'} 
                     w-full lg:w-[400px] bg-white lg:rounded-3xl border-r lg:border-r-0 border-gray-200 flex-col shadow-xl z-20 transition-all duration-300
                 `}>
                     <div className="p-6 border-b border-gray-100 flex items-center justify-between">
@@ -245,9 +245,9 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto no-scrollbar pb-32 pt-8 px-8 lg:px-12">
+                    <div className="flex-1 overflow-y-auto no-scrollbar pb-40 lg:pb-32 pt-16 lg:pt-8 px-4 sm:px-8 lg:px-12">
                         {/* Compact Profile Header */}
-                        <div className="flex items-center gap-6 mb-10">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-8 lg:mb-10 text-center sm:text-left">
                             <div className="size-24 rounded-3xl overflow-hidden border-2 border-white shadow-lg shrink-0 relative">
                                 {selectedOrg && (
                                     <Image
@@ -260,8 +260,8 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                 )}
                             </div>
                             <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h1 className="text-4xl font-black text-[#30496E] leading-tight">
+                                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-2">
+                                    <h1 className="text-3xl lg:text-4xl font-black text-[#30496E] leading-tight text-center sm:text-left">
                                         {selectedOrg?.full_name}
                                     </h1>
                                     {selectedOrg?.is_verified && (
@@ -270,12 +270,13 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 text-gray-400 font-bold text-xs uppercase tracking-widest">
+                                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-gray-400 font-bold text-xs uppercase tracking-widest justify-center sm:justify-start">
                                     <div className="flex items-center gap-1.5">
                                         <div className={`size-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)] ${selectedOrg?.is_verified ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                                         {selectedOrg?.is_verified ? 'Fully Verified Partner' : 'Verification Pending'}
                                     </div>
-                                    <div className="flex items-center gap-1.5 border-l border-gray-200 pl-4">
+                                    <div className="hidden sm:block border-l border-gray-200 h-4 pl-4"></div>
+                                    <div className="flex items-center gap-1.5">
                                         <MapPin className="size-3.5" />
                                         {selectedOrg?.location}
                                     </div>
@@ -283,30 +284,30 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                             </div>
                         </div>
 
-                        <div className="px-8 lg:px-12 py-6">
-                            <div className="grid lg:grid-cols-3 gap-12 mt-4">
-                                <div className="lg:col-span-2 space-y-10">
+                        <div className="py-2">
+                            <div className="grid xl:grid-cols-3 gap-8 lg:gap-12 mt-4">
+                                <div className="xl:col-span-2 space-y-8 lg:space-y-10">
                                     <div>
-                                        <h3 className="text-2xl font-black text-[#30496E] mb-6 flex items-center gap-3 lowercase tracking-tight">
-                                            / profile description
-                                            <div className="h-1 flex-1 bg-[#9dbcd4]/20 rounded-full"></div>
+                                        <h3 className="text-xl lg:text-2xl font-black text-[#30496E] mb-6 flex flex-col sm:flex-row items-center gap-3 lowercase tracking-tight">
+                                            <span className="hidden sm:inline">/</span> profile description
+                                            <div className="hidden sm:block h-1 flex-1 bg-[#9dbcd4]/20 rounded-full"></div>
                                         </h3>
-                                        <p className="text-gray-600 text-lg leading-relaxed font-medium">
+                                        <p className="text-gray-600 text-base lg:text-lg leading-relaxed font-medium text-center sm:text-left">
                                             {selectedOrg?.description || 'No description provided by this organization.'}
                                         </p>
                                     </div>
 
                                     <div className="space-y-6">
-                                        <h4 className="text-xl font-black text-[#30496E] flex items-center gap-3 lowercase tracking-tight">
-                                            / accepted categories
-                                            <div className="h-1 w-12 bg-[#30496E]/10 rounded-full"></div>
+                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] flex flex-col sm:flex-row items-center gap-3 lowercase tracking-tight">
+                                            <span className="hidden sm:inline">/</span> accepted categories
+                                            <div className="hidden sm:block h-1 w-12 bg-[#30496E]/10 rounded-full"></div>
                                         </h4>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="flex flex-wrap justify-center sm:justify-start gap-2 lg:gap-3">
                                             {selectedOrg?.categories_accepted && selectedOrg.categories_accepted.length > 0 ? (
                                                 selectedOrg.categories_accepted.map(cat => (
-                                                    <div key={cat} className="px-5 py-3 bg-[#30496E]/5 border border-[#30496E]/10 rounded-2xl flex items-center gap-3 group hover:bg-[#30496E] hover:text-white transition-all cursor-default shadow-sm">
-                                                        <div className="size-2 bg-[#30496E] rounded-full group-hover:bg-white"></div>
-                                                        <span className="font-bold text-[#30496E] group-hover:text-white uppercase text-xs tracking-widest">{cat}</span>
+                                                    <div key={cat} className="px-4 py-2 lg:px-5 lg:py-3 bg-[#30496E]/5 border border-[#30496E]/10 rounded-2xl flex items-center gap-2 lg:gap-3 group hover:bg-[#30496E] hover:text-white transition-all cursor-default shadow-sm text-center">
+                                                        <div className="size-1.5 lg:size-2 bg-[#30496E] rounded-full group-hover:bg-white hidden sm:block"></div>
+                                                        <span className="font-bold text-[#30496E] group-hover:text-white uppercase text-[10px] lg:text-xs tracking-widest">{cat}</span>
                                                     </div>
                                                 ))
                                             ) : (
@@ -316,10 +317,10 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
-                                    <div className="bg-[#f0f4f8] p-8 rounded-[40px] border-2 border-dashed border-[#9dbcd4] shadow-inner">
-                                        <h4 className="text-xl font-black text-[#30496E] mb-8 lowercase tracking-tight">/ connectivity</h4>
-                                        <div className="space-y-6">
+                                <div className="space-y-6 lg:space-y-8">
+                                    <div className="bg-[#f0f4f8] p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] border-2 border-dashed border-[#9dbcd4] shadow-inner">
+                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] mb-6 lg:mb-8 lowercase tracking-tight text-center sm:text-left"><span className="hidden sm:inline">/</span> connectivity</h4>
+                                        <div className="space-y-4 lg:space-y-6">
                                             {[
                                                 { icon: Globe, val: selectedOrg?.website, label: 'Website' },
                                                 { icon: Mail, val: selectedOrg?.email, label: 'Email' },
@@ -327,26 +328,26 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                                 { icon: Clock, val: selectedOrg?.availability, label: 'Availability' },
                                                 { icon: Truck, val: selectedOrg?.donation_method?.toLowerCase() === 'both' ? 'Delivery & Pickup' : selectedOrg?.donation_method, label: 'Handover Method' }
                                             ].map((item, i) => (
-                                                <div key={i} className="flex items-center gap-4 group">
-                                                    <div className="size-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#30496E] border border-white group-hover:border-[#30496E]/20 group-hover:scale-105 transition-all">
-                                                        <item.icon className="size-5" />
+                                                <div key={i} className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4 group text-center sm:text-left">
+                                                    <div className="size-10 lg:size-12 rounded-xl lg:rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#30496E] border border-white group-hover:border-[#30496E]/20 group-hover:scale-105 transition-all">
+                                                        <item.icon className="size-4 lg:size-5" />
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{item.label}</p>
-                                                        <p className="text-sm font-bold text-[#30496E] truncate">{item.val || 'Not listed'}</p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{item.label}</p>
+                                                        <p className="text-sm lg:text-sm font-bold text-[#30496E] break-words sm:truncate">{item.val || 'Not listed'}</p>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-[#30496E] rounded-[32px] text-white flex items-center gap-4 shadow-lg">
-                                        <div className="size-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                                            <Truck className="size-6 text-white" />
+                                    <div className="p-4 lg:p-6 bg-[#30496E] rounded-[24px] lg:rounded-[32px] text-white flex flex-col sm:flex-row items-center gap-3 lg:gap-4 shadow-lg text-center sm:text-left">
+                                        <div className="size-10 lg:size-12 bg-white/20 rounded-xl lg:rounded-2xl flex items-center justify-center backdrop-blur-md">
+                                            <Truck className="size-5 lg:size-6 text-white" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest">Support Mode</p>
-                                            <p className="font-bold text-lg">
+                                            <p className="text-[9px] lg:text-[10px] font-black text-blue-200 uppercase tracking-widest">Support Mode</p>
+                                            <p className="font-bold text-base lg:text-lg">
                                                 {selectedOrg?.donation_method?.toLowerCase() === 'both' ? 'Delivery & Pickup' : (selectedOrg?.donation_method || 'Pickup/Delivery')}
                                             </p>
                                         </div>
@@ -357,7 +358,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                     </div>
 
                     {/* Sticky Action Footer - Fixed at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8 bg-white/90 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 z-40">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8 bg-white/90 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 z-40 text-center sm:text-left">
                         <div className="hidden sm:block">
                             <p className="text-sm text-gray-400 font-bold uppercase tracking-tight">Handover Request for</p>
                             <h4 className="text-xl font-black text-[#30496E]">{selectedOrg?.full_name}</h4>
@@ -378,43 +379,6 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                     </div>
                 </div>
             </div>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background-color: #30496E20;
-                    border-radius: 20px;
-                }
-                .no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .no-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-                @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes zoom-in-95 {
-                    from { transform: scale(0.95); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                .animate-in {
-                    animation-fill-mode: forwards;
-                }
-                .fade-in {
-                    animation-name: fade-in;
-                }
-                .zoom-in-95 {
-                    animation-name: zoom-in-95;
-                }
-            `}</style>
         </div>
     );
 }

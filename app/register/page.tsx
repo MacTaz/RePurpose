@@ -206,12 +206,12 @@ const RegisterPage = () => {
             </div>
 
             {/* Left decorative panel */}
-            <div className="w-1/2 h-full flex items-center justify-center px-10">
+            <div className="hidden lg:flex w-1/2 h-full items-center justify-center px-10">
                 <div className="bg-white rounded-3xl w-full h-4/5 opacity-10 border border-white/20 backdrop-blur-sm" />
             </div>
 
             {/* Right form — scrolls independently, background stays fixed */}
-            <div className="relative z-10 w-1/2 h-full flex flex-col px-16 pt-10 pb-10 overflow-y-auto">
+            <div className="relative z-10 w-full lg:w-1/2 h-full flex flex-col px-6 md:px-16 pt-10 pb-10 overflow-y-auto">
 
                 {/* Logo */}
                 <div className="mb-8">
