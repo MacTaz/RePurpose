@@ -214,3 +214,16 @@ export async function deleteAccount(password: string) {
         return { error: `Server error: ${err.message || 'Operation failed'}` };
     }
 }
+
+export async function forgotPassword(formData: FormData) {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
+    })
+
+    if (error) {
+        redirect(`/error?message=${encodeURIComponent(error.message)}`)
+    }
+}
