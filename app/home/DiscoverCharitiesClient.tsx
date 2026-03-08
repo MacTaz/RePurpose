@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-
+import Link from 'next/link'
 const DiscoverCharitiesClient = () => {
     const mapRef = useRef<HTMLDivElement>(null)
     const mapInstanceRef = useRef<any>(null)
@@ -148,8 +148,14 @@ const DiscoverCharitiesClient = () => {
 
     return (
         <div className="flex-[0.6] border-[6px] border-[#7BA4D5] rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div className="bg-[#7BA4D5] px-6 py-3">
+            <div className="bg-[#7BA4D5] px-6 py-3 flex items-center justify-between">
                 <h2 className="text-white text-xl font-bold">Discover Charities</h2>
+                <Link href="/home/donate" className="bg-white text-[#7BA4D5] hover:text-[#6090C0] px-4 py-1.5 rounded-full text-sm font-black shadow-sm hover:shadow-md transition-all flex items-center gap-1 active:scale-95 group">
+                    Donate Now
+                    <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </Link>
             </div>
             <div className="flex-1 bg-white relative overflow-hidden" style={{ minHeight: '200px' }}>
                 <div ref={mapRef} className="w-full h-full absolute inset-0" />
