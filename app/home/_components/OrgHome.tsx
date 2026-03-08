@@ -1,6 +1,7 @@
 import React from 'react';
 import StatusManagement from './StatusManagement'
 import IncomingMatches from './IncomingMatches'
+import InventoryManagement from './InventoryManagement'
 
 interface Donation {
     id: string
@@ -46,12 +47,10 @@ const OrgHome = ({ orgId, donations }: Props) => {
                 {/* Inventory Needs */}
                 <div className="flex-[0.4] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
                     <div className="bg-[#FFD1B3] px-4 py-2 border-b-2 border-[#FFB27D]">
-                        <h2 className="text-black text-lg font-extrabold">Inventory Needs</h2>
+                        <h2 className="text-black text-lg font-extrabold">Inventory</h2>
                     </div>
-                    <div className="flex-1 bg-white p-4 flex flex-col gap-3">
-                        <div className="bg-[#FFEDE1] h-12 rounded-lg"></div>
-                        <div className="bg-[#FFEDE1] h-12 rounded-lg"></div>
-                        <div className="bg-[#FFEDE1] h-12 rounded-lg"></div>
+                    <div className="flex-1 bg-white p-4 overflow-hidden">
+                        <InventoryManagement orgId={orgId} />
                     </div>
                 </div>
 
