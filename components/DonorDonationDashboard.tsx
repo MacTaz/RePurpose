@@ -148,7 +148,7 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                         <span className="text-[9px] font-black uppercase tracking-[0.2em]">Partner Hub</span>
                                     </div>
                                     <p className="text-2xl font-black tracking-tight leading-tight">
-                                        {donation?.org_line1 || 'Primary Access Point'}
+                                        {donation?.org_line1 || 'Not Set'}
                                     </p>
                                     {donation?.org_line2 && (
                                         <p className="text-sm font-bold opacity-60 bg-white/10 px-4 py-2 rounded-xl inline-block">
@@ -161,11 +161,11 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                 <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
                                     <div>
                                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City Hub</p>
-                                        <p className="text-lg font-black">{donation?.org_city || 'Regional Center'}</p>
+                                        <p className="text-lg font-black">{donation?.org_city || 'Not Set'}</p>
                                     </div>
                                     <div>
                                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Territory</p>
-                                        <p className="text-lg font-black">{donation?.org_country || 'Default'}</p>
+                                        <p className="text-lg font-black">{donation?.org_country || 'Not Set'}</p>
                                     </div>
                                 </div>
 
