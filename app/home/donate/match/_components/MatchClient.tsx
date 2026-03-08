@@ -155,6 +155,15 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                 }
             }
 
+            // Auto-create a conversation tied to this donation
+            if (newDonation) {
+                await supabase.from('conversations').insert({
+                    donor_id: user.id,
+                    org_id: selectedOrg.id,
+                    donation_id: newDonation.id,
+                });
+            }
+
             setSuccess(true);
             setTimeout(() => {
                 router.push('/home/manage');
