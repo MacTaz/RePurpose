@@ -5,6 +5,7 @@ import { signout } from '@/lib/auth-actions'
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import NavigationProgressBar from '@/components/NavigationProgressBar'
 
 interface NavbarProps {
     role: 'donor' | 'organization'
@@ -188,6 +189,10 @@ const Navbar = ({ role, userId: initialUserId }: NavbarProps) => {
                     )}
                 </nav>
             )}
+            {/* Page transition progress bar */}
+            <NavigationProgressBar
+                color={normalizedRole === 'donor' ? '#93c5fd' : '#FFCF9E'}
+            />
         </div>
     )
 }

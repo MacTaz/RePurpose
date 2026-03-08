@@ -176,8 +176,8 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
 
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-10">
-                                <h3 className="text-2xl font-black lowercase tracking-tighter flex items-center gap-3">
-                                    Dispatch <span className="text-[#FF9248]">Address</span>
+                                <h3 className="text-2xl font-black tracking-tighter flex items-center gap-3">
+                                    Donor <span className="text-[#FF9248]">Address</span>
                                 </h3>
                                 <MapPin className="size-6 text-[#FF9248]" />
                             </div>
@@ -238,7 +238,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                             <MapPin className="size-5" />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pin Location</p>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pinned Donor Address</p>
                                             <p className="text-xs font-black text-[#5A2C10]">Verified Coordinates</p>
                                         </div>
                                     </div>

@@ -41,7 +41,7 @@ const DonationStatus = ({ donation, onClose }: any) => {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-black text-[#5A2C10] tracking-tight">
-                                Tracking <span className="text-[#FF9248]">Fulfillment</span>
+                                Tracking <span className="text-[#FF9248]">Donation</span>
                             </h1>
                             <div className="px-3 py-1 bg-[#FF9248]/10 text-[#FF9248] rounded-full text-[9px] font-black uppercase tracking-widest border border-[#FF9248]/20">
                                 {status.replace('_', ' ')}
@@ -180,8 +180,8 @@ const DonationStatus = ({ donation, onClose }: any) => {
                         <div className="absolute top-0 right-0 size-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-10">
-                                <h3 className="text-2xl font-black lowercase tracking-tighter flex items-center gap-3">
-                                    Collection <span className="text-[#FF9248]">Address</span>
+                                <h3 className="text-2xl font-black tracking-tighter flex items-center gap-3">
+                                    Donor <span className="text-[#FF9248]">Address</span>
                                 </h3>
                                 <MapPin className="size-6 text-[#FF9248]" />
                             </div>
@@ -233,7 +233,7 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                             <MapPin className="size-5" />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pin Location</p>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pinned Donor Address</p>
                                             <p className="text-xs font-black text-[#5A2C10]">Verified Coordinates</p>
                                         </div>
                                     </div>
