@@ -12,7 +12,6 @@ interface DonationThread {
     donationStatus: string;
     donationQuantity: number;
     lastMessage: string;
-    lastMessageId?: string;
     time: string;
     unread: number;
 }
@@ -20,7 +19,8 @@ interface DonationThread {
 interface OrgGroup {
     partnerId: string;
     partnerName: string;
-    partnerAvatar: string;
+    partnerAvatar: string;   // initials fallback
+    partnerAvatarUrl?: string | null;  // real photo URL
     facebookUrl?: string;
     threads: DonationThread[];
 }
@@ -174,10 +174,24 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                     .select('full_name, facebook_url')
                     .eq('id', partnerId)
                     .single()
+
+                // Fetch avatar from storage bucket
+                let partnerAvatarUrl: string | null = null
+                const { data: avatarFiles } = await supabase.storage
+                    .from('avatars')
+                    .list(partnerId, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } })
+                if (avatarFiles && avatarFiles.length > 0) {
+                    const { data: urlData } = supabase.storage
+                        .from('avatars')
+                        .getPublicUrl(`${partnerId}/${avatarFiles[0].name}`)
+                    partnerAvatarUrl = urlData.publicUrl
+                }
+
                 groupMap[partnerId] = {
                     partnerId,
                     partnerName: profile?.full_name || (isOrg ? 'Donor' : 'Organization'),
                     partnerAvatar: (profile?.full_name || '?').charAt(0).toUpperCase(),
+                    partnerAvatarUrl,
                     facebookUrl: profile?.facebook_url,
                     threads: [],
                 }
@@ -234,6 +248,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     // ── Fetch messages + realtime ─────────────────────────────────────────────
     useEffect(() => {
         if (!selectedConvoId) return
+        let cancelled = false  // stale-fetch guard
 
         const fetch = async () => {
             const { data, error } = await supabase
@@ -241,7 +256,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 .select('id, content, image_url, sender_id, created_at')
                 .eq('conversation_id', selectedConvoId)
                 .order('created_at', { ascending: true })
-            if (error || !data) return
+            if (cancelled || error || !data) return
+            // Only replace messages once the full result is ready — no blank flash
             setMessages(data.map((m: any) => ({
                 id: m.id, text: m.content, imageUrl: m.image_url,
                 sender: m.sender_id === userId ? 'user' : 'other',
@@ -269,7 +285,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
             })
             .subscribe()
         realtimeRef.current = channel
-        return () => { supabase.removeChannel(channel) }
+        return () => { cancelled = true; supabase.removeChannel(channel) }
     }, [selectedConvoId, userId])
 
     // ── Search orgs (donor only) ──────────────────────────────────────────────
@@ -327,7 +343,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         setSelectedConvoId(thread.conversationId)
         setSelectedThread(thread)
         setSelectedOrgGroup(group)
-        setMessages([])
+        // Don't clear messages here — let the fetch useEffect replace them
+        // once loaded to avoid a blank flash
     }
 
     // ── Send text ─────────────────────────────────────────────────────────────
@@ -454,8 +471,10 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                             ${isExpanded ? `${accentBg} shadow-sm` : 'hover:bg-slate-50'}`}
                                         onClick={() => setExpandedOrgId(isExpanded ? null : group.partnerId)}
                                     >
-                                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-2xl font-bold shadow-sm flex-shrink-0 text-slate-600">
-                                            {group.partnerAvatar}
+                                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-2xl font-bold shadow-sm flex-shrink-0 text-slate-600 overflow-hidden">
+                                            {group.partnerAvatarUrl
+                                                ? <img src={group.partnerAvatarUrl} alt={group.partnerName} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                                                : group.partnerAvatar}
                                         </div>
                                         <div className="flex-1 min-w-0 py-1">
                                             <div className="flex justify-between items-start mb-0.5">
@@ -584,8 +603,12 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 )}
                                 {messages.map(msg => (
                                     <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} gap-3 max-w-[75%] ${msg.sender === 'user' ? 'ml-auto' : ''}`}>
-                                        <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-sm font-bold ${msg.sender === 'user' ? `${accentColor} text-white shadow-sm` : 'bg-slate-200 text-slate-600'}`}>
-                                            {msg.sender === 'user' ? userDisplayName.charAt(0).toUpperCase() : selectedOrgGroup.partnerAvatar}
+                                        <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-sm font-bold overflow-hidden ${msg.sender === 'user' ? `${accentColor} text-white shadow-sm` : 'bg-slate-200 text-slate-600'}`}>
+                                            {msg.sender === 'user'
+                                                ? userDisplayName.charAt(0).toUpperCase()
+                                                : selectedOrgGroup.partnerAvatarUrl
+                                                    ? <img src={selectedOrgGroup.partnerAvatarUrl} alt={selectedOrgGroup.partnerName} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                                                    : selectedOrgGroup.partnerAvatar}
                                         </div>
                                         <div className="space-y-1">
                                             <div className={`rounded-2xl leading-relaxed text-sm overflow-hidden ${msg.sender === 'user' ? `${accentColor} text-white shadow-lg ${accentShadow} rounded-tr-none` : 'bg-white border border-slate-100 text-slate-800 shadow-sm rounded-tl-none'}`}>
