@@ -3,24 +3,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
-export interface Contact {
-    id: string;
-    partnerId: string;
-    name: string;
-    avatar: string;
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface DonationThread {
+    conversationId: string;
+    donationId: string | null;
+    donationType: string;
+    donationStatus: string;
+    donationQuantity: number;
     lastMessage: string;
     time: string;
     unread: number;
-    facebookUrl?: string;
-    donation?: {
-        id: string;
-        type: string;
-        status: string;
-        quantity: number;
-    };
 }
 
-export interface ChatMessage {
+interface OrgGroup {
+    partnerId: string;
+    partnerName: string;
+    partnerAvatar: string;
+    facebookUrl?: string;
+    threads: DonationThread[];
+}
+
+interface ChatMessage {
     id: string;
     text: string;
     imageUrl?: string | null;
@@ -39,473 +43,396 @@ interface InboxClientProps {
     userDisplayName: string;
 }
 
-// ── Confirmation Modal ────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const TYPE_ICONS: Record<string, string> = {
+    food: '🍱', clothes: '👕', clothing: '👕', water: '💧',
+    medicine: '💊', blanket: '🛏️', other: '📦',
+}
+const getIcon = (type: string) => {
+    const lower = (type || '').toLowerCase()
+    for (const [key, icon] of Object.entries(TYPE_ICONS)) {
+        if (lower.includes(key)) return icon
+    }
+    return '📦'
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bar: string; width: string }> = {
+    pending:     { label: 'Pending',     color: 'text-amber-600',  bar: 'bg-amber-400',  width: 'w-[10%]' },
+    accepted:    { label: 'Accepted',    color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3'   },
+    in_progress: { label: 'In Progress', color: 'text-blue-600',   bar: 'bg-blue-500',   width: 'w-2/3'   },
+    delivered:   { label: 'Delivered',   color: 'text-green-600',  bar: 'bg-green-500',  width: 'w-full'  },
+    rejected:    { label: 'Rejected',    color: 'text-red-500',    bar: 'bg-red-400',    width: 'w-0'     },
+}
+
+// ── Delete Modal ──────────────────────────────────────────────────────────────
+
 const DeleteModal = ({
-    contact,
-    deleting,
-    onConfirm,
-    onCancel,
-}: {
-    contact: Contact;
-    deleting: boolean;
-    onConfirm: () => void;
-    onCancel: () => void;
-}) => (
+    name, deleting, onConfirm, onCancel,
+}: { name: string; deleting: boolean; onConfirm: () => void; onCancel: () => void }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={onCancel}
-        />
-        {/* Modal */}
-        <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center text-3xl">
-                🗑️
-            </div>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+        <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center text-3xl">🗑️</div>
             <div className="text-center">
-                <h3 className="text-lg font-black text-slate-900 mb-1">Delete Conversation?</h3>
+                <h3 className="text-lg font-black text-slate-900 mb-1">Delete Thread?</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">
-                    This will permanently delete your conversation with{' '}
-                    <span className="font-bold text-slate-700">{contact.name}</span> and all messages within it. This cannot be undone.
+                    This will permanently delete the <span className="font-bold text-slate-700">{name}</span> thread and all its messages.
                 </p>
             </div>
             <div className="flex gap-3 w-full">
-                <button
-                    onClick={onCancel}
-                    disabled={deleting}
-                    className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
-                >
+                <button onClick={onCancel} disabled={deleting}
+                    className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50">
                     Cancel
                 </button>
-                <button
-                    onClick={onConfirm}
-                    disabled={deleting}
-                    className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                    {deleting ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Deleting...
-                        </>
-                    ) : (
-                        'Delete'
-                    )}
+                <button onClick={onConfirm} disabled={deleting}
+                    className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {deleting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Deleting...</> : 'Delete'}
                 </button>
             </div>
         </div>
     </div>
-);
+)
 
-// Main Component
+// ── Main Component ────────────────────────────────────────────────────────────
+
 const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
-    const supabase = createClient();
+    const supabase = createClient()
+    const isOrg = role === 'organization'
 
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [inputValue, setInputValue] = useState('');
-    const [sending, setSending] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // Grouped org data
+    const [orgGroups, setOrgGroups] = useState<OrgGroup[]>([])
+    const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null)
 
-    // Search
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<OrgResult[]>([]);
-    const [searching, setSearching] = useState(false);
-    const [showResults, setShowResults] = useState(false);
-    const searchRef = useRef<HTMLDivElement>(null);
+    // Active chat
+    const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null)
+    const [selectedThread, setSelectedThread] = useState<DonationThread | null>(null)
+    const [selectedOrgGroup, setSelectedOrgGroup] = useState<OrgGroup | null>(null)
+    const [messages, setMessages] = useState<ChatMessage[]>([])
+
+    // Input
+    const [inputValue, setInputValue] = useState('')
+    const [sending, setSending] = useState(false)
+    const [uploadingImage, setUploadingImage] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Search (donor only)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [searchResults, setSearchResults] = useState<OrgResult[]>([])
+    const [searching, setSearching] = useState(false)
+    const [showResults, setShowResults] = useState(false)
+    const searchRef = useRef<HTMLDivElement>(null)
 
     // Delete
-    const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
-    const [deleting, setDeleting] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ convoId: string; name: string } | null>(null)
+    const [deleting, setDeleting] = useState(false)
 
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const realtimeRef = useRef<any>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const realtimeRef = useRef<any>(null)
 
-    const isOrg = role === 'organization';
-    const selectedContact = contacts.find(c => c.id === selectedId);
+    const accentColor = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600'
+    const accentText  = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
+    const accentBg    = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
+    const accentShadow = isOrg ? 'shadow-[#FF9248]/20' : 'shadow-blue-200'
 
-    const accentColor = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600';
-    const accentText = isOrg ? 'text-[#FF9248]' : 'text-blue-700';
-    const accentBg = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]';
-    const accentRing = isOrg ? 'ring-[#FF9248]/10' : 'ring-blue-600/10';
-    const accentShadow = isOrg ? 'shadow-[#FF9248]/20' : 'shadow-blue-200';
+    // ── Auto scroll ───────────────────────────────────────────────────────────
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages])
 
-    // Close search dropdown on outside click
+    // ── Close search on outside click ─────────────────────────────────────────
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (searchRef.current && !searchRef.current.contains(e.target as Node))
-                setShowResults(false);
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
-
-    // Auto scroll
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    // Search orgs (donor only, debounced)
-    useEffect(() => {
-        if (isOrg || !searchQuery.trim()) {
-            setSearchResults([]);
-            setShowResults(false);
-            return;
+                setShowResults(false)
         }
-        const delay = setTimeout(async () => {
-            setSearching(true);
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, full_name')
-                .eq('role', 'organization')
-                .ilike('full_name', `%${searchQuery}%`)
-                .limit(6);
-            if (!error && data) { setSearchResults(data); setShowResults(true); }
-            setSearching(false);
-        }, 300);
-        return () => clearTimeout(delay);
-    }, [searchQuery, isOrg]);
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [])
 
-    // Start or open conversation
-    const handleStartConversation = async (org: OrgResult) => {
-        setShowResults(false);
-        setSearchQuery('');
-
-        const { data: existing } = await supabase
+    // ── Fetch & group conversations ───────────────────────────────────────────
+    const fetchConversations = async () => {
+        const { data: convos, error } = await supabase
             .from('conversations')
-            .select('id')
-            .eq('donor_id', userId)
-            .eq('org_id', org.id)
-            .single();
+            .select(`id, donor_id, org_id, donation_id, messages(content, image_url, created_at, sender_id)`)
+            .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
 
-        if (existing) {
-            handleSelectContact(existing.id);
-            if (!contacts.find(c => c.id === existing.id)) {
-                setContacts(prev => [{
-                    id: existing.id, partnerId: org.id,
-                    name: org.full_name, avatar: org.full_name.charAt(0).toUpperCase(),
-                    lastMessage: 'No messages yet', time: '', unread: 0,
-                    facebookUrl: (org as any).facebook_url // Cast if needed or fetch
-                }, ...prev]);
+        if (error || !convos) return
+
+        // Group by partner
+        const groupMap: Record<string, OrgGroup> = {}
+
+        await Promise.all(convos.map(async (convo: any) => {
+            const partnerId = isOrg ? convo.donor_id : convo.org_id
+            if (!partnerId) return
+
+            // Fetch partner profile if not cached
+            if (!groupMap[partnerId]) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name, facebook_url')
+                    .eq('id', partnerId)
+                    .single()
+                groupMap[partnerId] = {
+                    partnerId,
+                    partnerName: profile?.full_name || (isOrg ? 'Donor' : 'Organization'),
+                    partnerAvatar: (profile?.full_name || '?').charAt(0).toUpperCase(),
+                    facebookUrl: profile?.facebook_url,
+                    threads: [],
+                }
             }
-            return;
-        }
 
-        const { data: newConvo, error } = await supabase
-            .from('conversations')
-            .insert({ donor_id: userId, org_id: org.id })
-            .select('id')
-            .single();
+            // Fetch donation details
+            let donationType = 'Donation'
+            let donationStatus = 'pending'
+            let donationQuantity = 1
+            if (convo.donation_id) {
+                const { data: don } = await supabase
+                    .from('donations')
+                    .select('type, status, quantity')
+                    .eq('id', convo.donation_id)
+                    .single()
+                if (don) {
+                    donationType = don.type
+                    donationStatus = don.status
+                    donationQuantity = don.quantity || 1
+                }
+            }
 
-        if (error || !newConvo) { console.error('Failed to create conversation:', error); return; }
+            const msgs = convo.messages || []
+            const lastMsg = msgs.sort((a: any, b: any) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0]
 
-        const newContact: Contact = {
-            id: newConvo.id, partnerId: org.id,
-            name: org.full_name, avatar: org.full_name.charAt(0).toUpperCase(),
-            lastMessage: 'No messages yet', time: '', unread: 0,
-            facebookUrl: (org as any).facebook_url
-        };
-        setContacts(prev => [newContact, ...prev]);
-        handleSelectContact(newConvo.id);
-    };
+            const thread: DonationThread = {
+                conversationId: convo.id,
+                donationId: convo.donation_id,
+                donationType,
+                donationStatus,
+                donationQuantity,
+                lastMessage: lastMsg?.image_url ? '📷 Image' : (lastMsg?.content || 'No messages yet'),
+                time: lastMsg?.created_at
+                    ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
+                    : '',
+                unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
+            }
 
-    // Fetch conversations
+            groupMap[partnerId].threads.push(thread)
+        }))
+
+        // Sort threads within each group by most recent
+        Object.values(groupMap).forEach(g => {
+            g.threads.sort((a, b) => (b.time > a.time ? 1 : -1))
+        })
+
+        setOrgGroups(Object.values(groupMap))
+    }
+
+    useEffect(() => { fetchConversations() }, [userId, role])
+
+    // ── Fetch messages + realtime ─────────────────────────────────────────────
     useEffect(() => {
-        const fetchConversations = async () => {
-            const { data: convos, error } = await supabase
-                .from('conversations')
-                .select(`id, donor_id, org_id, donation_id, messages(content, created_at, sender_id)`)
-                .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
-                .order('created_at', { referencedTable: 'messages', ascending: false });
+        if (!selectedConvoId) return
 
-            if (error || !convos) return;
-
-            const contactList: Contact[] = await Promise.all(
-                convos.map(async (convo: any) => {
-                    const partnerId = isOrg ? convo.donor_id : convo.org_id;
-                    const { data: profile } = await supabase
-                        .from('profiles').select('full_name, facebook_url').eq('id', partnerId).single();
-                    const partnerName = profile?.full_name || (isOrg ? 'Donor' : 'Organization');
-                    const partnerFacebook = profile?.facebook_url;
-
-                    // Fetch donation details 
-                    let donationDetails = undefined;
-                    if (convo.donation_id) {
-                        const { data: don } = await supabase
-                            .from('donations')
-                            .select('id, type, status, quantity')
-                            .eq('id', convo.donation_id)
-                            .single();
-                        if (don) donationDetails = don;
-                    }
-
-                    const msgs = convo.messages || [];
-                    const lastMsg = msgs[0];
-                    return {
-                        id: convo.id, partnerId,
-                        name: partnerName, avatar: partnerName.charAt(0).toUpperCase(),
-                        lastMessage: lastMsg?.content || 'No messages yet',
-                        time: lastMsg?.created_at
-                            ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
-                            : '',
-                        unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
-                        donation: donationDetails,
-                        facebookUrl: partnerFacebook
-                    };
-                })
-            );
-            setContacts(contactList);
-        };
-        fetchConversations();
-    }, [userId, role]);
-
-    // Fetch messages + realtime
-    useEffect(() => {
-        if (!selectedId) return;
-
-        const fetchMessages = async () => {
+        const fetch = async () => {
             const { data, error } = await supabase
-                .from('messages').select('id, content, image_url, sender_id, created_at')
-                .eq('conversation_id', selectedId).order('created_at', { ascending: true });
-            if (error || !data) return;
+                .from('messages')
+                .select('id, content, image_url, sender_id, created_at')
+                .eq('conversation_id', selectedConvoId)
+                .order('created_at', { ascending: true })
+            if (error || !data) return
             setMessages(data.map((m: any) => ({
-                id: m.id, text: m.content,
-                imageUrl: m.image_url,
+                id: m.id, text: m.content, imageUrl: m.image_url,
                 sender: m.sender_id === userId ? 'user' : 'other',
                 time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
-            })));
-        };
-        fetchMessages();
+            })))
+        }
+        fetch()
 
-        if (realtimeRef.current) supabase.removeChannel(realtimeRef.current);
+        if (realtimeRef.current) supabase.removeChannel(realtimeRef.current)
         const channel = supabase
-            .channel(`messages:${selectedId}`)
+            .channel(`messages:${selectedConvoId}`)
             .on('postgres_changes', {
                 event: 'INSERT', schema: 'public', table: 'messages',
-                filter: `conversation_id=eq.${selectedId}`,
+                filter: `conversation_id=eq.${selectedConvoId}`,
             }, (payload: any) => {
-                const m = payload.new;
+                const m = payload.new
                 setMessages(prev => {
-                    if (prev.find(x => x.id === m.id)) return prev;
+                    if (prev.find(x => x.id === m.id)) return prev
                     return [...prev, {
-                        id: m.id, text: m.content,
-                        imageUrl: m.image_url,
+                        id: m.id, text: m.content, imageUrl: m.image_url,
                         sender: m.sender_id === userId ? 'user' : 'other',
                         time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
-                    }];
-                });
+                    }]
+                })
             })
-            .subscribe();
-        realtimeRef.current = channel;
-        return () => { supabase.removeChannel(channel); };
-    }, [selectedId, userId]);
+            .subscribe()
+        realtimeRef.current = channel
+        return () => { supabase.removeChannel(channel) }
+    }, [selectedConvoId, userId])
 
-    // Send message
-    const handleSendMessage = async (text: string) => {
-        if (!text.trim() || !selectedId || sending) return;
-        setSending(true);
-        const { error } = await supabase.from('messages')
-            .insert({ conversation_id: selectedId, sender_id: userId, content: text.trim() });
-        if (error) console.error('Failed to send:', error);
-        setSending(false);
-        setInputValue('');
-    };
-
-    // Upload + send image
-    const handleSendImage = async (file: File) => {
-        if (!selectedId || uploadingImage) return;
-        setUploadingImage(true);
-
-        const ext = file.name.split('.').pop();
-        const fileName = `${selectedId}/${Date.now()}.${ext}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('chat-images')
-            .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
-        if (uploadError) {
-            console.error('Upload failed:', uploadError);
-            setUploadingImage(false);
-            return;
+    // ── Search orgs (donor only) ──────────────────────────────────────────────
+    useEffect(() => {
+        if (isOrg || !searchQuery.trim()) {
+            setSearchResults([]); setShowResults(false); return
         }
+        const delay = setTimeout(async () => {
+            setSearching(true)
+            const { data } = await supabase.from('profiles').select('id, full_name')
+                .eq('role', 'organization').ilike('full_name', `%${searchQuery}%`).limit(6)
+            if (data) { setSearchResults(data); setShowResults(true) }
+            setSearching(false)
+        }, 300)
+        return () => clearTimeout(delay)
+    }, [searchQuery, isOrg])
 
-        const { data: urlData } = supabase.storage
-            .from('chat-images')
-            .getPublicUrl(fileName);
-
-        const imageUrl = urlData.publicUrl;
-
-        const { error } = await supabase.from('messages')
-            .insert({ conversation_id: selectedId, sender_id: userId, content: '', image_url: imageUrl });
-
-        if (error) console.error('Failed to send image message:', error);
-        setUploadingImage(false);
-    };
-
-    // Select conversation
-    const handleSelectContact = (contactId: string) => {
-        setSelectedId(contactId);
-        setMessages([]);
-        setContacts(prev => prev.map(c => c.id === contactId ? { ...c, unread: 0 } : c));
-    };
-
-    const handleDeleteConfirmed = async () => {
-        if (!deleteTarget) return;
-        setDeleting(true);
-
-        const { error } = await supabase
+    // ── Start new conversation (donor searching org manually) ─────────────────
+    const handleStartConversation = async (org: OrgResult) => {
+        setShowResults(false); setSearchQuery('')
+        // Create a new standalone conversation with no donation_id
+        const { data: newConvo, error } = await supabase
             .from('conversations')
-            .delete()
-            .eq('id', deleteTarget.id);
+            .insert({ donor_id: userId, org_id: org.id, donation_id: null })
+            .select('id').single()
+        if (error || !newConvo) { console.error(error); return }
 
-        if (error) {
-            console.error('Failed to delete conversation:', error);
-            setDeleting(false);
-            return;
+        const thread: DonationThread = {
+            conversationId: newConvo.id, donationId: null,
+            donationType: 'General', donationStatus: 'pending',
+            donationQuantity: 0, lastMessage: 'No messages yet', time: '', unread: 0,
         }
+        setOrgGroups(prev => {
+            const existing = prev.find(g => g.partnerId === org.id)
+            if (existing) {
+                return prev.map(g => g.partnerId === org.id
+                    ? { ...g, threads: [thread, ...g.threads] } : g)
+            }
+            return [{
+                partnerId: org.id,
+                partnerName: org.full_name,
+                partnerAvatar: org.full_name.charAt(0).toUpperCase(),
+                threads: [thread],
+            }, ...prev]
+        })
+        setExpandedOrgId(org.id)
+        openThread(thread, {
+            partnerId: org.id, partnerName: org.full_name,
+            partnerAvatar: org.full_name.charAt(0).toUpperCase(), threads: [thread],
+        })
+    }
 
-        // Remove from UI
-        setContacts(prev => prev.filter(c => c.id !== deleteTarget.id));
-        if (selectedId === deleteTarget.id) {
-            setSelectedId(null);
-            setMessages([]);
+    // ── Open a thread ─────────────────────────────────────────────────────────
+    const openThread = (thread: DonationThread, group: OrgGroup) => {
+        setSelectedConvoId(thread.conversationId)
+        setSelectedThread(thread)
+        setSelectedOrgGroup(group)
+        setMessages([])
+    }
+
+    // ── Send text ─────────────────────────────────────────────────────────────
+    const handleSendMessage = async (text: string) => {
+        if (!text.trim() || !selectedConvoId || sending) return
+        setSending(true)
+        await supabase.from('messages')
+            .insert({ conversation_id: selectedConvoId, sender_id: userId, content: text.trim() })
+        setSending(false)
+        setInputValue('')
+    }
+
+    // ── Send image ────────────────────────────────────────────────────────────
+    const handleSendImage = async (file: File) => {
+        if (!selectedConvoId || uploadingImage) return
+        setUploadingImage(true)
+        const ext = file.name.split('.').pop()
+        const fileName = `${selectedConvoId}/${Date.now()}.${ext}`
+        const { error: uploadError } = await supabase.storage
+            .from('chat-images').upload(fileName, file, { cacheControl: '3600', upsert: false })
+        if (uploadError) { console.error(uploadError); setUploadingImage(false); return }
+        const { data: urlData } = supabase.storage.from('chat-images').getPublicUrl(fileName)
+        await supabase.from('messages').insert({
+            conversation_id: selectedConvoId, sender_id: userId,
+            content: '', image_url: urlData.publicUrl,
+        })
+        setUploadingImage(false)
+    }
+
+    // ── Delete thread ─────────────────────────────────────────────────────────
+    const handleDeleteConfirmed = async () => {
+        if (!deleteTarget) return
+        setDeleting(true)
+        const { error } = await supabase.from('conversations').delete().eq('id', deleteTarget.convoId)
+        if (!error) {
+            if (selectedConvoId === deleteTarget.convoId) {
+                setSelectedConvoId(null); setSelectedThread(null); setMessages([])
+            }
+            setOrgGroups(prev => prev.map(g => ({
+                ...g, threads: g.threads.filter(t => t.conversationId !== deleteTarget.convoId)
+            })).filter(g => g.threads.length > 0))
         }
-        setDeleteTarget(null);
-        setDeleting(false);
-    };
+        setDeleteTarget(null); setDeleting(false)
+    }
+
+    // ── Filtered org groups for org-side search ───────────────────────────────
+    const filteredGroups = isOrg && searchQuery.trim()
+        ? orgGroups.filter(g => g.partnerName.toLowerCase().includes(searchQuery.toLowerCase()))
+        : orgGroups
 
     return (
         <>
-            {/* Delete confirmation modal */}
             {deleteTarget && (
                 <DeleteModal
-                    contact={deleteTarget}
-                    deleting={deleting}
+                    name={deleteTarget.name} deleting={deleting}
                     onConfirm={handleDeleteConfirmed}
                     onCancel={() => !deleting && setDeleteTarget(null)}
                 />
             )}
 
             <div className="flex-1 flex overflow-hidden bg-[#F8F9FB] font-['Inter']">
-                {/* LEFT: Contact Stack */}
+                {/* ── LEFT: Grouped contact list ── */}
                 <div className="w-[380px] border-r border-slate-200 flex flex-col bg-white">
-                    <div className="p-6 border-b border-slate-100 bg-white">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Messages</h2>
-                        </div>
+                    <div className="p-6 border-b border-slate-100">
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">Messages</h2>
 
+                        {/* Search */}
                         <div className="relative" ref={searchRef}>
                             <div className="relative">
-                                <input
-                                    type="text"
-                                    value={searchQuery}
+                                <input type="text" value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     onFocus={() => searchResults.length > 0 && setShowResults(true)}
                                     placeholder={isOrg ? 'Search conversations...' : 'Search organizations to message...'}
-                                    className="w-full bg-slate-100 border-none rounded-xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-slate-200 transition-all outline-none"
+                                    className="w-full bg-slate-100 border-none rounded-xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-slate-200 outline-none"
                                 />
                                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                {searching && (
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                                    </div>
-                                )}
+                                {searching && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />}
                             </div>
 
+                            {/* Org search dropdown (donor only) */}
                             {!isOrg && showResults && (
                                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
-                                    {searchResults.length === 0 ? (
-                                        <div className="px-5 py-4 text-sm text-slate-400 text-center">No organizations found</div>
-                                    ) : (
-                                        <>
-                                            <div className="px-4 py-2 border-b border-slate-50">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Organizations</p>
-                                            </div>
-                                            {searchResults.map(org => (
-                                                <button key={org.id} onClick={() => handleStartConversation(org)}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left">
-                                                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
-                                                        {org.full_name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-slate-800">{org.full_name}</p>
-                                                        <p className="text-xs text-slate-400">Organization · Click to message</p>
-                                                    </div>
-                                                    <svg className="ml-auto text-slate-300" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                                        <path d="M9 18l6-6-6-6" />
-                                                    </svg>
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
+                                    {searchResults.length === 0
+                                        ? <div className="px-5 py-4 text-sm text-slate-400 text-center">No organizations found</div>
+                                        : searchResults.map(org => (
+                                            <button key={org.id} onClick={() => handleStartConversation(org)}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left">
+                                                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
+                                                    {org.full_name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-800">{org.full_name}</p>
+                                                    <p className="text-xs text-slate-400">Organization · Click to message</p>
+                                                </div>
+                                            </button>
+                                        ))}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Conversations list */}
+                    {/* Org group cards */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                        {contacts.length > 0 ? (
-                            contacts.map(contact => (
-                                <div
-                                    key={contact.id}
-                                    className={`relative group w-full p-4 rounded-2xl transition-all duration-200 flex gap-4 cursor-pointer hover:shadow-md ${selectedId === contact.id ? `${accentBg} shadow-sm` : 'hover:bg-slate-50'}`}
-                                    onClick={() => handleSelectContact(contact.id)}
-                                >
-                                    <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-2xl font-bold shadow-sm group-hover:scale-105 transition-transform duration-200 text-slate-600 flex-shrink-0">
-                                        {contact.avatar}
-                                    </div>
-                                    <div className="flex-1 min-w-0 py-1">
-                                        <div className="flex justify-between items-start mb-0.5">
-                                            <h3 className={`font-bold truncate ${selectedId === contact.id ? accentText : 'text-slate-900'}`}>
-                                                {contact.name}
-                                            </h3>
-                                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">{contact.time}</span>
-                                        </div>
-                                        <p className={`text-sm truncate ${contact.unread > 0 ? 'text-slate-900 font-semibold' : 'text-slate-500 font-light'}`}>
-                                            {contact.lastMessage}
-                                        </p>
-                                        {/* Mini Progress Indicator */}
-                                        {contact.donation && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden max-w-[80px]">
-                                                    <div
-                                                        className={`h-full transition-all duration-700 ${contact.donation.status === 'delivered' ? 'w-full bg-green-500' :
-                                                            contact.donation.status === 'in_progress' ? 'w-2/3 bg-blue-500' :
-                                                                contact.donation.status === 'accepted' ? 'w-1/3 bg-orange-400' : 'w-[10%] bg-slate-300'
-                                                            }`}
-                                                    />
-                                                </div>
-                                                <span className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">
-                                                    {contact.donation.status.replace('_', ' ')}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {contact.unread > 0 && (
-                                        <div className="flex items-center">
-                                            <div className={`w-5 h-5 rounded-full ${accentColor} text-white text-[10px] flex items-center justify-center font-bold ring-4 ${accentRing}`}>
-                                                {contact.unread}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Delete button — appears on hover */}
-                                    <button
-                                        onClick={e => { e.stopPropagation(); setDeleteTarget(contact); }}
-                                        className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center"
-                                        title="Delete conversation"
-                                    >
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
+                        {filteredGroups.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-slate-400 px-6 py-12 text-center">
                                 <div className="text-4xl mb-3 opacity-40">📭</div>
                                 <p className="text-sm">No conversations yet.</p>
@@ -513,66 +440,130 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                     {isOrg ? 'Donors will appear here when they message you.' : 'Search for an organization above to start chatting.'}
                                 </p>
                             </div>
-                        )}
+                        ) : filteredGroups.map(group => {
+                            const isExpanded = expandedOrgId === group.partnerId
+                            const totalUnread = group.threads.reduce((s, t) => s + t.unread, 0)
+                            const latestThread = group.threads[0]
+
+                            return (
+                                <div key={group.partnerId}>
+                                    {/* Org card */}
+                                    <div
+                                        className={`relative group w-full p-4 rounded-2xl transition-all duration-200 flex gap-4 cursor-pointer hover:shadow-md
+                                            ${isExpanded ? `${accentBg} shadow-sm` : 'hover:bg-slate-50'}`}
+                                        onClick={() => setExpandedOrgId(isExpanded ? null : group.partnerId)}
+                                    >
+                                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-2xl font-bold shadow-sm flex-shrink-0 text-slate-600">
+                                            {group.partnerAvatar}
+                                        </div>
+                                        <div className="flex-1 min-w-0 py-1">
+                                            <div className="flex justify-between items-start mb-0.5">
+                                                <h3 className={`font-bold truncate ${isExpanded ? accentText : 'text-slate-900'}`}>
+                                                    {group.partnerName}
+                                                </h3>
+                                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                    <span className="text-[11px] font-medium text-slate-400">{latestThread?.time}</span>
+                                                    <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                                        fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                                        <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-slate-500 font-light truncate">
+                                                {group.threads.length} donation thread{group.threads.length !== 1 ? 's' : ''}
+                                                {latestThread ? ` · ${latestThread.lastMessage}` : ''}
+                                            </p>
+                                        </div>
+                                        {totalUnread > 0 && (
+                                            <div className={`absolute top-3 right-3 w-5 h-5 rounded-full ${accentColor} text-white text-[10px] flex items-center justify-center font-bold`}>
+                                                {totalUnread}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Accordion: donation threads */}
+                                    {isExpanded && (
+                                        <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-100 pl-3">
+                                            {group.threads.map(thread => {
+                                                const status = STATUS_CONFIG[thread.donationStatus] || STATUS_CONFIG.pending
+                                                const isActive = selectedConvoId === thread.conversationId
+                                                return (
+                                                    <div key={thread.conversationId}
+                                                        className={`relative group/thread flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150
+                                                            ${isActive ? `${accentBg} shadow-sm` : 'hover:bg-slate-50'}`}
+                                                        onClick={() => openThread(thread, group)}
+                                                    >
+                                                        <span className="text-xl flex-shrink-0">{getIcon(thread.donationType)}</span>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-1">
+                                                                <p className={`text-sm font-bold capitalize truncate ${isActive ? accentText : 'text-slate-800'}`}>
+                                                                    {thread.donationType}
+                                                                    <span className="text-slate-400 font-normal ml-1">×{thread.donationQuantity}</span>
+                                                                </p>
+                                                                <span className="text-[10px] text-slate-400 flex-shrink-0">{thread.time}</span>
+                                                            </div>
+                                                            {/* Status bar */}
+                                                            <div className="flex items-center gap-2 mt-1.5">
+                                                                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className={`h-full rounded-full transition-all duration-500 ${status.bar} ${status.width}`} />
+                                                                </div>
+                                                                <span className={`text-[9px] font-black uppercase tracking-wide flex-shrink-0 ${status.color}`}>
+                                                                    {status.label}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-xs text-slate-400 truncate mt-0.5">{thread.lastMessage}</p>
+                                                        </div>
+                                                        {/* Delete thread button */}
+                                                        <button
+                                                            onClick={e => {
+                                                                e.stopPropagation()
+                                                                setDeleteTarget({ convoId: thread.conversationId, name: thread.donationType })
+                                                            }}
+                                                            className="w-6 h-6 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors opacity-0 group-hover/thread:opacity-100 flex items-center justify-center flex-shrink-0"
+                                                        >
+                                                            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
 
-                {/* RIGHT: Conversation View */}
+                {/* ── RIGHT: Chat view ── */}
                 <div className="flex-1 flex flex-col bg-white">
-                    {selectedContact ? (
+                    {selectedConvoId && selectedThread && selectedOrgGroup ? (
                         <>
+                            {/* Chat header */}
                             <div className="h-20 px-8 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-600">
-                                        {selectedContact.avatar}
+                                        {getIcon(selectedThread.donationType)}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-slate-900 leading-none">{selectedContact.name}</h3>
-                                        <div className="flex items-center gap-3 mt-1.5">
-                                            <span className="text-xs text-green-500 font-medium flex items-center gap-1">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                                Online
-                                            </span>
-                                            {selectedContact.facebookUrl && (
-                                                <>
-                                                    <div className="h-1 w-1 rounded-full bg-slate-300" />
-                                                    <a
-                                                        href={selectedContact.facebookUrl.startsWith('http') ? selectedContact.facebookUrl : `https://${selectedContact.facebookUrl}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 underline flex items-center gap-1"
-                                                    >
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796V23.927C19.612 23.027 24 18.062 24 12.073z" /></svg>
-                                                        Facebook
-                                                    </a>
-                                                </>
-                                            )}
-                                            {selectedContact.donation && (
-                                                <>
-                                                    <div className="h-3 w-[1px] bg-slate-200" />
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#5A2C10]/40">Donation Progress:</span>
-                                                        <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full transition-all duration-700 ${selectedContact.donation.status === 'delivered' ? 'w-full bg-green-500' :
-                                                                    selectedContact.donation.status === 'in_progress' ? 'w-2/3 bg-blue-500' :
-                                                                        selectedContact.donation.status === 'accepted' ? 'w-1/3 bg-orange-400' : 'w-[10%] bg-slate-300'
-                                                                    }`}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider px-2 py-0.5 bg-slate-50 rounded-md border border-slate-100">
-                                                            {selectedContact.donation.status.replace('_', ' ')}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
+                                        <h3 className="font-bold text-slate-900 leading-none capitalize">
+                                            {selectedThread.donationType}
+                                            <span className="text-slate-400 font-normal ml-1.5 text-sm">×{selectedThread.donationQuantity}</span>
+                                        </h3>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-xs text-slate-500 font-medium">{selectedOrgGroup.partnerName}</span>
+                                            <span className="text-slate-300">·</span>
+                                            {(() => {
+                                                const s = STATUS_CONFIG[selectedThread.donationStatus] || STATUS_CONFIG.pending
+                                                return <span className={`text-[10px] font-black uppercase tracking-widest ${s.color}`}>{s.label}</span>
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
-                                {/* Delete button in chat header */}
                                 <button
-                                    onClick={() => setDeleteTarget(selectedContact)}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors text-sm font-semibold"
+                                    onClick={() => setDeleteTarget({ convoId: selectedConvoId, name: selectedThread.donationType })}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold"
                                 >
                                     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -581,6 +572,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 </button>
                             </div>
 
+                            {/* Messages */}
                             <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-[#FBFCFE] custom-scrollbar">
                                 {messages.length === 0 && (
                                     <div className="flex justify-center">
@@ -592,15 +584,13 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 {messages.map(msg => (
                                     <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} gap-3 max-w-[75%] ${msg.sender === 'user' ? 'ml-auto' : ''}`}>
                                         <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-sm font-bold ${msg.sender === 'user' ? `${accentColor} text-white shadow-sm` : 'bg-slate-200 text-slate-600'}`}>
-                                            {msg.sender === 'user' ? userDisplayName.charAt(0).toUpperCase() : selectedContact.avatar}
+                                            {msg.sender === 'user' ? userDisplayName.charAt(0).toUpperCase() : selectedOrgGroup.partnerAvatar}
                                         </div>
                                         <div className="space-y-1">
                                             <div className={`rounded-2xl leading-relaxed text-sm overflow-hidden ${msg.sender === 'user' ? `${accentColor} text-white shadow-lg ${accentShadow} rounded-tr-none` : 'bg-white border border-slate-100 text-slate-800 shadow-sm rounded-tl-none'}`}>
                                                 {msg.imageUrl ? (
                                                     <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer">
-                                                        <img
-                                                            src={msg.imageUrl}
-                                                            alt="Shared image"
+                                                        <img src={msg.imageUrl} alt="Shared image"
                                                             className="max-w-[280px] max-h-[320px] w-full object-cover rounded-2xl cursor-pointer hover:opacity-90 transition-opacity"
                                                             onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
                                                         />
@@ -618,52 +608,29 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 <div ref={messagesEndRef} />
                             </div>
 
+                            {/* Input */}
                             <div className="p-6 bg-white border-t border-slate-100">
                                 <div className="bg-slate-50 rounded-2xl p-2 flex items-end gap-2 border border-slate-100 focus-within:ring-2 focus-within:ring-slate-200 transition-all">
-                                    {/* Hidden file input */}
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={e => {
-                                            const file = e.target.files?.[0];
-                                            if (file) handleSendImage(file);
-                                            e.target.value = '';
-                                        }}
+                                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                                        onChange={e => { const f = e.target.files?.[0]; if (f) handleSendImage(f); e.target.value = '' }}
                                     />
-                                    {/* Image upload button */}
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
+                                    <button onClick={() => fileInputRef.current?.click()}
                                         disabled={uploadingImage || sending}
-                                        className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                        className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-40 flex-shrink-0"
                                         title="Send image"
                                     >
-                                        {uploadingImage ? (
-                                            <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                                <path d="M21 15l-5-5L5 21"/>
-                                            </svg>
-                                        )}
+                                        {uploadingImage
+                                            ? <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                                            : <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                                        }
                                     </button>
-                                    <textarea
-                                        value={inputValue}
-                                        onChange={e => setInputValue(e.target.value)}
+                                    <textarea value={inputValue} onChange={e => setInputValue(e.target.value)}
                                         placeholder="Type your message..."
                                         className="flex-1 bg-transparent border-none outline-none py-3 px-2 resize-none text-sm max-h-32 min-h-[44px]"
                                         rows={1}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                handleSendMessage(inputValue);
-                                            }
-                                        }}
+                                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(inputValue) } }}
                                     />
-                                    <button
-                                        onClick={() => handleSendMessage(inputValue)}
+                                    <button onClick={() => handleSendMessage(inputValue)}
                                         disabled={sending || uploadingImage || !inputValue.trim()}
                                         className={`p-3 ${accentColor} text-white rounded-xl hover:opacity-90 transition-all shadow-lg ${accentShadow} disabled:opacity-40 disabled:cursor-not-allowed`}
                                     >
@@ -680,7 +647,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-4xl mb-6 grayscale opacity-50">📬</div>
                             <h3 className="text-xl font-bold text-slate-900 mb-2">Your Inbox</h3>
                             <p className="max-w-xs text-slate-500 font-light">
-                                {isOrg ? 'Select a conversation to start chatting.' : 'Search for an organization above or select an existing conversation.'}
+                                {isOrg ? 'Select a conversation to start chatting.' : 'Click an organization to see your donation threads.'}
                             </p>
                         </div>
                     )}
@@ -694,7 +661,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 `}</style>
             </div>
         </>
-    );
-};
+    )
+}
 
-export default InboxClient;
+export default InboxClient
