@@ -49,92 +49,117 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
         .getPublicUrl(`${donation.donor_id}/donation-${donation.id}/picture.jpg`).data.publicUrl;
 
     return (
-        <div className="w-full max-w-[1500px] mx-auto flex flex-col gap-8 animate-in fade-in duration-500 pb-12">
-            {/* Header / Profile Style Bar */}
-            <div className="bg-white rounded-[40px] p-8 lg:p-10 shadow-sm border-2 border-[#FFB27D] flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 animate-in fade-in duration-700 pb-20 px-4 md:px-0">
+            {/* Contextual Top Bar */}
+            <div className="flex items-center justify-between bg-white/40 backdrop-blur-xl border border-white/60 p-6 rounded-[2.5rem] shadow-2xl shadow-[#5A2C10]/5">
                 <div className="flex items-center gap-6">
                     <button
                         onClick={onClose}
-                        className="size-12 bg-[#5A2C10] rounded-2xl flex items-center justify-center text-white hover:bg-black transition-colors shrink-0"
+                        className="group size-14 bg-white border-2 border-[#5A2C10]/10 rounded-2xl flex items-center justify-center text-[#5A2C10] hover:bg-[#5A2C10] hover:text-white transition-all shadow-sm active:scale-95"
                     >
-                        <X className="size-6" />
+                        <X className="size-6 group-hover:rotate-90 transition-transform duration-300" />
                     </button>
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-3xl lg:text-4xl font-black text-[#5A2C10] tracking-tight lowercase">
-                                {donation.donor_name}'s <span className="text-[#FF9248]">donation</span>
+                            <h1 className="text-3xl font-black text-[#5A2C10] tracking-tight">
+                                Manage <span className="text-[#FF9248]">Donation</span>
                             </h1>
-                            <span className="px-4 py-1.5 bg-[#FF9248]/10 text-[#FF9248] rounded-full text-[10px] font-black uppercase tracking-widest">Awaiting Verification</span>
+                            <div className="px-3 py-1 bg-green-500/10 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-green-500/20">
+                                {donation.status || 'Active'}
+                            </div>
                         </div>
-                        <p className="text-[#5A2C10]/50 font-bold text-sm mt-1 uppercase tracking-tighter">Request ID: #{String(donation.id).slice(0, 8)}</p>
+                        <p className="text-[#5A2C10]/40 font-bold text-xs mt-0.5 tracking-widest uppercase">ID: {String(donation.id).padStart(6, '0')}</p>
                     </div>
                 </div>
 
-                <div className="flex gap-4 w-full md:w-auto">
-                    <button
-                        disabled={loading}
-                        onClick={() => handleAction(acceptDonation)}
-                        className="flex-1 md:flex-none px-10 py-5 bg-[#22C55E] text-white rounded-3xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-widest border-4 border-white/20"
-                    >
-                        {loading ? 'Processing...' : 'Accept Donation'}
-                    </button>
+                <div className="flex items-center gap-4">
                     <button
                         disabled={loading}
                         onClick={() => handleAction(rejectDonation)}
-                        className="flex-1 md:flex-none px-10 py-5 bg-white text-red-500 border-2 border-red-100 rounded-3xl font-black shadow-md hover:bg-red-50 transition-all text-sm uppercase tracking-widest"
+                        className="px-8 py-4 bg-white text-red-500 border-2 border-red-50 rounded-2xl font-black shadow-sm hover:bg-red-50 active:scale-95 transition-all text-xs uppercase tracking-widest"
                     >
-                        Reject
+                        Decline
+                    </button>
+                    <button
+                        disabled={loading}
+                        onClick={() => handleAction(acceptDonation)}
+                        className="px-10 py-4 bg-[#5A2C10] text-white rounded-2xl font-black shadow-xl shadow-[#5A2C10]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-2 group"
+                    >
+                        {loading ? 'Processing...' : 'Accept Donation'}
+                        <CheckCircle2 className="size-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
             </div>
 
-            {/* Content Grid */}
-            <div className="grid lg:grid-cols-3 gap-8 items-stretch">
-                {/* Left Panel: Item & Narrative */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white rounded-[40px] p-8 lg:p-12 shadow-sm border-2 border-[#FFB27D] flex flex-col h-full">
-                        <h2 className="text-lg font-black text-[#5A2C10] mb-10 flex items-center gap-3 uppercase tracking-tighter opacity-40">
-                            <Package className="size-5" /> Donation Details
-                        </h2>
-
-                        <div className="flex flex-col xl:flex-row gap-12 flex-1">
-                            {/* Prominent Photo Area */}
-                            <div className="w-full xl:w-[45%] aspect-square xl:aspect-auto rounded-[3.5rem] overflow-hidden bg-gray-50 border-2 border-[#FFB27D]/20 relative shadow-inner">
-                                <img
-                                    src={imageUrl}
-                                    alt="Donation preview"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1559416525-4c6e9cc05a66?auto=format&fit=crop&q=80&w=1000";
-                                    }}
-                                />
+            <div className="grid lg:grid-cols-12 gap-8 items-start">
+                {/* Visual Content Column */}
+                <div className="lg:col-span-8 space-y-8">
+                    {/* Main Card */}
+                    <div className="bg-white rounded-[3.5rem] p-4 lg:p-6 shadow-2xl shadow-[#5A2C10]/10 border border-[#5A2C10]/5 overflow-hidden">
+                        <div className="flex flex-col xl:flex-row gap-8">
+                            {/* Cinematic Image Frame */}
+                            <div className="w-full xl:w-[55%] relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-br from-[#FF9248] to-[#5A2C10] rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+                                <div className="relative aspect-[4/5] rounded-[3rem] overflow-hidden bg-gray-100 shadow-2xl border-4 border-white">
+                                    <img
+                                        src={imageUrl}
+                                        alt="Donation preview"
+                                        className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1559416525-4c6e9cc05a66?auto=format&fit=crop&q=80&w=1000";
+                                        }}
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white text-xs font-black uppercase tracking-widest">
+                                                {donation.type}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="flex-1 flex flex-col justify-center space-y-10">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="bg-[#FFEDE1] p-6 rounded-[2.5rem] border-2 border-[#FFB27D]/30 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-20 h-20 bg-[#FFB27D]/5 rotate-45 translate-x-10 -translate-y-10"></div>
-                                        <p className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest mb-1">Total Quantity</p>
-                                        <p className="text-3xl font-black text-[#5A2C10] leading-none">{donation.quantity} units</p>
+                            {/* Narrative and Stats */}
+                            <div className="flex-1 flex flex-col p-4">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="size-10 bg-[#FF9248]/10 rounded-xl flex items-center justify-center text-[#FF9248]">
+                                        <Info className="size-5" />
                                     </div>
-                                    <div className="bg-[#FFEDE1] p-6 rounded-[2.5rem] border-2 border-[#FFB27D]/30 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 w-20 h-20 bg-[#FFB27D]/5 rotate-45 translate-x-10 -translate-y-10"></div>
-                                        <p className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest mb-1">Item Category</p>
-                                        <p className="text-xl font-black text-[#5A2C10] lowercase italic">{donation.type}</p>
+                                    <h3 className="text-xl font-black text-[#5A2C10] lowercase">Item Description</h3>
+                                </div>
+
+                                <div className="relative mb-10 overflow-hidden">
+                                    <div className="absolute top-0 left-0 text-6xl font-serif text-[#FF9248]/10 select-none">"</div>
+                                    <p className="relative z-10 text-2xl lg:text-3xl font-bold text-[#5A2C10] leading-relaxed italic px-6 py-4">
+                                        {donation.description || "No specific details provided."}
+                                    </p>
+                                    <div className="absolute bottom-0 right-0 text-6xl font-serif text-[#FF9248]/10 select-none translate-y-4">"</div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mt-auto">
+                                    <div className="bg-[#5A2C10]/5 p-6 rounded-3xl border border-[#5A2C10]/5 transition-colors hover:bg-[#5A2C10]/10">
+                                        <p className="text-[9px] font-black text-[#5A2C10]/40 uppercase tracking-[0.2em] mb-2">Quantity</p>
+                                        <p className="text-3xl font-black text-[#5A2C10]">{donation.quantity} <span className="text-xs opacity-50 font-bold uppercase ml-1">Units</span></p>
+                                    </div>
+                                    <div className="bg-[#FF9248]/5 p-6 rounded-3xl border border-[#FF9248]/5 transition-colors hover:bg-[#FF9248]/10">
+                                        <p className="text-[9px] font-black text-[#5A2C10]/40 uppercase tracking-[0.2em] mb-2">Category</p>
+                                        <p className="text-xl font-black text-[#5A2C10] uppercase tracking-tighter">{donation.type}</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-2 text-[10px] font-black text-[#5A2C10]/30 uppercase tracking-widest ml-1">
-                                        <span className="px-5 py-2.5 bg-[#5A2C10] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg italic mr-4">
-                                            {donation.type}
-                                        </span>
-                                        <Info className="size-3" /> User Narrative
+                                <div className="mt-8 pt-8 border-t border-gray-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                            <div className="size-2 bg-blue-600 rounded-full animate-pulse" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sent By</p>
+                                            <p className="font-black text-[#5A2C10]">{donation.donor_name}</p>
+                                        </div>
                                     </div>
-                                    <div className="bg-gray-50/50 p-10 rounded-[3rem] border-2 border-dashed border-gray-200 min-h-[200px] flex items-center">
-                                        <p className="text-[#5A2C10] text-2xl font-bold leading-relaxed lowercase italic">
-                                            "{donation.description || "The donor has not provided any specific description for this contribution."}"
-                                        </p>
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Handover</p>
+                                        <p className="font-black text-[#5A2C10] uppercase tracking-tighter">{donation.delivery_preference || 'pickup'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -142,76 +167,110 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                     </div>
                 </div>
 
-                {/* Right Panel: Clean Address Details (Matching Image Request) */}
-                <div className="space-y-8">
-                    <div className="bg-white rounded-[40px] p-8 lg:p-10 shadow-sm border-2 border-[#5A2C10] flex flex-col gap-8 h-full">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-2xl font-black text-[#5A2C10] uppercase tracking-tighter flex items-center gap-3">
-                                <MapPin className="size-6" /> Dispatch Address
-                            </h3>
-                        </div>
+                {/* Logistics Column */}
+                <div className="lg:col-span-4 space-y-8">
+                    {/* Address Master Card */}
+                    <div className="bg-[#5A2C10] rounded-[3.5rem] p-10 text-white shadow-2xl shadow-[#5A2C10]/30 relative overflow-hidden group">
+                        {/* Decorative Background Element */}
+                        <div className="absolute top-0 right-0 size-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
 
-                        <div className="space-y-6">
-                            {/* Address Line 1 */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest ml-1">Address Line 1</label>
-                                <div className="bg-[#F8FAFC] p-6 rounded-3xl border-2 border-transparent hover:border-[#FFB27D]/30 transition-all shadow-sm">
-                                    <p className="text-xl font-black text-[#5A2C10]">{donation.donor_line1 || 'Missing Street Address'}</p>
-                                </div>
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-10">
+                                <h3 className="text-2xl font-black tracking-tighter flex items-center gap-3">
+                                    Donor <span className="text-[#FF9248]">Address</span>
+                                </h3>
+                                <MapPin className="size-6 text-[#FF9248]" />
                             </div>
 
-                            {/* Address Line 2 */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest ml-1">Address Line 2 (Optional)</label>
-                                <div className="bg-[#F8FAFC] p-6 rounded-3xl border-2 border-transparent hover:border-[#FFB27D]/30 transition-all shadow-sm">
-                                    <p className="text-base font-bold text-[#5A2C10]/60 italic">
-                                        {donation.donor_line2 || 'Apartment, suite, unit, etc.'}
+                            <div className="space-y-6">
+                                {/* Primary Line */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 opacity-40">
+                                        <Navigation className="size-3" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Street Address</span>
+                                    </div>
+                                    <p className="text-2xl font-black tracking-tight leading-tight">
+                                        {donation.donor_line1 || 'Not Set'}
                                     </p>
+                                    {donation.donor_line2 && (
+                                        <p className="text-sm font-bold opacity-60 bg-white/10 px-4 py-2 rounded-xl inline-block">
+                                            {donation.donor_line2}
+                                        </p>
+                                    )}
                                 </div>
-                            </div>
 
-                            {/* City & Country Grid */}
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest ml-1">City</label>
-                                    <div className="bg-[#F8FAFC] p-6 rounded-3xl border-2 border-transparent hover:border-[#FFB27D]/30 transition-all shadow-sm">
-                                        <p className="text-xl font-black text-[#5A2C10]">{donation.donor_city || 'City Not Set'}</p>
+                                {/* Secondary Info Grid */}
+                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City</p>
+                                        <p className="text-lg font-black">{donation.donor_city || 'Not Set'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Country</p>
+                                        <p className="text-lg font-black">{donation.donor_country || 'Not Set'}</p>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest ml-1">Country</label>
-                                    <div className="bg-[#F8FAFC] p-6 rounded-3xl border-2 border-transparent hover:border-[#FFB27D]/30 transition-all shadow-sm">
-                                        <p className="text-xl font-black text-[#5A2C10]">{donation.donor_country || 'Country Not Set'}</p>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Zip Code */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-widest ml-1">Zip / Postal Code</label>
-                                <div className="bg-[#F8FAFC] p-6 rounded-3xl border-2 border-transparent hover:border-[#FFB27D]/30 transition-all shadow-sm">
-                                    <p className="text-2xl font-black text-[#5A2C10] tracking-widest">{donation.donor_zip || '----'}</p>
+                                <div>
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Postal Code</p>
+                                    <p className="text-xl font-black bg-white/10 px-4 py-3 rounded-2xl inline-block min-w-[100px] text-center">{donation.donor_zip || '----'}</p>
                                 </div>
-                            </div>
-
-                            {/* Handover Mode */}
-                            <div className="bg-[#5A2C10] p-6 rounded-[2.5rem] text-white flex items-center justify-between shadow-xl mt-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="size-10 bg-white/10 rounded-xl flex items-center justify-center">
-                                        <Navigation className="size-5" />
-                                    </div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Handover Mode</span>
-                                </div>
-                                <span className="text-2xl font-black lowercase italic">{donation.delivery_preference || 'pickup'}</span>
                             </div>
                         </div>
                     </div>
+
+                    {/* Integrated Map */}
+                    {donation.donor_lat && donation.donor_lng ? (
+                        <div className="relative h-[400px] rounded-[3.5rem] overflow-hidden border-4 border-[#5A2C10]/10 shadow-2xl group">
+                            <iframe
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                src={`https://maps.google.com/maps?q=${parseFloat(String(donation.donor_lat))},${parseFloat(String(donation.donor_lng))}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                className="grayscale-[0.2] contrast-[1.2] hover:grayscale-0 transition-all duration-700"
+                            />
+                            {/* Interactive Overlay */}
+                            <div className="absolute inset-x-4 bottom-4 ">
+                                <div className="bg-white/80 backdrop-blur-md p-4 rounded-[2rem] border border-white flex items-center justify-between shadow-lg">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 bg-[#5A2C10] rounded-xl flex items-center justify-center text-white">
+                                            <MapPin className="size-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pinned Donor Address</p>
+                                            <p className="text-xs font-black text-[#5A2C10]">Verified Coordinates</p>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${donation.donor_lat},${donation.donor_lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="size-10 bg-[#FF9248]/10 rounded-xl flex items-center justify-center text-[#FF9248] hover:bg-[#FF9248] hover:text-white transition-all shadow-sm active:scale-95"
+                                    >
+                                        <Navigation className="size-5" />
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="relative h-[300px] rounded-[3.5rem] overflow-hidden border-4 border-[#5A2C10]/10 bg-gray-50 flex flex-col items-center justify-center text-center p-8">
+                            <div className="size-16 bg-[#5A2C10]/5 rounded-full flex items-center justify-center text-[#5A2C10]/20 mb-4">
+                                <MapPin className="size-8" />
+                            </div>
+                            <h4 className="text-lg font-black text-[#5A2C10]">Map Unset</h4>
+                            <p className="text-sm font-bold text-[#5A2C10]/40 max-w-[200px] mt-2">The donor has not yet specified a pinned location for this address.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <style jsx global>{`
-                .animate-in { animation: fade-in 0.6s ease-out forwards; }
-                @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-in { animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                @keyframes fade-up { 
+                    from { opacity: 0; transform: translateY(40px); } 
+                    to { opacity: 1; transform: translateY(0); } 
+                }
             `}</style>
         </div>
     );

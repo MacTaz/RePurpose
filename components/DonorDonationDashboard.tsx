@@ -1,76 +1,242 @@
-'use client';
-
-import React from 'react';
+import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft } from 'lucide-react';
 
 const DonorDonationDashboard = ({ donation, onClose }: any) => {
     return (
-        <div className="w-full max-w-7xl mx-auto bg-[#DDE6ED] border-[10px] border-[#7BA4D5] rounded-[4rem] p-10 lg:p-16 shadow-2xl relative flex flex-col items-center animate-in zoom-in-95 duration-500 min-h-[90vh]">
-            {/* Back Button */}
-            {onClose && (
-                <button
-                    onClick={onClose}
-                    className="absolute top-10 left-10 flex items-center gap-2 font-black text-[#2D3561] hover:scale-105 active:scale-95 transition-all group"
-                >
-                    <div className="size-10 bg-[#7BA4D5] rounded-full flex items-center justify-center group-hover:bg-[#5A8CC9] text-white transition-colors">←</div>
-                    <span className="text-xl uppercase tracking-widest">Back</span>
-                </button>
-            )}
-
-            {/* Header */}
-            <div className="w-full text-center mt-8 mb-4">
-                <h1 className="text-5xl lg:text-7xl font-black text-[#2D3561] tracking-tighter lowercase">
-                    charity <span className="text-[#7BA4D5]">details</span>
-                </h1>
-            </div>
-
-            <div className="w-full h-2 bg-[#2D3561] my-8 rounded-full"></div>
-
-            <div className="flex flex-col lg:flex-row w-full gap-12 mt-4 flex-1">
-                <div className="w-full lg:w-5/12 animate-in slide-in-from-left-8 duration-700">
-                    <div className="w-full aspect-[4/5] rounded-[3rem] overflow-hidden bg-white shadow-2xl border-4 border-[#7BA4D5]">
-                        <img
-                            src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1000"
-                            alt="Organization"
-                            className="w-full h-full object-cover"
-                        />
+        <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 animate-in fade-in duration-700 pb-20 px-4 md:px-0">
+            {/* Contextual Top Bar */}
+            <div className="flex items-center justify-between bg-white/40 backdrop-blur-xl border border-white/60 p-6 rounded-[2.5rem] shadow-2xl shadow-[#30496E]/5">
+                <div className="flex items-center gap-6">
+                    <button
+                        onClick={onClose}
+                        className="group size-14 bg-white border-2 border-[#30496E]/10 rounded-2xl flex items-center justify-center text-[#30496E] hover:bg-[#30496E] hover:text-white transition-all shadow-sm active:scale-95"
+                    >
+                        <ChevronLeft className="size-6 group-hover:-translate-x-1 transition-transform" />
+                    </button>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-black text-[#30496E] tracking-tight">
+                                Contribution <span className="text-[#80A6C2]">Details</span>
+                            </h1>
+                            <div className="px-3 py-1 bg-blue-500/10 text-[#30496E] rounded-full text-[9px] font-black uppercase tracking-widest border border-[#30496E]/20">
+                                {donation.status || 'Active'}
+                            </div>
+                        </div>
+                        <p className="text-[#30496E]/40 font-bold text-xs mt-0.5 tracking-widest uppercase italic">Personal Contribution History</p>
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col gap-10 animate-in slide-in-from-right-8 duration-700">
-                    <div className="bg-white rounded-[3rem] p-12 shadow-2xl flex-1 border-4 border-[#7BA4D5]/50">
-                        <h3 className="text-[#2D3561]/40 text-xs font-black uppercase tracking-[0.3em] mb-6">Tracking Information</h3>
-                        <div className="space-y-8">
-                            <div className="flex items-center gap-6">
-                                <span className="size-16 rounded-3xl bg-[#7BA4D5] text-white flex items-center justify-center text-3xl font-black shadow-lg block px-4 py-2">01</span>
-                                <div className="flex-1">
-                                    <h4 className="text-3xl font-black text-[#2D3561] lowercase leading-none">Status: <span className="text-[#7BA4D5] uppercase">{donation?.status?.replace('_', ' ') || 'PENDING'}</span></h4>
-                                    <div className="w-full h-2 bg-[#2D3561]/10 rounded-full mt-4 overflow-hidden">
-                                        <div className={`h-full bg-[#7BA4D5] transition-all duration-1000 ${donation?.status === 'delivered' ? 'w-full' : donation?.status === 'in_progress' ? 'w-2/3' : 'w-1/3'}`} />
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={onClose}
+                        className="px-10 py-4 bg-[#30496E] text-white rounded-2xl font-black shadow-xl shadow-[#30496E]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-2 group"
+                    >
+                        Return to Manage
+                        <CheckCircle2 className="size-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid lg:grid-cols-12 gap-8 items-start">
+                {/* Visual Content Column */}
+                <div className="lg:col-span-8 space-y-8">
+                    {/* Main Card */}
+                    <div className="bg-white rounded-[3.5rem] p-4 lg:p-6 shadow-2xl shadow-[#30496E]/10 border border-[#30496E]/5 overflow-hidden">
+                        <div className="flex flex-col xl:flex-row gap-8">
+                            {/* Cinematic Image Frame */}
+                            <div className="w-full xl:w-[50%] relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-br from-[#80A6C2] to-[#30496E] rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+                                <div className="relative aspect-[4/5] rounded-[3rem] overflow-hidden bg-gray-100 shadow-2xl border-4 border-white">
+                                    <img
+                                        src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1000"
+                                        alt="Organization"
+                                        className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white text-xs font-black uppercase tracking-widest">
+                                                Recieving Partner
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-[#DDE6ED] p-6 rounded-2xl border-2 border-dashed border-[#7BA4D5] text-center">
-                                    <span className="text-[10px] font-black uppercase text-[#2D3561]/40 block mb-1">Items</span>
-                                    <span className="text-2xl font-black text-[#2D3561] lowercase">{donation?.type}</span>
+                            {/* Tracking and Progress */}
+                            <div className="flex-1 flex flex-col p-4">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="size-10 bg-[#80A6C2]/10 rounded-xl flex items-center justify-center text-[#30496E]">
+                                        <Info className="size-5" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-[#30496E] lowercase">Item Description</h3>
                                 </div>
-                                <div className="bg-[#DDE6ED] p-6 rounded-2xl border-2 border-dashed border-[#7BA4D5] text-center">
-                                    <span className="text-[10px] font-black uppercase text-[#2D3561]/40 block mb-1">To</span>
-                                    <span className="text-2xl font-black text-[#2D3561] lowercase truncate block">{donation?.target_organization}</span>
+
+                                <div className="relative mb-8 overflow-hidden">
+                                    <div className="absolute -left-4 top-0 h-full w-1 bg-gradient-to-b from-transparent via-[#80A6C2] to-transparent opacity-30"></div>
+                                    <p className="text-[#30496E] text-base font-medium leading-relaxed italic opacity-80 pl-2">
+                                        "{donation.description || "No specific details provided for this gift."}"
+                                    </p>
+                                </div>
+
+                                <div className="space-y-10 flex-1">
+                                    <div className="bg-[#30496E]/5 p-8 rounded-[2.5rem] border border-[#30496E]/5">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em]">Fulfillment Phase</p>
+                                            <p className="text-sm font-black text-[#30496E] uppercase tracking-tighter">{donation?.status?.replace('_', ' ') || 'PROCESSING'}</p>
+                                        </div>
+                                        <div className="w-full h-4 bg-[#30496E]/10 rounded-full overflow-hidden p-1 shadow-inner">
+                                            <div
+                                                className={`h-full bg-gradient-to-r from-[#80A6C2] to-[#30496E] rounded-full transition-all duration-1000 relative`}
+                                                style={{ width: donation?.status === 'delivered' ? '100%' : donation?.status === 'in_progress' ? '66%' : '33%' }}
+                                            >
+                                                <div className="absolute top-0 right-0 h-full w-4 bg-white/20 skew-x-12 animate-[pulse_2s_infinite]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-[#80A6C2]/10 p-6 rounded-3xl border border-[#80A6C2]/10 transition-colors hover:bg-[#80A6C2]/20">
+                                            <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Item Type</p>
+                                            <p className="text-xl font-black text-[#30496E] lowercase italic truncate">{donation?.type}</p>
+                                        </div>
+                                        <div className="bg-[#30496E]/10 p-6 rounded-3xl border border-[#30496E]/10 transition-colors hover:bg-[#30496E]/20">
+                                            <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Destined For</p>
+                                            <p className="text-xl font-black text-[#30496E] uppercase tracking-tighter truncate">{donation?.org_name || donation?.target_organization}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-8 border-t border-gray-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                            <div className="size-2 bg-blue-600 rounded-full" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sent From</p>
+                                            <p className="font-black text-[#30496E]">Personal Dashboard</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Logged On</p>
+                                        <p className="font-black text-[#30496E] uppercase tracking-tighter">{new Date(donation?.created_at).toLocaleDateString() || 'Recently'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Logistics Column */}
+                <div className="lg:col-span-4 space-y-8">
+                    {/* Address Master Card */}
+                    <div className="bg-[#30496E] rounded-[3.5rem] p-10 text-white shadow-2xl shadow-[#30496E]/30 relative overflow-hidden group">
+                        {/* Decorative Background Element */}
+                        <div className="absolute top-0 right-0 size-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-10">
+                                <h3 className="text-2xl font-black lowercase tracking-tighter flex items-center gap-3">
+                                    Drop-off <span className="text-[#80A6C2]">Location</span>
+                                </h3>
+                                <MapPin className="size-6 text-[#80A6C2]" />
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Primary Line */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 opacity-40">
+                                        <Navigation className="size-3" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Partner Hub</span>
+                                    </div>
+                                    <p className="text-2xl font-black tracking-tight leading-tight">
+                                        {donation?.org_line1 || 'Not Set'}
+                                    </p>
+                                    {donation?.org_line2 && (
+                                        <p className="text-sm font-bold opacity-60 bg-white/10 px-4 py-2 rounded-xl inline-block">
+                                            {donation?.org_line2}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Secondary Info Grid */}
+                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City Hub</p>
+                                        <p className="text-lg font-black">{donation?.org_city || 'Not Set'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Territory</p>
+                                        <p className="text-lg font-black">{donation?.org_country || 'Not Set'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4">
+                                    <div className="bg-white/10 px-6 py-4 rounded-3xl flex items-center justify-between group-hover:bg-white/20 transition-all">
+                                        <div>
+                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mb-0.5">Contact Verification</p>
+                                            <p className="text-sm font-black lowercase italic">Ready for handover</p>
+                                        </div>
+                                        <div className="size-8 bg-[#80A6C2] rounded-xl flex items-center justify-center text-white shadow-lg">
+                                            <CheckCircle2 className="size-4" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button
-                        onClick={onClose}
-                        className="w-full py-10 bg-[#2D3561] hover:bg-black active:scale-[0.98] text-white rounded-[2.5rem] shadow-2xl transition-all cursor-pointer font-black text-4xl uppercase tracking-tighter border-8 border-white"
-                    >
-                        Close
-                    </button>
+                    {/* Integrated Map */}
+                    {donation?.org_lat && donation?.org_lng ? (
+                        <div className="relative h-[400px] rounded-[3.5rem] overflow-hidden border-4 border-[#30496E]/10 shadow-2xl group">
+                            <iframe
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                src={`https://maps.google.com/maps?q=${donation.org_lat},${donation.org_lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                className="grayscale-[0.3] contrast-[1.1] hover:grayscale-0 transition-all duration-700"
+                            />
+                            {/* Interactive Overlay */}
+                            <div className="absolute inset-x-4 bottom-4 ">
+                                <div className="bg-white/80 backdrop-blur-md p-4 rounded-[2rem] border border-white flex items-center justify-between shadow-lg">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 bg-[#30496E] rounded-xl flex items-center justify-center text-white">
+                                            <MapPin className="size-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pin Location</p>
+                                            <p className="text-xs font-black text-[#30496E]">Hub Coordinates</p>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${donation.org_lat},${donation.org_lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="size-10 bg-[#80A6C2]/10 rounded-xl flex items-center justify-center text-[#80A6C2] hover:bg-[#80A6C2] hover:text-white transition-all shadow-sm active:scale-95"
+                                    >
+                                        <Navigation className="size-5" />
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="relative h-[300px] rounded-[3.5rem] overflow-hidden border-4 border-[#30496E]/10 bg-gray-50 flex flex-col items-center justify-center text-center p-8">
+                            <div className="size-16 bg-[#30496E]/5 rounded-full flex items-center justify-center text-[#30496E]/20 mb-4">
+                                <MapPin className="size-8" />
+                            </div>
+                            <h4 className="text-lg font-black text-[#30496E]">Hub Map Unset</h4>
+                            <p className="text-sm font-bold text-[#30496E]/40 max-w-[200px] mt-2">The organization has not yet specified a pinned location for this hub.</p>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            <style jsx global>{`
+                .animate-in { animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                @keyframes fade-up { 
+                    from { opacity: 0; transform: translateY(40px); } 
+                    to { opacity: 1; transform: translateY(0); } 
+                }
+            `}</style>
         </div>
     );
 };

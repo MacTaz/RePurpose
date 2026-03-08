@@ -12,6 +12,7 @@ interface DonationThread {
     donationStatus: string;
     donationQuantity: number;
     lastMessage: string;
+    lastMessageId?: string;
     time: string;
     unread: number;
 }

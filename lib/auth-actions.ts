@@ -207,6 +207,19 @@ export async function deleteAccount(password: string) {
         }
 
         // 3. Manual cascade to avoid Foreign Key violations
+        // Must delete in dependency order: messages → conversations → donations → profiles
+        const { data: userConversations } = await adminSupabase
+            .from('conversations')
+            .select('id')
+            .or(`donor_id.eq.${user.id},org_id.eq.${user.id}`);
+
+        const conversationIds = (userConversations || []).map((c: any) => c.id);
+
+        if (conversationIds.length > 0) {
+            await adminSupabase.from('messages').delete().in('conversation_id', conversationIds);
+        }
+        await adminSupabase.from('messages').delete().eq('sender_id', user.id);
+        await adminSupabase.from('conversations').delete().or(`donor_id.eq.${user.id},org_id.eq.${user.id}`);
         await adminSupabase.from('donations').delete().or(`donor_id.eq.${user.id},organization_id.eq.${user.id}`);
         await adminSupabase.from('addresses').delete().eq('user_id', user.id);
         await adminSupabase.from('donor_profiles').delete().eq('profile_id', user.id);

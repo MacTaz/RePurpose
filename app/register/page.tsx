@@ -216,7 +216,7 @@ const RegisterPage = () => {
     const phoneRingClass = phoneTouched ? (phoneValid ? 'ring-1 ring-green-400/60' : 'ring-1 ring-red-400/60') : '';
 
     return (
-        <div className={`relative h-screen overflow-hidden ${bgColor} transition-colors duration-700 flex`}>
+        <div className={`relative h-screen overflow-hidden ${bgColor} transition-colors duration-700 flex flex-col lg:flex-row`}>
             {/* Wave background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <svg className="absolute w-full h-full top-0 left-0 opacity-70" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900">

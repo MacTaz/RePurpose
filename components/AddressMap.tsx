@@ -90,6 +90,11 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
             mapRef.current = mapInstance
             markerRef.current = marker
 
+            // Force Leaflet to recalculate size after DOM paint
+            setTimeout(() => {
+                mapInstance.invalidateSize()
+            }, 100)
+
             loadAddressData(mapInstance, marker)
         }
 
@@ -206,7 +211,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
         <div className="flex flex-col lg:flex-row h-full w-full gap-8">
             {/* Map Section */}
             <div className={`w-full lg:w-3/5 min-h-[400px] lg:min-h-full rounded-[32px] overflow-hidden shadow-inner border-2 ${borderColor} relative group`}>
-                <div ref={mapContainerRef} className="h-full w-full" />
+                <div ref={mapContainerRef} className="h-full w-full min-h-[400px]" />
                 <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-gray-100">
                     <p className={`text-[10px] font-black ${textColor} uppercase tracking-widest flex items-center gap-2`}>
                         <Navigation className="size-3" /> Map Locator
