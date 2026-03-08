@@ -23,6 +23,7 @@ export interface Contact {
 export interface ChatMessage {
     id: string;
     text: string;
+    imageUrl?: string | null;
     sender: 'user' | 'other';
     time: string;
 }
@@ -104,6 +105,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [inputValue, setInputValue] = useState('');
     const [sending, setSending] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Search
     const [searchQuery, setSearchQuery] = useState('');
@@ -263,11 +266,12 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
 
         const fetchMessages = async () => {
             const { data, error } = await supabase
-                .from('messages').select('id, content, sender_id, created_at')
+                .from('messages').select('id, content, image_url, sender_id, created_at')
                 .eq('conversation_id', selectedId).order('created_at', { ascending: true });
             if (error || !data) return;
             setMessages(data.map((m: any) => ({
                 id: m.id, text: m.content,
+                imageUrl: m.image_url,
                 sender: m.sender_id === userId ? 'user' : 'other',
                 time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
             })));
@@ -286,6 +290,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                     if (prev.find(x => x.id === m.id)) return prev;
                     return [...prev, {
                         id: m.id, text: m.content,
+                        imageUrl: m.image_url,
                         sender: m.sender_id === userId ? 'user' : 'other',
                         time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
                     }];
@@ -305,6 +310,37 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         if (error) console.error('Failed to send:', error);
         setSending(false);
         setInputValue('');
+    };
+
+    // Upload + send image
+    const handleSendImage = async (file: File) => {
+        if (!selectedId || uploadingImage) return;
+        setUploadingImage(true);
+
+        const ext = file.name.split('.').pop();
+        const fileName = `${selectedId}/${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('chat-images')
+            .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) {
+            console.error('Upload failed:', uploadError);
+            setUploadingImage(false);
+            return;
+        }
+
+        const { data: urlData } = supabase.storage
+            .from('chat-images')
+            .getPublicUrl(fileName);
+
+        const imageUrl = urlData.publicUrl;
+
+        const { error } = await supabase.from('messages')
+            .insert({ conversation_id: selectedId, sender_id: userId, content: '', image_url: imageUrl });
+
+        if (error) console.error('Failed to send image message:', error);
+        setUploadingImage(false);
     };
 
     // Select conversation
@@ -559,8 +595,19 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                             {msg.sender === 'user' ? userDisplayName.charAt(0).toUpperCase() : selectedContact.avatar}
                                         </div>
                                         <div className="space-y-1">
-                                            <div className={`p-4 rounded-2xl leading-relaxed text-sm ${msg.sender === 'user' ? `${accentColor} text-white shadow-lg ${accentShadow} rounded-tr-none` : 'bg-white border border-slate-100 text-slate-800 shadow-sm rounded-tl-none'}`}>
-                                                {msg.text}
+                                            <div className={`rounded-2xl leading-relaxed text-sm overflow-hidden ${msg.sender === 'user' ? `${accentColor} text-white shadow-lg ${accentShadow} rounded-tr-none` : 'bg-white border border-slate-100 text-slate-800 shadow-sm rounded-tl-none'}`}>
+                                                {msg.imageUrl ? (
+                                                    <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer">
+                                                        <img
+                                                            src={msg.imageUrl}
+                                                            alt="Shared image"
+                                                            className="max-w-[280px] max-h-[320px] w-full object-cover rounded-2xl cursor-pointer hover:opacity-90 transition-opacity"
+                                                            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                                                        />
+                                                    </a>
+                                                ) : (
+                                                    <div className="p-4">{msg.text}</div>
+                                                )}
                                             </div>
                                             <div className={`flex items-center gap-1 font-bold text-[10px] text-slate-400 ${msg.sender === 'user' ? 'justify-end mr-1' : 'ml-1'}`}>
                                                 {msg.time}
@@ -573,6 +620,35 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
 
                             <div className="p-6 bg-white border-t border-slate-100">
                                 <div className="bg-slate-50 rounded-2xl p-2 flex items-end gap-2 border border-slate-100 focus-within:ring-2 focus-within:ring-slate-200 transition-all">
+                                    {/* Hidden file input */}
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={e => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleSendImage(file);
+                                            e.target.value = '';
+                                        }}
+                                    />
+                                    {/* Image upload button */}
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={uploadingImage || sending}
+                                        className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                        title="Send image"
+                                    >
+                                        {uploadingImage ? (
+                                            <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                <path d="M21 15l-5-5L5 21"/>
+                                            </svg>
+                                        )}
+                                    </button>
                                     <textarea
                                         value={inputValue}
                                         onChange={e => setInputValue(e.target.value)}
@@ -588,7 +664,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                     />
                                     <button
                                         onClick={() => handleSendMessage(inputValue)}
-                                        disabled={sending || !inputValue.trim()}
+                                        disabled={sending || uploadingImage || !inputValue.trim()}
                                         className={`p-3 ${accentColor} text-white rounded-xl hover:opacity-90 transition-all shadow-lg ${accentShadow} disabled:opacity-40 disabled:cursor-not-allowed`}
                                     >
                                         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

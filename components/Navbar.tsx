@@ -14,7 +14,7 @@ const Navbar = ({ role }: NavbarProps) => {
     const normalizedRole = role.toLowerCase().trim()
 
     return (
-        <div className="font-inter">
+        <div className="font-inter sticky top-0 z-50">
             {normalizedRole === 'donor' ? (
                 /* DONOR VIEW (BLUE THEME) */
                 <nav className="bg-[#3D5082] text-white px-4 md:px-8 py-3 relative shadow-lg">
