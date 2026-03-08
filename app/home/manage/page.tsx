@@ -29,46 +29,80 @@ export default async function Manage() {
     if (normalizedRole === 'donor') {
         const { data: donations } = await supabase
             .from('donations')
-            .select('id, donor_id, organization_id, type, quantity, status, created_at, target_organization, description, delivery_preference')
+            .select(`
+                *,
+                organizationProfile:profiles!donations_organization_id_fkey(
+                    full_name,
+                    addresses(
+                        *
+                    )
+                )
+            `)
             .eq('donor_id', user.id)
             .order('created_at', { ascending: false })
+
+        const mappedDonations = (donations || []).map((d: any) => {
+            // Robustly extract the organization profile
+            const rawOrg = d.organizationProfile || d.profiles || d.organization;
+            const profile = Array.isArray(rawOrg) ? rawOrg[0] : rawOrg;
+            const addressArray = profile?.addresses || [];
+            const addr = Array.isArray(addressArray) ? addressArray[0] : addressArray;
+
+            return {
+                ...d,
+                org_name: profile?.full_name || d.target_organization || 'Unknown Organization',
+                org_address: addr?.city ? `${addr.city}, ${addr.country}` : (addr?.full_address || 'City Not Set'),
+                org_city: addr?.city || 'City Not Set',
+                org_country: addr?.country || 'Country Not Set',
+                org_lat: addr?.latitude,
+                org_lng: addr?.longitude,
+                org_line1: addr?.address_line1 || addr?.full_address || 'Missing Street Address',
+                org_line2: addr?.address_line2,
+                org_zip: addr?.zip || '----'
+            };
+        })
 
         return (
             <div className="min-h-screen bg-white flex flex-col font-inter">
                 <Navbar role="donor" />
-                <ManageDonor donations={donations || []} />
+                <ManageDonor donations={mappedDonations || []} />
             </div>
         )
     }
 
-    if (normalizedRole === 'organization' || normalizedRole === 'charity') {
+    if (normalizedRole === 'organization' || normalizedRole === 'charity' || normalizedRole === 'admin') {
         const { data: donations } = await supabase
             .from('donations')
             .select(`
-                id, donor_id, organization_id, type, quantity, status, created_at, target_organization, description, delivery_preference,
-                profiles!donations_donor_id_fkey(
+                *,
+                donorProfile:profiles!donations_donor_id_fkey(
                     full_name,
-                    addresses(city, country, latitude, longitude, address_line1, address_line2, zip)
+                    addresses(*)
                 )
             `)
             .eq('organization_id', user.id)
             .order('created_at', { ascending: false })
 
-        const mappedDonations = donations?.map((d: any) => {
-            const addr = d.profiles?.addresses?.[0] || {};
+        const mappedDonations = (donations || []).map((d: any) => {
+            // Robustly extract the donor profile
+            const rawDonor = d.donorProfile || d.profiles || d.donor;
+            const profile = Array.isArray(rawDonor) ? rawDonor[0] : rawDonor;
+            const addressArray = profile?.addresses || [];
+            const addr = Array.isArray(addressArray) ? addressArray[0] : addressArray;
+
             return {
                 ...d,
-                donor_name: d.profiles?.full_name || 'Anonymous Donor',
-                donor_address: addr.city ? `${addr.city}, ${addr.country}` : 'City Not Set',
-                donor_city: addr.city || 'City Not Set',
-                donor_country: addr.country || 'Country Not Set',
-                donor_lat: addr.latitude,
-                donor_lng: addr.longitude,
-                donor_line1: addr.address_line1 || 'Missing Street Address',
-                donor_line2: addr.address_line2,
-                donor_zip: addr.zip || '----'
+                donor_name: profile?.full_name || 'Anonymous Donor',
+                donor_address: addr?.city ? `${addr.city}, ${addr.country}` : (addr?.full_address || 'City Not Set'),
+                donor_city: addr?.city || 'City Not Set',
+                donor_country: addr?.country || 'Country Not Set',
+                donor_lat: addr?.latitude,
+                donor_lng: addr?.longitude,
+                donor_line1: addr?.address_line1 || addr?.full_address || 'Missing Street Address',
+                donor_line2: addr?.address_line2,
+                donor_zip: addr?.zip || '----'
             };
-        }) || []
+        })
 
         return (
             <div className="min-h-screen bg-white flex flex-col font-inter">

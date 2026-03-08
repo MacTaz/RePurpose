@@ -22,6 +22,11 @@ interface Donation {
     donor_line1?: string
     donor_line2?: string
     donor_zip?: string
+    org_zip?: string
+    org_lat?: number
+    org_lng?: number
+    donor_lat?: number
+    donor_lng?: number
 }
 
 interface Props {
@@ -100,7 +105,7 @@ const ManageCharity = ({ donations }: Props) => {
     }
 
     return (
-        <main className="w-full max-w-7xl mx-auto py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
+        <main className="w-full py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
             <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-6 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 flex flex-col gap-10 relative overflow-hidden min-h-[85vh]">
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-white/30 rounded-full blur-3xl pointer-events-none"></div>

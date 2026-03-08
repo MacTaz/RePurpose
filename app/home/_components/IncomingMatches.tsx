@@ -21,6 +21,8 @@ interface Donation {
     donor_line1?: string
     donor_line2?: string
     donor_zip?: string
+    donor_lat?: number
+    donor_lng?: number
 }
 
 interface Props {
@@ -66,7 +68,7 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                     // Fetch donor name + address from profiles
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select(`full_name, addresses(city, country, address_line1, address_line2, zip)`)
+                        .select(`full_name, addresses(city, country, address_line1, address_line2, zip, latitude, longitude)`)
                         .eq('id', d.donor_id)
                         .single()
 
@@ -89,6 +91,8 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                         donor_line1: addr.address_line1 || 'Missing Street Address',
                         donor_line2: addr.address_line2,
                         donor_zip: addr.zip || '----',
+                        donor_lat: addr.latitude,
+                        donor_lng: addr.longitude,
                     }
 
                     // Prepend to list and mark as new for highlight animation
@@ -128,7 +132,6 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                 <CharityDonationDashboard
                     donation={selected}
                     onClose={handleClose}
-                    onAccepted={() => handleAccepted(selected.id)}
                 />
             </div>
         )

@@ -13,6 +13,15 @@ interface Donation {
     status: string | null
     created_at: string
     target_organization: string | null
+    org_name?: string
+    org_address?: string
+    org_city?: string
+    org_country?: string
+    org_lat?: number
+    org_lng?: number
+    org_line1?: string
+    org_line2?: string
+    org_zip?: string
 }
 
 interface Props {
@@ -81,7 +90,7 @@ const ManageDonor = ({ donations }: Props) => {
     }
 
     return (
-        <main className="w-full max-w-7xl mx-auto py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
+        <main className="w-full py-8 px-4 font-sans animate-in fade-in duration-500 flex-grow">
             <div className="w-full bg-gradient-to-br from-[#9BBAD0] to-[#80A6C2] rounded-[2rem] p-6 lg:p-12 shadow-2xl shadow-[#9BBAD0]/30 border border-white/20 flex flex-col gap-10 relative overflow-hidden min-h-[85vh]">
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -121,7 +130,7 @@ const ManageDonor = ({ donations }: Props) => {
                                         className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-black text-[#30496E]">{String(index + 1).padStart(3, '0')}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize">{donation.type}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.target_organization || '—'}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.org_name || donation.target_organization || '—'}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">
                                             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
                                                 donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
