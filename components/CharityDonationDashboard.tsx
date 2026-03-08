@@ -190,9 +190,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                         <span className="text-[9px] font-black uppercase tracking-[0.2em]">Street Address</span>
                                     </div>
                                     <p className="text-2xl font-black tracking-tight leading-tight">
-                                        {donation.donor_line1 && donation.donor_line1 !== 'Missing Street Address'
-                                            ? donation.donor_line1
-                                            : (donation.donor_address && donation.donor_address !== 'City Not Set' ? donation.donor_address.split(',')[0] : 'Address Pending')}
+                                        {donation.donor_line1 || 'Not Set'}
                                     </p>
                                     {donation.donor_line2 && (
                                         <p className="text-sm font-bold opacity-60 bg-white/10 px-4 py-2 rounded-xl inline-block">
@@ -205,11 +203,11 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                 <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
                                     <div>
                                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City</p>
-                                        <p className="text-lg font-black">{donation.donor_city || '---'}</p>
+                                        <p className="text-lg font-black">{donation.donor_city || 'Not Set'}</p>
                                     </div>
                                     <div>
                                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Country</p>
-                                        <p className="text-lg font-black">{donation.donor_country || '---'}</p>
+                                        <p className="text-lg font-black">{donation.donor_country || 'Not Set'}</p>
                                     </div>
                                 </div>
 

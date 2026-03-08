@@ -192,13 +192,11 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                         <span className="text-[9px] font-black uppercase tracking-[0.2em]">Donor's Location</span>
                                     </div>
                                     <p className="text-2xl font-black tracking-tight leading-tight">
-                                        {donation.donor_line1 && donation.donor_line1 !== 'Missing Street Address'
-                                            ? donation.donor_line1
-                                            : (donation.donor_address && donation.donor_address !== 'City Not Set' ? donation.donor_address.split(',')[0] : 'Address Pending')}
+                                        {donation.donor_line1 || 'Not Set'}
                                     </p>
                                     {(donation.donor_city || donation.donor_country) && (
                                         <p className="text-sm font-bold opacity-60 bg-white/10 px-4 py-2 rounded-xl inline-block mt-2">
-                                            {donation.donor_city}, {donation.donor_country}
+                                            {[donation.donor_city, donation.donor_country].filter(Boolean).join(', ')}
                                         </p>
                                     )}
                                 </div>
