@@ -282,7 +282,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] bg-[#30496E]/10 text-[#30496E] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
                                             {org.donation_method?.toLowerCase() === 'both'
-                                                ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
+                                                ? (searchParams.get('pref') === 'pickup' ? 'Pickup' : searchParams.get('pref') === 'delivery' ? 'Delivery' : 'Delivery & Pickup')
                                                 : (org.donation_method || 'Organization')}
                                         </span>
                                         <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
@@ -353,8 +353,8 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                             <div className="grid xl:grid-cols-3 gap-8 lg:gap-12 mt-4">
                                 <div className="xl:col-span-2 space-y-8 lg:space-y-10">
                                     <div>
-                                        <h3 className="text-xl lg:text-2xl font-black text-[#30496E] mb-6 flex flex-col sm:flex-row items-center gap-3 lowercase tracking-tight">
-                                            <span className="hidden sm:inline">/</span> profile description
+                                        <h3 className="text-xl lg:text-2xl font-black text-[#30496E] mb-6 flex flex-col sm:flex-row items-center gap-3 tracking-tight">
+                                            <span className="hidden sm:inline">Profile Description</span>
                                             <div className="hidden sm:block h-1 flex-1 bg-[#9dbcd4]/20 rounded-full"></div>
                                         </h3>
                                         <p className="text-gray-600 text-base lg:text-lg leading-relaxed font-medium text-center sm:text-left">
@@ -363,8 +363,8 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     </div>
 
                                     <div className="space-y-6">
-                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] flex flex-col sm:flex-row items-center gap-3 lowercase tracking-tight">
-                                            <span className="hidden sm:inline">/</span> accepted categories
+                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] flex flex-col sm:flex-row items-center gap-3 tracking-tight">
+                                            <span className="hidden sm:inline">Accepted Categories</span>
                                             <div className="hidden sm:block h-1 w-12 bg-[#30496E]/10 rounded-full"></div>
                                         </h4>
                                         <div className="flex flex-wrap justify-center sm:justify-start gap-2 lg:gap-3">
@@ -396,7 +396,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                                     val: selectedOrg?.donation_method?.toLowerCase() === 'both'
                                                         ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
                                                         : selectedOrg?.donation_method,
-                                                    label: 'Handover Method'
+                                                    label: 'Donation Method'
                                                 }
                                             ].map((item, i) => (
                                                 <div key={i} className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4 group text-center sm:text-left">
@@ -433,7 +433,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                     {/* Sticky Action Footer - Fixed at bottom */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8 bg-white/90 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 z-40 text-center sm:text-left">
                         <div className="hidden sm:block">
-                            <p className="text-sm text-gray-400 font-bold uppercase tracking-tight">Handover Request for</p>
+                            <p className="text-sm text-gray-400 font-bold uppercase tracking-tight">Donation Request for</p>
                             <h4 className="text-xl font-black text-[#30496E]">{selectedOrg?.full_name}</h4>
                         </div>
                         {success ? (
