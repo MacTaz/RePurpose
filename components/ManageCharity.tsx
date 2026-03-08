@@ -160,8 +160,8 @@ const ManageCharity = ({ donations }: Props) => {
                 <div className="bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden pb-8 shadow-lg border border-white/50 relative z-10 hover:bg-white/50 transition-all">
                     <div className="relative h-auto min-h-[4rem] py-5 flex flex-col md:flex-row items-center border-b border-white/40 bg-white/30 px-8">
                         <div className="flex-1">
-                            <h2 className="text-2xl font-black text-[#5A2C10] tracking-tight">Track Progress</h2>
-                            <p className="text-[#5A2C10]/60 text-xs font-bold uppercase tracking-widest mt-1">Ongoing fulfillment</p>
+                            <h2 className="text-2xl font-black text-[#5A2C10] tracking-tight">Status Management</h2>
+                            <p className="text-[#5A2C10]/60 text-xs font-bold uppercase tracking-widest mt-1">Current Donations</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <button
@@ -226,10 +226,10 @@ const ManageCharity = ({ donations }: Props) => {
                     </div>
 
                     <div className="bg-white/50 backdrop-blur-md rounded-[2.5rem] p-8 shadow-xl border border-white/60 flex flex-col items-center justify-center transition-all hover:-translate-y-1">
-                        <h3 className="text-lg font-black text-[#5A2C10] mb-6 uppercase tracking-widest">Total Volume</h3>
+                        <h3 className="text-lg font-black text-[#5A2C10] mb-6 uppercase tracking-widest">Total</h3>
                         <div className="bg-white rounded-full w-56 h-56 flex flex-col items-center justify-center shadow-2xl border-4 border-white transform hover:scale-105 transition-all">
                             <span className="text-7xl font-black text-[#5A2C10] leading-none">{totalQuantity}</span>
-                            <span className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-[0.2em] mt-2">Active Units</span>
+                            <span className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-[0.2em] mt-2">Donations</span>
                         </div>
                     </div>
                 </div>

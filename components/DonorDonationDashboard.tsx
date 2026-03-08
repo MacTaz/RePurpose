@@ -1,6 +1,12 @@
 import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 const DonorDonationDashboard = ({ donation, onClose }: any) => {
+    const supabase = createClient();
+    const imageUrl = supabase.storage
+        .from('donations')
+        .getPublicUrl(`${donation.donor_id}/donation-${donation.id}/picture.jpg`).data.publicUrl;
+
     return (
         <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 animate-in fade-in duration-700 pb-20 px-4 md:px-0">
             {/* Contextual Top Bar */}
@@ -37,14 +43,17 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                 <div className="absolute -inset-1 bg-gradient-to-br from-[#80A6C2] to-[#30496E] rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
                                 <div className="relative aspect-[4/5] rounded-[3rem] overflow-hidden bg-gray-100 shadow-2xl border-4 border-white">
                                     <img
-                                        src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1000"
-                                        alt="Organization"
+                                        src={imageUrl}
+                                        alt="Donation Image"
                                         className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1559416525-4c6e9cc05a66?auto=format&fit=crop&q=80&w=1000";
+                                        }}
                                     />
                                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
                                         <div className="flex items-center gap-3">
                                             <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white text-xs font-black uppercase tracking-widest">
-                                                Organization Logo
+                                                Donation Image
                                             </div>
                                         </div>
                                     </div>
@@ -88,7 +97,7 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                         <p className="text-xl font-black text-[#30496E] capitalize italic truncate">{donation?.type}</p>
                                     </div>
                                     <div className="bg-[#30496E]/10 p-6 rounded-3xl border border-[#30496E]/10 transition-colors hover:bg-[#30496E]/20">
-                                        <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Destined For</p>
+                                        <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Donated To</p>
                                         <p className="text-xl font-black text-[#30496E] uppercase tracking-tighter truncate">{donation?.org_name || donation?.target_organization}</p>
                                     </div>
                                 </div>

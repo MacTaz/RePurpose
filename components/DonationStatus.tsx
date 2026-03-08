@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft, RefreshCcw } from 'lucide-react';
+import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft, RefreshCcw, ChevronDown } from 'lucide-react';
 import { updateDonationStatus } from '@/lib/donation-actions';
 import { createClient } from '@/utils/supabase/client';
 
@@ -47,18 +47,8 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                 {status.replace('_', ' ')}
                             </div>
                         </div>
-                        <p className="text-[#5A2C10]/40 font-bold text-xs mt-0.5 tracking-widest uppercase italic">Live Logistics Console</p>
+                        <p className="text-[#5A2C10]/40 font-bold text-xs mt-0.5 tracking-widest uppercase italic">Donation Management</p>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={onClose}
-                        className="px-10 py-4 bg-[#5A2C10] text-white rounded-2xl font-black shadow-xl shadow-[#5A2C10]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-2 group"
-                    >
-                        Return to Manage
-                        <CheckCircle2 className="size-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
                 </div>
             </div>
 
@@ -103,7 +93,7 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                     <div className="size-10 bg-[#FF9248]/10 rounded-xl flex items-center justify-center text-[#FF9248]">
                                         <Clock className="size-5" />
                                     </div>
-                                    <h3 className="text-xl font-black text-[#5A2C10] lowercase italic">Fulfillment Phase</h3>
+                                    <h3 className="text-xl font-black text-[#5A2C10] italic">Donation Details</h3>
                                 </div>
 
                                 <div className="space-y-10 flex-1">
@@ -124,7 +114,7 @@ const DonationStatus = ({ donation, onClose }: any) => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-[#FF9248]/10 p-6 rounded-3xl border border-[#FF9248]/10">
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Donor Profile</p>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Donor Name</p>
                                             <p className="text-lg font-black text-[#5A2C10]">{donation.donor_name}</p>
                                         </div>
                                         <div className="bg-[#5A2C10]/10 p-6 rounded-3xl border border-[#5A2C10]/10">
@@ -148,8 +138,8 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                             onClick={() => setIsOpen(!isOpen)}
                                             className="w-full py-6 bg-[#5A2C10] text-white rounded-[2rem] font-black shadow-xl shadow-[#5A2C10]/20 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-4 group uppercase tracking-widest text-sm"
                                         >
-                                            <RefreshCcw className={`size-5 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`} />
-                                            Update Fulfillment Stage
+                                            <ChevronDown className={`size-5 transition-transform duration-500 ${isOpen ? '' : 'rotate-180'}`} />
+                                            Update Donation Status
                                         </button>
 
                                         {isOpen && (
@@ -181,7 +171,7 @@ const DonationStatus = ({ donation, onClose }: any) => {
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-10">
                                 <h3 className="text-2xl font-black tracking-tighter flex items-center gap-3">
-                                    Donor <span className="text-[#FF9248]">Address</span>
+                                    Donor <span className="text-[#FF9248]">Location</span>
                                 </h3>
                                 <MapPin className="size-6 text-[#FF9248]" />
                             </div>
@@ -189,26 +179,27 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2 opacity-40">
                                         <Navigation className="size-3" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Donor's Location</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Street</span>
                                     </div>
                                     <p className="text-2xl font-black tracking-tight leading-tight">
                                         {donation.donor_line1 || 'Not Set'}
                                     </p>
-                                    {(donation.donor_city || donation.donor_country) && (
+                                    {donation.donor_line2 && (
                                         <p className="text-sm font-bold opacity-60 bg-white/10 px-4 py-2 rounded-xl inline-block mt-2">
-                                            {[donation.donor_city, donation.donor_country].filter(Boolean).join(', ')}
+                                            {donation.donor_line2}
                                         </p>
                                     )}
                                 </div>
-                                <div className="pt-4 border-t border-white/10">
-                                    <div className="bg-white/10 px-6 py-4 rounded-3xl flex items-center justify-between group-hover:bg-white/20 transition-all">
-                                        <div>
-                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mb-0.5">Zip Code</p>
-                                            <p className="text-sm font-black italic">{donation.donor_zip || '----'}</p>
-                                        </div>
-                                        <div className="size-8 bg-[#FF9248] rounded-xl flex items-center justify-center text-white shadow-lg">
-                                            <Package className="size-4" />
-                                        </div>
+
+                                {/* Secondary Info Grid */}
+                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City</p>
+                                        <p className="text-lg font-black">{donation.donor_city || 'Not Set'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Country</p>
+                                        <p className="text-lg font-black">{donation.donor_country || 'Not Set'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -233,8 +224,8 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                             <MapPin className="size-5" />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pinned Donor Address</p>
-                                            <p className="text-xs font-black text-[#5A2C10]">Verified Coordinates</p>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pin Location</p>
+                                            <p className="text-xs font-black text-[#5A2C10]">{donation.donor_name}</p>
                                         </div>
                                     </div>
                                     <a

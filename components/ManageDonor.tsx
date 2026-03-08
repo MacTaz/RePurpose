@@ -98,7 +98,7 @@ const ManageDonor = ({ donations }: Props) => {
                 <div className="bg-white/30 backdrop-blur-md rounded-3xl overflow-hidden pb-8 shadow-lg border border-white/40 relative z-10 transition-all hover:bg-white/40">
                     <div className="relative h-auto min-h-[5rem] py-5 flex flex-col md:flex-row items-center border-b border-white/30 bg-white/20 px-8">
                         <div className="flex-1">
-                            <h1 className="text-2xl font-black text-white tracking-tight">Donations Sent</h1>
+                            <h1 className="text-2xl font-black text-white tracking-tight">Donation History</h1>
                             <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">History of contributions</p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -161,10 +161,10 @@ const ManageDonor = ({ donations }: Props) => {
                     </div>
 
                     <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] p-10 shadow-xl border border-white/50 flex flex-col items-center justify-center transition-all hover:-translate-y-1">
-                        <h2 className="text-lg font-black text-[#30496E] mb-6 uppercase tracking-widest text-center">Total Volume</h2>
+                        <h2 className="text-lg font-black text-[#30496E] mb-6 uppercase tracking-widest text-center">Total</h2>
                         <div className="bg-white rounded-full w-56 h-56 flex flex-col items-center justify-center shadow-2xl border-4 border-white transform hover:scale-105 transition-all">
                             <span className="text-7xl font-black text-[#30496E] leading-none">{totalDonated}</span>
-                            <span className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mt-2">Contributions</span>
+                            <span className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mt-2">Donations</span>
                         </div>
                     </div>
                 </div>
