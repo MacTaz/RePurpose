@@ -25,6 +25,17 @@ const CharityProfile = ({ user, userId }: CharityProfileProps) => {
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [orgName, setOrgName] = useState(user.name || '');
     const [facebook, setFacebook] = useState(user.facebook || '');
+    const [facebookError, setFacebookError] = useState('');
+
+    const validateFacebook = (value: string) => {
+        if (!value) { setFacebookError(''); return; }
+        const fbRegex = /^https?:\/\/(www\.|m\.)?facebook\.com\/[a-zA-Z0-9(.\-_]{1,}/i;
+        if (!fbRegex.test(value)) {
+            setFacebookError('Please enter a valid Facebook URL (e.g. https://facebook.com/username)');
+        } else {
+            setFacebookError('');
+        }
+    };
     const [instagram, setInstagram] = useState(user.instagram || '');
     const [website, setWebsite] = useState(user.website || '');
     const [description, setDescription] = useState(user.description || '');
@@ -124,13 +135,17 @@ const CharityProfile = ({ user, userId }: CharityProfileProps) => {
                                         </div>
                                         <div className="pl-14 text-white/90 text-lg break-all">
                                             {isProfileEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={facebook}
-                                                    onChange={(e) => setFacebook(e.target.value)}
-                                                    placeholder="Username or Link"
-                                                    className="w-full bg-white/20 border-b border-white/40 focus:border-white focus:outline-none text-white placeholder-white/50 py-1"
-                                                />
+                                                <div className="flex flex-col gap-1">
+                                                    <input
+                                                        type="text"
+                                                        value={facebook}
+                                                        onChange={(e) => { setFacebook(e.target.value); validateFacebook(e.target.value); }}
+                                                        onBlur={(e) => validateFacebook(e.target.value)}
+                                                        placeholder="https://facebook.com/username"
+                                                        className={`w-full bg-white/20 border-b focus:outline-none text-white placeholder-white/50 py-1 ${facebookError ? 'border-red-400' : 'border-white/40 focus:border-white'}`}
+                                                    />
+                                                    {facebookError && <p className="text-red-300 text-xs font-semibold mt-0.5">{facebookError}</p>}
+                                                </div>
                                             ) : (
                                                 facebook || 'NA'
                                             )}
@@ -283,8 +298,9 @@ const CharityProfile = ({ user, userId }: CharityProfileProps) => {
                             <div className="w-full lg:w-[40%] flex items-end justify-center lg:justify-end pb-4 pt-12 lg:pt-0">
                                 {isProfileEditing ? (
                                     <button
-                                        onClick={() => setIsProfileEditing(false)}
-                                        className="bg-[#FF944D] hover:bg-[#E87A30] text-white font-bold text-xl py-4 px-16 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 w-full lg:w-auto"
+                                        onClick={() => { if (!facebookError) setIsProfileEditing(false); }}
+                                        disabled={!!facebookError}
+                                        className="bg-[#FF944D] hover:bg-[#E87A30] text-white font-bold text-xl py-4 px-16 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 w-full lg:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                                     >
                                         Confirm
                                     </button>
