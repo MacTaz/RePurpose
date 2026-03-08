@@ -23,7 +23,7 @@ const InboxPage = async () => {
     const displayName = profile?.full_name || user.email || 'You'
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-['Inter']">
+        <div className="h-screen bg-[#F8F9FA] flex flex-col overflow-hidden font-['Inter']">
             <Navbar role={role} />
             <main className="flex-1 flex flex-col max-w-[1600px] mx-auto w-full overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
                 <InboxClient
