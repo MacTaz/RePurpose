@@ -9,6 +9,7 @@ export interface Contact {
     name: string;
     avatar: string;
     lastMessage: string;
+    lastMessageId?: string;
     time: string;
     unread: number;
     facebookUrl?: string;
@@ -19,6 +20,7 @@ export interface Contact {
         quantity: number;
     };
 }
+
 
 export interface ChatMessage {
     id: string;
@@ -215,7 +217,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         const fetchConversations = async () => {
             const { data: convos, error } = await supabase
                 .from('conversations')
-                .select(`id, donor_id, org_id, donation_id, messages(content, created_at, sender_id)`)
+                .select(`id, donor_id, org_id, donation_id, messages(id, content, created_at, sender_id)`)
                 .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
                 .order('created_at', { referencedTable: 'messages', ascending: false });
 
@@ -242,14 +244,17 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
 
                     const msgs = convo.messages || [];
                     const lastMsg = msgs[0];
+                    const lastSeenId = typeof window !== 'undefined' ? localStorage.getItem(`seen_${convo.id}`) : null;
+
                     return {
                         id: convo.id, partnerId,
                         name: partnerName, avatar: partnerName.charAt(0).toUpperCase(),
                         lastMessage: lastMsg?.content || 'No messages yet',
+                        lastMessageId: lastMsg?.id,
                         time: lastMsg?.created_at
                             ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                             : '',
-                        unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
+                        unread: (lastMsg && lastMsg.sender_id !== userId && lastMsg.id !== lastSeenId) ? 1 : 0,
                         donation: donationDetails,
                         facebookUrl: partnerFacebook
                     };
@@ -260,10 +265,9 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         fetchConversations();
     }, [userId, role]);
 
-    // Fetch messages + realtime
+    // Fetch messages
     useEffect(() => {
         if (!selectedId) return;
-
         const fetchMessages = async () => {
             const { data, error } = await supabase
                 .from('messages').select('id, content, image_url, sender_id, created_at')
@@ -277,29 +281,61 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
             })));
         };
         fetchMessages();
+    }, [selectedId, userId, supabase]);
 
-        if (realtimeRef.current) supabase.removeChannel(realtimeRef.current);
+    // Global Realtime listener for sidebar and active chat
+    useEffect(() => {
+        if (!userId) return;
+
         const channel = supabase
-            .channel(`messages:${selectedId}`)
+            .channel('inbox-realtime')
             .on('postgres_changes', {
                 event: 'INSERT', schema: 'public', table: 'messages',
-                filter: `conversation_id=eq.${selectedId}`,
             }, (payload: any) => {
-                const m = payload.new;
-                setMessages(prev => {
-                    if (prev.find(x => x.id === m.id)) return prev;
-                    return [...prev, {
-                        id: m.id, text: m.content,
-                        imageUrl: m.image_url,
-                        sender: m.sender_id === userId ? 'user' : 'other',
-                        time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
-                    }];
+                const newMessage = payload.new;
+
+                // 1. Update active chat if it matches selectedId
+                if (newMessage.conversation_id === selectedId) {
+                    if (newMessage.id) {
+                        localStorage.setItem(`seen_${selectedId}`, newMessage.id);
+                    }
+                    setMessages(prev => {
+                        if (prev.find(x => x.id === newMessage.id)) return prev;
+                        return [...prev, {
+                            id: newMessage.id, text: newMessage.content,
+                            imageUrl: newMessage.image_url,
+                            sender: newMessage.sender_id === userId ? 'user' : 'other',
+                            time: new Date(newMessage.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+                        }];
+                    });
+                }
+
+
+                // 2. Update Sidebar
+                setContacts(prev => {
+                    const contactIdx = prev.findIndex(c => c.id === newMessage.conversation_id);
+                    if (contactIdx === -1) return prev; // Conversation not in list yet
+
+                    const oldContact = prev[contactIdx];
+                    const updatedContact = { ...oldContact };
+                    updatedContact.lastMessage = newMessage.content || (newMessage.image_url ? '📷 Image' : '');
+                    updatedContact.time = new Date(newMessage.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+
+                    // Mark as unread ONLY if from someone else and WE ARE NOT looking at it
+                    if (newMessage.sender_id !== userId && selectedId !== newMessage.conversation_id) {
+                        updatedContact.unread = 1;
+                    }
+
+                    const newContacts = [...prev];
+                    newContacts.splice(contactIdx, 1);
+                    return [updatedContact, ...newContacts];
                 });
             })
             .subscribe();
-        realtimeRef.current = channel;
+
         return () => { supabase.removeChannel(channel); };
-    }, [selectedId, userId]);
+    }, [userId, selectedId, supabase]);
+
 
     // Send message
     const handleSendMessage = async (text: string) => {
@@ -347,8 +383,17 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const handleSelectContact = (contactId: string) => {
         setSelectedId(contactId);
         setMessages([]);
-        setContacts(prev => prev.map(c => c.id === contactId ? { ...c, unread: 0 } : c));
+        setContacts(prev => prev.map(c => {
+            if (c.id === contactId) {
+                if (c.lastMessageId) {
+                    localStorage.setItem(`seen_${c.id}`, c.lastMessageId);
+                }
+                return { ...c, unread: 0 };
+            }
+            return c;
+        }));
     };
+
 
     const handleDeleteConfirmed = async () => {
         if (!deleteTarget) return;
@@ -643,9 +688,9 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                             <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
                                         ) : (
                                             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                                <path d="M21 15l-5-5L5 21"/>
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                                <path d="M21 15l-5-5L5 21" />
                                             </svg>
                                         )}
                                     </button>
