@@ -20,9 +20,9 @@ export default async function Donate() {
     const role = (profile?.role || 'donor') as 'donor' | 'organization';
 
     return (
-        <div className="min-h-screen bg-[#9dbcd4] flex flex-col font-['Inter']">
+        <div className="min-h-screen bg-white flex flex-col font-['Inter']">
             <Navbar role={role} />
-            <main className="flex-1">
+            <main className="flex-1 flex flex-col">
                 <DonationForm />
             </main>
         </div>

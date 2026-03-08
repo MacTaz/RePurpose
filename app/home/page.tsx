@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, createAdminClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import DonorHome from './_components/DonorHome'
@@ -32,15 +32,51 @@ const Home = async () => {
     if (role === 'donor') {
         const { data: donations } = await supabase
             .from('donations')
-            .select('id, type, created_at, quantity')
+            .select('*')
             .eq('donor_id', user.id)
             .order('created_at', { ascending: false })
             .limit(20)
 
+        const orgIds = [...new Set((donations || []).map((d: any) => d.organization_id).filter(Boolean))]
+
+        // Fetch org names
+        const { data: orgProfiles } = orgIds.length > 0
+            ? await supabase.from('profiles').select('id, full_name').in('id', orgIds)
+            : { data: [] }
+
+        // Fetch org addresses via admin client to bypass RLS
+        const adminSupabase = createAdminClient()
+        const { data: orgAddresses } = orgIds.length > 0
+            ? await adminSupabase.from('addresses').select('*').in('user_id', orgIds)
+            : { data: [] }
+
+        const orgProfileMap: Record<string, any> = {}
+        for (const p of (orgProfiles || [])) orgProfileMap[p.id] = p
+
+        const orgAddressMap: Record<string, any> = {}
+        for (const a of (orgAddresses || [])) orgAddressMap[a.user_id] = a
+
+        const mappedDonations = (donations || []).map((d: any) => {
+            const op = orgProfileMap[d.organization_id] || null
+            const addr = orgAddressMap[d.organization_id] || null
+            return {
+                ...d,
+                org_name: op?.full_name || d.target_organization || 'Unknown Organization',
+                org_address: addr?.city ? `${addr.city}, ${addr.country}` : '',
+                org_city: addr?.city || '',
+                org_country: addr?.country || '',
+                org_lat: addr?.latitude || null,
+                org_lng: addr?.longitude || null,
+                org_line1: addr?.address_line1 || '',
+                org_line2: addr?.address_line2 || '',
+                org_zip: addr?.zip || ''
+            }
+        })
+
         return (
             <div className="min-h-screen bg-white flex flex-col font-['Inter']">
                 <Navbar role={role} />
-                <DonorHome donations={donations || []} />
+                <DonorHome donations={mappedDonations} />
             </div>
         )
     }

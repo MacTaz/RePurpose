@@ -139,8 +139,8 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
 
     return (
         <div className="flex flex-col h-full">
-            {/* Column headers */}
-            <div className="grid grid-cols-[50px_1fr_80px_1fr] gap-3 px-4 pt-4 pb-2">
+            {/* Column headers — desktop only */}
+            <div className="hidden md:grid grid-cols-[50px_1fr_80px_1fr] gap-3 px-4 pt-4 pb-2">
                 {['#', 'TYPE', 'QTY', 'DONOR'].map(h => (
                     <div key={h} className={h === '#' ? 'text-center' : ''}>
                         <span className="text-[10px] font-black text-[#c47a3a]/60 uppercase tracking-widest">{h}</span>
@@ -166,49 +166,75 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                             <button
                                 key={d.id}
                                 onClick={() => setSelected(d)}
-                                className={`w-full grid grid-cols-[50px_1fr_80px_1fr] gap-3 items-center px-4 py-3 rounded-2xl border shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-300 text-left group
+                                className={`w-full text-left rounded-2xl border shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-300 group
                                     ${isNew
                                         ? 'bg-orange-50 border-[#FFB27D] ring-2 ring-[#FFB27D]/40 animate-pulse'
                                         : 'bg-white border-[#FFB27D]/30 hover:border-[#FFB27D]/60'
                                     }`}
                             >
-                                {/* # */}
-                                <div className="text-center">
-                                    <span className="text-sm font-black text-[#c47a3a]">
-                                        {String(i + 1).padStart(3, '0')}
-                                    </span>
-                                </div>
-
-                                {/* Type */}
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <span className="text-lg">{getIcon(d.type)}</span>
-                                    <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.type}</span>
-                                    {isNew && (
-                                        <span className="ml-1 text-[9px] font-black text-[#FFB27D] uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded-full border border-[#FFB27D]/40">
-                                            New
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Quantity */}
-                                <div>
-                                    <span className="text-sm font-semibold text-slate-500">
-                                        ×{d.quantity ?? '—'}
-                                    </span>
-                                </div>
-
-                                {/* Donor */}
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-6 h-6 rounded-md bg-[#FFE8D4] flex items-center justify-center text-[10px] font-black text-[#c47a3a] flex-shrink-0">
-                                        {d.donor_name.charAt(0).toUpperCase()}
+                                {/* Mobile layout */}
+                                <div className="flex flex-col gap-1.5 px-4 py-3 md:hidden">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="text-sm font-black text-[#c47a3a] flex-shrink-0">{String(i + 1).padStart(3, '0')}</span>
+                                            <span className="text-lg">{getIcon(d.type)}</span>
+                                            <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.type}</span>
+                                            {isNew && (
+                                                <span className="ml-1 text-[9px] font-black text-[#FFB27D] uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded-full border border-[#FFB27D]/40 flex-shrink-0">
+                                                    New
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-sm font-semibold text-slate-500 flex-shrink-0">×{d.quantity ?? '—'}</span>
                                     </div>
-                                    <span className="text-sm font-semibold text-slate-700 truncate">{d.donor_name}</span>
-                                    <svg
-                                        className="ml-auto w-4 h-4 text-[#FFB27D] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                                        fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
-                                    >
-                                        <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-md bg-[#FFE8D4] flex items-center justify-center text-[10px] font-black text-[#c47a3a] flex-shrink-0">
+                                            {d.donor_name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span className="text-xs font-semibold text-slate-700 truncate">{d.donor_name}</span>
+                                        <svg className="ml-auto w-3 h-3 text-[#FFB27D] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Desktop layout */}
+                                <div className="hidden md:grid grid-cols-[50px_1fr_80px_1fr] gap-3 items-center px-4 py-3">
+                                    {/* # */}
+                                    <div className="text-center">
+                                        <span className="text-sm font-black text-[#c47a3a]">
+                                            {String(i + 1).padStart(3, '0')}
+                                        </span>
+                                    </div>
+                                    {/* Type */}
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span className="text-lg">{getIcon(d.type)}</span>
+                                        <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.type}</span>
+                                        {isNew && (
+                                            <span className="ml-1 text-[9px] font-black text-[#FFB27D] uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded-full border border-[#FFB27D]/40">
+                                                New
+                                            </span>
+                                        )}
+                                    </div>
+                                    {/* Quantity */}
+                                    <div>
+                                        <span className="text-sm font-semibold text-slate-500">
+                                            ×{d.quantity ?? '—'}
+                                        </span>
+                                    </div>
+                                    {/* Donor */}
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className="w-6 h-6 rounded-md bg-[#FFE8D4] flex items-center justify-center text-[10px] font-black text-[#c47a3a] flex-shrink-0">
+                                            {d.donor_name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span className="text-sm font-semibold text-slate-700 truncate">{d.donor_name}</span>
+                                        <svg
+                                            className="ml-auto w-4 h-4 text-[#FFB27D] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                            fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
+                                        >
+                                            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
                                 </div>
                             </button>
                         )

@@ -125,20 +125,18 @@ export default function DonationForm() {
   }; //
 
   return (
-    <div className="min-h-screen bg-white py-12 px-4 font-['Inter'] font-normal">
-      <div className="max-w-6xl mx-auto bg-[#9dbcd4] rounded-[40px] p-8 lg:p-12 shadow-inner">
-
-        <div className="bg-white rounded-full py-2 px-10 shadow-sm mb-10 border border-gray-200">
-          <h2 className="text-2xl font-bold text-[#30496E] text-center">
+    <div className="flex-1 bg-white p-4 sm:p-6 lg:p-8 font-['Inter'] font-normal flex flex-col">
+      <div className="w-full flex-1 bg-[#9dbcd4] rounded-[40px] p-6 lg:p-10 shadow-inner flex flex-col">
+        <div className="bg-white rounded-full py-2 px-10 shadow-sm mb-6 lg:mb-10 border border-gray-200 self-center">
+          <h2 className="text-xl lg:text-2xl font-bold text-[#30496E] text-center">
             RePurpose Donation Form
           </h2>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch flex-1">
           {/* Left Column: Image Upload Section */}
-          <div className="w-full lg:w-1/3">
-            {/* Removed errors.image condition from this main container class */}
-            <div className={`bg-white rounded-3xl p-8 shadow-sm border border-gray-200 h-full flex flex-col transition-colors`}>
+          <div className="w-full lg:w-1/3 flex flex-col">
+            <div className={`bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-gray-200 flex-1 flex flex-col transition-colors`}>
               <h3 className="text-center text-[#30496E] mb-6 border-b-4 border-[#304674] pb-2 text-xl font-bold">
                 Donation Item Image
               </h3>
@@ -177,8 +175,8 @@ export default function DonationForm() {
           </div>
 
           {/* Right Column: Form Section */}
-          <div className="w-full lg:w-2/3">
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200 h-full">
+          <div className="w-full lg:w-2/3 flex flex-col">
+            <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-gray-200 flex-1 flex flex-col">
               <h3 className="text-center text-[#30496E] mb-6 border-b-4 border-[#304674] pb-2 text-xl font-bold">
                 Donation Item Details
               </h3>
@@ -228,35 +226,35 @@ export default function DonationForm() {
                   <label className="block text-sm font-medium text-[#30496E] mb-1">Item Description / Comments</label>
                   <textarea
                     name="description"
-                    rows={6}
+                    rows={8}
                     placeholder="Describe Your Item Here"
-                    className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 outline-none resize-none transition-colors ${errors.description ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
+                    className={`w-full p-3 border rounded-md focus:ring-2 focus:ring-blue-300 outline-none resize-none transition-colors ${errors.description ? 'border-red-500 bg-red-50' : 'border-gray-400'}`}
                     value={formData.description}
-                    onChange={handleChange}>
-                  </textarea>
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#30496E] mb-2">Item Delivery Preference</label>
-                  <div className="flex gap-6 text-[#30496E]">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="block text-sm font-medium text-[#30496E] mb-3">Item Delivery Preference</label>
+                  <div className="flex gap-8 text-[#30496E]">
+                    <label className="flex items-center gap-3 cursor-pointer text-lg font-medium">
                       <input
                         type="radio"
                         name="deliveryPreference"
                         value="pickup"
                         checked={formData.deliveryPreference === 'pickup'}
                         onChange={handleChange}
-                        className="w-4 h-4 accent-[#2d4373]" />
+                        className="w-5 h-5 accent-[#2d4373]" />
                       Pickup
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-3 cursor-pointer text-lg font-medium">
                       <input
                         type="radio"
                         name="deliveryPreference"
                         value="delivery"
                         checked={formData.deliveryPreference === 'delivery'}
                         onChange={handleChange}
-                        className="w-4 h-4 accent-[#2d4373]" />
+                        className="w-5 h-5 accent-[#2d4373]" />
                       Delivery Service
                     </label>
                   </div>
@@ -266,18 +264,18 @@ export default function DonationForm() {
           </div>
         </div>
 
-        <div className="mt-12 text-center">
-          <div className="border-t-2 border-dashed border-white mb-8 w-full"></div>
+        <div className="mt-8 lg:mt-12 text-center max-w-2xl mx-auto w-full">
+          <div className="border-t-2 border-dashed border-white mb-6 lg:mb-8 w-full"></div>
           <button
             onClick={handleSubmit}
             disabled={uploading}
-            className="block w-full bg-[#2d4373] text-white py-3 rounded-full text-xl font-bold shadow-lg hover:bg-[#1e2e4f] transition-all uppercase tracking-wide disabled:opacity-50"
+            className="block w-full bg-[#2d4373] text-white py-4 rounded-full text-xl lg:text-2xl font-black shadow-lg hover:bg-[#1e2e4f] transition-all uppercase tracking-wide disabled:opacity-50"
           >
             {uploading ? 'Preparing...' : 'Match'}
           </button>
 
           {showErrorMsg && (
-            <p className="text-red-600 font-bold mt-4 text-lg">
+            <p className="text-red-600 font-bold mt-4 text-lg bg-white/80 py-2 px-4 rounded-full inline-block">
               Please fill out the form first before proceeding.
             </p>
           )}

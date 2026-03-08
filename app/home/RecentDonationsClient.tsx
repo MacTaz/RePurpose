@@ -11,6 +11,7 @@ interface Donation {
 
 interface Props {
     donations: Donation[]
+    onSelect?: (donation: Donation) => void
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -26,7 +27,7 @@ const getIcon = (type: string) => {
     return '📦'
 }
 
-const RecentDonationsClient = ({ donations }: Props) => {
+const RecentDonationsClient = ({ donations, onSelect }: Props) => {
     return (
         <div className="flex-1 border-[6px] border-[#7BA4D5] rounded-xl overflow-hidden shadow-sm flex flex-col">
             <div className="bg-[#7BA4D5] px-6 py-3">
@@ -46,7 +47,11 @@ const RecentDonationsClient = ({ donations }: Props) => {
                 ) : (
                     <div className="flex-1 overflow-y-auto divide-y divide-gray-50" style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDE6ED transparent' }}>
                         {donations.map((donation) => (
-                            <div key={donation.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[#F5F8FA] transition-colors">
+                            <div
+                                key={donation.id}
+                                onClick={() => onSelect?.(donation)}
+                                className="flex items-center gap-3 px-5 py-3 hover:bg-[#F5F8FA] transition-colors cursor-pointer group"
+                            >
                                 <div className="w-9 h-9 rounded-lg bg-[#EEF3F9] flex items-center justify-center text-lg flex-shrink-0">
                                     {getIcon(donation.type)}
                                 </div>
