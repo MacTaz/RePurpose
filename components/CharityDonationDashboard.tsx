@@ -125,7 +125,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                     <div className="size-10 bg-[#FF9248]/10 rounded-xl flex items-center justify-center text-[#FF9248]">
                                         <Info className="size-5" />
                                     </div>
-                                    <h3 className="text-xl font-black text-[#5A2C10] lowercase">Item Description</h3>
+                                    <h3 className="text-xl font-black text-[#5A2C10]">Item Description</h3>
                                 </div>
 
                                 <div className="relative mb-10 overflow-hidden">
@@ -158,7 +158,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Handover</p>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">DONATION METHOD</p>
                                         <p className="font-black text-[#5A2C10] uppercase tracking-tighter">{donation.delivery_preference || 'pickup'}</p>
                                     </div>
                                 </div>
@@ -187,7 +187,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2 opacity-40">
                                         <Navigation className="size-3" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Street Address</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Street</span>
                                     </div>
                                     <p className="text-2xl font-black tracking-tight leading-tight">
                                         {donation.donor_line1 || 'Not Set'}
@@ -209,11 +209,6 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                         <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Country</p>
                                         <p className="text-lg font-black">{donation.donor_country || 'Not Set'}</p>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Postal Code</p>
-                                    <p className="text-xl font-black bg-white/10 px-4 py-3 rounded-2xl inline-block min-w-[100px] text-center">{donation.donor_zip || '----'}</p>
                                 </div>
                             </div>
                         </div>
@@ -238,8 +233,8 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                             <MapPin className="size-5" />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pinned Donor Address</p>
-                                            <p className="text-xs font-black text-[#5A2C10]">Verified Coordinates</p>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pin Location</p>
+                                            <p className="text-xs font-black text-[#5A2C10]">{donation.donor_name}</p>
                                         </div>
                                     </div>
                                     <a
