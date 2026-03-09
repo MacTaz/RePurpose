@@ -24,27 +24,19 @@ const DisasterWatchClient = () => {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const res = await fetch(
-                    `https://gnews.io/api/v4/search?q=disaster+Philippines&lang=en&country=ph&max=8&apikey=${process.env.NEXT_PUBLIC_GNEWS_API_KEY}`
-                )
-                if (!res.ok) throw new Error('GNews failed')
+                const res = await fetch('/api/news')
+                if (!res.ok) throw new Error('News fetch failed')
                 const data = await res.json()
-                const normalized = (data.articles || []).map((a: any) => ({
-                    ...a,
-                    urlToImage: a.image || a.urlToImage || null,
-                }))
-                if (normalized.length > 0) { setArticles(normalized); return }
-                throw new Error('No articles')
-            } catch {
-                try {
-                    const res2 = await fetch(
-                        `https://newsapi.org/v2/everything?q=disaster+Philippines&language=en&pageSize=8&sortBy=publishedAt&apiKey=${process.env.NEXT_PUBLIC_NEWS_API_KEY}`
-                    )
-                    const data2 = await res2.json()
-                    if (data2.articles?.length) { setArticles(data2.articles); return }
+                if (data.articles?.length) {
+                    setArticles(data.articles)
+                } else {
                     setError(true)
-                } catch { setError(true) }
-            } finally { setLoading(false) }
+                }
+            } catch {
+                setError(true)
+            } finally {
+                setLoading(false)
+            }
         }
         fetchNews()
     }, [])
