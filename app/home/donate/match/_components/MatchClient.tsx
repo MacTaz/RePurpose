@@ -6,6 +6,9 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signout } from '@/lib/auth-actions';
 import { createClient } from '@/utils/supabase/client';
+import dynamic from 'next/dynamic';
+
+const DistanceMap = dynamic(() => import('@/components/DistanceMap'), { ssr: false });
 
 interface Donation {
     id: string;
@@ -35,15 +38,19 @@ interface Organization {
     facebook_url?: string;
     email?: string;
     tagline?: string;
+    urgent_need?: string;
     location: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 interface MatchClientProps {
     organizations: Organization[];
     role: 'donor' | 'organization';
+    userLocation?: { latitude: number; longitude: number };
 }
 
-export default function MatchClient({ organizations, role }: MatchClientProps) {
+export default function MatchClient({ organizations, role, userLocation }: MatchClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const supabase = createClient();
@@ -279,6 +286,13 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     <p className="text-xs text-gray-400 font-bold truncate mb-2 uppercase tracking-tight">
                                         {org.tagline || 'Ready to accept donations'}
                                     </p>
+                                    {org.urgent_need && (
+                                        <div className="mb-2">
+                                            <span className="text-[9px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded uppercase tracking-widest inline-flex items-center gap-1 w-fit">
+                                                <AlertTriangle className="size-2.5" /> URGENT: {org.urgent_need}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] bg-[#30496E]/10 text-[#30496E] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
                                             {org.donation_method?.toLowerCase() === 'both'
@@ -352,6 +366,19 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                         <div className="py-2">
                             <div className="grid xl:grid-cols-3 gap-8 lg:gap-12 mt-4">
                                 <div className="xl:col-span-2 space-y-8 lg:space-y-10">
+                                    {/* Map Display */}
+                                    {(selectedOrg?.latitude && selectedOrg?.longitude) && (
+                                        <div className="bg-white p-2 lg:p-3 rounded-[32px] lg:rounded-[40px] shadow-sm border border-[#9dbcd4]/30 relative overflow-hidden group hover:border-[#9dbcd4] transition-all">
+                                            <DistanceMap
+                                                orgLat={selectedOrg.latitude}
+                                                orgLng={selectedOrg.longitude}
+                                                userLat={userLocation?.latitude}
+                                                userLng={userLocation?.longitude}
+                                                zoom={14}
+                                            />
+                                        </div>
+                                    )}
+
                                     <div>
                                         <h3 className="text-xl lg:text-2xl font-black text-[#30496E] mb-6 flex flex-col sm:flex-row items-center gap-3 tracking-tight">
                                             <span className="hidden sm:inline">Profile Description</span>
@@ -369,33 +396,56 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                         </h4>
                                         <div className="flex flex-wrap justify-center sm:justify-start gap-2 lg:gap-3">
                                             {selectedOrg?.categories_accepted && selectedOrg.categories_accepted.length > 0 ? (
-                                                selectedOrg.categories_accepted.map(cat => (
-                                                    <div key={cat} className="px-4 py-2 lg:px-5 lg:py-3 bg-[#30496E]/5 border border-[#30496E]/10 rounded-2xl flex items-center gap-2 lg:gap-3 group hover:bg-[#30496E] hover:text-white transition-all cursor-default shadow-sm text-center">
-                                                        <div className="size-1.5 lg:size-2 bg-[#30496E] rounded-full group-hover:bg-white hidden sm:block"></div>
-                                                        <span className="font-bold text-[#30496E] group-hover:text-white uppercase text-[10px] lg:text-xs tracking-widest">{cat}</span>
-                                                    </div>
-                                                ))
+                                                selectedOrg.categories_accepted.map(cat => {
+                                                    const isUrgent = selectedOrg.urgent_need?.toLowerCase() === cat.toLowerCase();
+                                                    return (
+                                                        <div key={cat} className={`px-4 py-2 lg:px-5 lg:py-3 ${isUrgent ? 'bg-red-500 hover:bg-red-600 shadow-md shadow-red-500/20' : 'bg-[#30496E]/5 hover:bg-[#30496E] shadow-sm'} border ${isUrgent ? 'border-red-500' : 'border-[#30496E]/10'} rounded-2xl flex items-center gap-2 lg:gap-3 group transition-all cursor-default text-center`}>
+                                                            <div className={`size-1.5 lg:size-2 ${isUrgent ? 'bg-white' : 'bg-[#30496E] group-hover:bg-white'} rounded-full hidden sm:block`}></div>
+                                                            <span className={`font-bold uppercase text-[10px] lg:text-xs tracking-widest ${isUrgent ? 'text-white' : 'text-[#30496E] group-hover:text-white'}`}>
+                                                                {cat} {isUrgent && '(Needed)'}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })
                                             ) : (
-                                                <p className="text-gray-400 italic">No categories listed.</p>
+                                                <p className="text-gray-400 italic font-bold">No categories listed.</p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6 lg:space-y-8">
+
+                                    {/* Urgent Need Sidebar Panel */}
+                                    {selectedOrg?.urgent_need && (
+                                        <div className="bg-red-50 border-2 border-red-200 p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] flex flex-col gap-3 text-center shadow-inner relative overflow-hidden group">
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-red-400"></div>
+                                            <div className="size-14 bg-red-100 rounded-2xl flex items-center justify-center shrink-0 mx-auto group-hover:scale-110 transition-transform shadow-sm relative">
+                                                <AlertTriangle className="size-6 text-red-600" />
+                                                <div className="absolute inset-0 bg-red-400 opacity-20 animate-ping rounded-2xl delay-100"></div>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] lg:text-xs font-black text-red-400 mb-1.5 tracking-widest uppercase">Urgent Inventory Need</h4>
+                                                <p className="text-red-600 font-black text-lg lg:text-xl leading-tight uppercase tracking-tight">
+                                                    {selectedOrg.urgent_need}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="bg-[#f0f4f8] p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] border-2 border-dashed border-[#9dbcd4] shadow-inner">
-                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] mb-6 lg:mb-8 lowercase tracking-tight text-center sm:text-left"><span className="hidden sm:inline">/</span> connectivity</h4>
+                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] mb-6 lg:mb-8 tracking-tight text-center sm:text-left"><span className="hidden sm:inline">Details</span></h4>
                                         <div className="space-y-4 lg:space-y-6">
                                             {[
-                                                { icon: Globe, val: selectedOrg?.website, label: 'Website' },
+                                                { icon: Globe, val: selectedOrg?.website || selectedOrg?.facebook_url, label: selectedOrg?.website ? 'Website' : (selectedOrg?.facebook_url ? 'Facebook' : 'Website') },
                                                 { icon: Mail, val: selectedOrg?.email, label: 'Email' },
                                                 { icon: Phone, val: selectedOrg?.phone, label: 'Phone' },
                                                 { icon: Clock, val: selectedOrg?.availability, label: 'Availability' },
                                                 {
                                                     icon: Truck,
                                                     val: selectedOrg?.donation_method?.toLowerCase() === 'both'
-                                                        ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
-                                                        : selectedOrg?.donation_method,
+                                                        ? (searchParams.get('pref') === 'pickup' ? 'Pick-Up' : searchParams.get('pref') === 'delivery' ? 'Delivery' : 'Delivery & Pickup')
+                                                        : (selectedOrg?.donation_method?.toLowerCase() === 'pickup' ? 'Pick-Up' : selectedOrg?.donation_method?.toLowerCase() === 'delivery' ? 'Delivery' : selectedOrg?.donation_method || 'Pick-Up/Delivery'),
                                                     label: 'Donation Method'
                                                 }
                                             ].map((item, i) => (
@@ -405,26 +455,28 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{item.label}</p>
-                                                        <p className="text-sm lg:text-sm font-bold text-[#30496E] break-words sm:truncate">{item.val || 'Not listed'}</p>
+                                                        {item.val ? (
+                                                            (item.label === 'Facebook' || item.label === 'Website') ? (
+                                                                <a
+                                                                    href={item.val.toString().startsWith('http') ? item.val.toString() : `https://${item.val}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-sm lg:text-sm font-bold text-blue-500 hover:text-blue-700 hover:underline break-words sm:truncate block transition-colors"
+                                                                >
+                                                                    Visit {item.label}
+                                                                </a>
+                                                            ) : (
+                                                                <p className="text-sm lg:text-sm font-bold text-[#30496E] break-words sm:truncate">{item.val}</p>
+                                                            )
+                                                        ) : (
+                                                            <p className="text-sm lg:text-sm font-bold text-gray-400 break-words sm:truncate">Not listed</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="p-4 lg:p-6 bg-[#30496E] rounded-[24px] lg:rounded-[32px] text-white flex flex-col sm:flex-row items-center gap-3 lg:gap-4 shadow-lg text-center sm:text-left">
-                                        <div className="size-10 lg:size-12 bg-white/20 rounded-xl lg:rounded-2xl flex items-center justify-center backdrop-blur-md">
-                                            <Truck className="size-5 lg:size-6 text-white" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] lg:text-[10px] font-black text-blue-200 uppercase tracking-widest">Support Mode</p>
-                                            <p className="font-bold text-base lg:text-lg">
-                                                {selectedOrg?.donation_method?.toLowerCase() === 'both'
-                                                    ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
-                                                    : (selectedOrg?.donation_method || 'Pickup/Delivery')}
-                                            </p>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
