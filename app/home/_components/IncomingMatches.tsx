@@ -9,6 +9,7 @@ interface Donation {
     donor_id: string
     organization_id: string | null
     type: string
+    item_name?: string | null
     quantity: number | null
     status: string | null
     created_at: string
@@ -87,6 +88,7 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                         donor_id: d.donor_id,
                         organization_id: d.organization_id,
                         type: d.type,
+                        item_name: d.item_name,
                         quantity: d.quantity,
                         status: d.status,
                         created_at: d.created_at,
@@ -162,7 +164,7 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
         setRefreshing(true)
         const { data, error } = await supabase
             .from('donations')
-            .select(`id, donor_id, organization_id, type, quantity, status, created_at, description, delivery_preference,
+            .select(`id, donor_id, organization_id, type, item_name, quantity, status, created_at, description, delivery_preference,
                 profiles!donations_donor_id_fkey(full_name, addresses(city, country, address_line1, address_line2, zip, latitude, longitude))`)
             .eq('organization_id', orgId)
             .eq('status', 'pending')
@@ -173,7 +175,7 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                 const addr = d.profiles?.addresses?.[0] || {}
                 return {
                     id: d.id, donor_id: d.donor_id, organization_id: d.organization_id,
-                    type: d.type, quantity: d.quantity, status: d.status,
+                    type: d.type, item_name: d.item_name, quantity: d.quantity, status: d.status,
                     created_at: d.created_at, description: d.description ?? null,
                     delivery_preference: d.delivery_preference ?? null,
                     donor_name: d.profiles?.full_name || 'Anonymous Donor',
@@ -215,7 +217,7 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
             {/* Column headers + refresh */}
             <div className="flex items-center px-4 pt-4 pb-2">
                 <div className="hidden sm:grid grid-cols-[50px_1fr_80px_1fr] gap-3 flex-1">
-                    {['#', 'TYPE', 'QTY', 'DONOR'].map(h => (
+                    {['#', 'NAME', 'QTY', 'DONOR'].map(h => (
                         <div key={h} className={h === '#' ? 'text-center' : ''}>
                             <span className="text-[10px] font-black text-[#c47a3a]/60 uppercase tracking-widest">{h}</span>
                         </div>
@@ -265,7 +267,10 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                                         <div className="flex items-center gap-2 min-w-0">
                                             <span className="text-sm font-black text-[#c47a3a] flex-shrink-0">{String(i + 1).padStart(3, '0')}</span>
                                             <span className="text-lg">{getIcon(d.type)}</span>
-                                            <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.type}</span>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.item_name || d.type}</span>
+                                                {d.item_name && <span className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none">{d.type}</span>}
+                                            </div>
                                             {isNew && (
                                                 <span className="ml-1 text-[9px] font-black text-[#FFB27D] uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded-full border border-[#FFB27D]/40 flex-shrink-0">
                                                     New
@@ -293,10 +298,12 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                                             {String(i + 1).padStart(3, '0')}
                                         </span>
                                     </div>
-                                    {/* Type */}
                                     <div className="flex items-center gap-2 min-w-0">
                                         <span className="text-lg">{getIcon(d.type)}</span>
-                                        <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.type}</span>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-sm font-bold text-slate-800 capitalize truncate">{d.item_name || d.type}</span>
+                                            {d.item_name && <span className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none">{d.type}</span>}
+                                        </div>
                                         {isNew && (
                                             <span className="ml-1 text-[9px] font-black text-[#FFB27D] uppercase tracking-widest bg-orange-50 px-1.5 py-0.5 rounded-full border border-[#FFB27D]/40">
                                                 New

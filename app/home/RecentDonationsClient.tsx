@@ -5,8 +5,10 @@ import React from 'react'
 interface Donation {
     id: string
     type: string
+    item_name?: string | null
     created_at: string
     amount?: number | null
+    quantity?: number | null
     status?: string | null
 }
 
@@ -57,7 +59,11 @@ const RecentDonationsClient = ({ donations, onSelect }: Props) => {
                                     {getIcon(donation.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-800 capitalize truncate">{donation.type}</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <p className="text-sm font-semibold text-gray-800 capitalize truncate line-clamp-1">{donation.item_name || donation.type}</p>
+                                        <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase">{(donation.item_name && donation.type) ? donation.type : ''}</span>
+                                        <span className="text-xs font-black text-gray-400 opacity-60">×{donation.quantity || 1}</span>
+                                    </div>
                                     <p className="text-xs text-gray-400">
                                         {new Date(donation.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </p>

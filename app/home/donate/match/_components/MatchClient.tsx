@@ -195,6 +195,7 @@ export default function MatchClient({ organizations, role, userLocation }: Match
                     donor_id: user.id,
                     organization_id: selectedOrg.id,
                     type: category || 'Other',
+                    item_name: itemName,
                     quantity: quantity,
                     status: 'pending',
                     target_organization: selectedOrg.full_name,

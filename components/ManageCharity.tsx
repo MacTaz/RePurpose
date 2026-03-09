@@ -10,6 +10,7 @@ interface Donation {
     donor_id: string
     organization_id: string | null
     type: string
+    item_name?: string | null
     quantity: number | null
     status: string | null
     created_at: string
@@ -161,7 +162,7 @@ const ManageCharity = ({ donations }: Props) => {
                     <div className="mt-6 px-4 md:px-8 overflow-x-auto pb-4">
                         <div className="min-w-[800px] space-y-4">
                             <div className="flex space-x-4">
-                                {["#", "Type", "Quantity", "Donor", "Date"].map(h => (
+                                {["#", "Name", "Quantity", "Donor", "Date"].map(h => (
                                     <div key={h} className="flex-1 bg-white/90 rounded-full py-2.5 text-center text-[#5A2C10] text-[10px] font-black uppercase tracking-widest shadow-sm">{h}</div>
                                 ))}
                             </div>
@@ -173,7 +174,10 @@ const ManageCharity = ({ donations }: Props) => {
                                     <div key={d.id} onClick={() => { setSelectedDonation(d); setMode('request'); }}
                                         className="flex w-full min-h-[56px] py-1 bg-white/80 rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
                                         <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-black text-[#5A2C10] px-1 text-center">{String(i + 1).padStart(3, '0')}</div>
-                                        <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-bold text-[#5A2C10] capitalize px-1 text-center">{d.type}</div>
+                                        <div className="flex-1 border-r border-[#FFB27D]/30 flex flex-col items-center justify-center px-1 text-center min-w-0">
+                                            <span className="font-bold text-[#5A2C10] capitalize truncate w-full tracking-tight">{d.item_name || d.type}</span>
+                                            {d.item_name && <span className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none mt-0.5">{d.type}</span>}
+                                        </div>
                                         <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-bold text-[#5A2C10] px-1 text-center">{d.quantity} units</div>
                                         <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-bold text-[#5A2C10] px-1 text-center">{d.donor_name}</div>
                                         <div className="flex-1 flex items-center justify-center font-bold text-[#5A2C10] px-1 text-center">{new Date(d.created_at).toLocaleDateString()}</div>
@@ -207,7 +211,7 @@ const ManageCharity = ({ donations }: Props) => {
                     <div className="mt-6 px-4 md:px-8 overflow-x-auto pb-4">
                         <div className="min-w-[800px] space-y-4">
                             <div className="flex space-x-4">
-                                {["#", "Type", "Status", "Donor", "Updates"].map(h => (
+                                {["#", "Name", "Quantity", "Donor", "Updates"].map(h => (
                                     <div key={h} className="flex-1 bg-white/90 rounded-full py-2.5 text-center text-[#5A2C10] text-[10px] font-black uppercase tracking-widest shadow-sm">{h}</div>
                                 ))}
                             </div>
@@ -219,16 +223,17 @@ const ManageCharity = ({ donations }: Props) => {
                                     <div key={d.id} onClick={() => { setSelectedDonation(d); setMode('status'); }}
                                         className="flex w-full min-h-[56px] py-1 bg-white/80 rounded-xl border border-white/60 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
                                         <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-black text-[#5A2C10] px-1 text-center">{String(i + 1).padStart(3, '0')}</div>
-                                        <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-bold text-[#5A2C10] capitalize px-1 text-center">{d.type}</div>
-                                        <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center px-1 text-center">
-                                            <span className={`px-2 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-center ${d.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                                d.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                                    'bg-[#FFD1B3] text-[#5A2C10]'
-                                                }`}>{d.status?.replace('_', ' ')}</span>
+                                        <div className="flex-1 border-r border-[#FFB27D]/30 flex flex-col items-center justify-center px-1 text-center min-w-0">
+                                            <span className="font-bold text-[#5A2C10] capitalize truncate w-full tracking-tight">{d.item_name || d.type}</span>
+                                            {d.item_name && <span className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none mt-0.5">{d.type}</span>}
                                         </div>
+                                        <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-bold text-[#5A2C10] px-1 text-center">{d.quantity} units</div>
                                         <div className="flex-1 border-r border-[#FFB27D]/30 flex items-center justify-center font-bold text-[#5A2C10] px-1 text-center">{d.donor_name}</div>
-                                        <div className="flex-1 flex items-center justify-center px-1 text-center">
-                                            <div className="w-full mx-2 md:mx-6 h-1 bg-[#5A2C10]/10 rounded-full overflow-hidden">
+                                        <div className="flex-1 flex flex-col items-center justify-center px-1 text-center gap-2">
+                                            <span className={`text-[9px] font-black uppercase tracking-[0.15em] ${d.status === 'delivered' ? 'text-green-600' : d.status === 'in_progress' ? 'text-blue-600' : 'text-[#c47a3a]'}`}>
+                                                {d.status?.replace('_', ' ')}
+                                            </span>
+                                            <div className="w-full mx-2 md:mx-6 h-1.5 bg-[#5A2C10]/10 rounded-full overflow-hidden">
                                                 <div className={`h-full transition-all duration-500 ${d.status === 'delivered' ? 'w-full bg-green-500' : d.status === 'in_progress' ? 'w-2/3 bg-blue-500' : 'w-1/3 bg-[#5A2C10]'}`} />
                                             </div>
                                         </div>

@@ -74,6 +74,10 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                             {/* Tracking and Progress */}
                             <div className="flex-1 flex flex-col p-4">
                                 <div className="bg-[#30496E]/5 p-8 rounded-[2.5rem] border border-[#30496E]/5 mb-8">
+                                    <div className="mb-6 border-b border-[#30496E]/10 pb-4">
+                                        <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-1">Item Name</p>
+                                        <h2 className="text-3xl font-black text-[#30496E] capitalize tracking-tighter">{donation.item_name || donation.type}</h2>
+                                    </div>
                                     <div className="flex items-center justify-between mb-4">
                                         <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em]">Current Phase</p>
                                         <p className={`text-sm font-black uppercase tracking-tighter ${donation?.status === 'rejected' ? 'text-red-500' : 'text-[#30496E]'
@@ -118,15 +122,19 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                     </p>
                                 </div>
 
-                                <div className="space-y-4 flex-1">
+                                <div className="grid grid-cols-2 gap-4 mt-auto">
                                     <div className="bg-[#80A6C2]/10 p-6 rounded-3xl border border-[#80A6C2]/10 transition-colors hover:bg-[#80A6C2]/20">
                                         <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Item Type</p>
                                         <p className="text-xl font-black text-[#30496E] capitalize italic truncate">{donation?.type}</p>
                                     </div>
                                     <div className="bg-[#30496E]/10 p-6 rounded-3xl border border-[#30496E]/10 transition-colors hover:bg-[#30496E]/20">
-                                        <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Donated To</p>
-                                        <p className="text-xl font-black text-[#30496E] uppercase tracking-tighter truncate">{donation?.org_name || donation?.target_organization}</p>
+                                        <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Quantity</p>
+                                        <p className="text-xl font-black text-[#30496E]">{donation?.quantity || 1} <span className="text-xs opacity-50 font-bold uppercase ml-1">Units</span></p>
                                     </div>
+                                </div>
+                                <div className="mt-4 bg-[#30496E]/5 p-6 rounded-3xl border border-[#30496E]/10 transition-colors hover:bg-[#30496E]/10">
+                                    <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Donated To</p>
+                                    <p className="text-xl font-black text-[#30496E] uppercase tracking-tighter truncate">{donation?.org_name || donation?.target_organization}</p>
                                 </div>
 
                                 <div className="mt-8 pt-8 border-t border-gray-100 flex items-center justify-between">

@@ -9,6 +9,7 @@ interface Donation {
     donor_id: string
     organization_id: string | null
     type: string
+    item_name?: string | null
     quantity: number | null
     status: string | null
     created_at: string
@@ -141,7 +142,7 @@ const ManageDonor = ({ donations }: Props) => {
                     <div className="mt-8 px-4 md:px-8 pb-4 overflow-x-auto relative z-10">
                         <div className="min-w-[800px] space-y-4">
                             <div className="flex space-x-4">
-                                {["#", "Type", "Charity Sent To", "Status", "Date"].map(h => (
+                                {["#", "Name", "Qty", "Charity Sent To", "Status", "Date"].map(h => (
                                     <div key={h} className="flex-1 bg-white/80 rounded-full py-2.5 text-center text-[#30496E] text-[10px] font-black uppercase tracking-widest shadow-sm">{h}</div>
                                 ))}
                             </div>
@@ -153,7 +154,11 @@ const ManageDonor = ({ donations }: Props) => {
                                     <div key={donation.id} onClick={() => setSelectedDonation(donation)}
                                         className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-black text-[#30496E]">{String(index + 1).padStart(3, '0')}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize">{donation.type}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex flex-col items-center justify-center px-2 min-w-0">
+                                            <span className="font-bold text-[#30496E] capitalize truncate w-full text-center">{donation.item_name || donation.type}</span>
+                                            {donation.item_name && <span className="text-[10px] opacity-40 uppercase font-black tracking-widest">{donation.type}</span>}
+                                        </div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">×{donation.quantity || 1}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.org_name || donation.target_organization || '—'}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">
                                             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'rejected' || donation.status === 'cancelled' ? 'bg-red-100 text-red-500' :

@@ -11,6 +11,7 @@ interface Donation {
     donor_id: string;
     organization_id: string | null;
     type: string;
+    item_name?: string | null;
     quantity: number | null;
     status: string | null;
     created_at: string;
@@ -128,7 +129,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
                                         <div className="flex items-center gap-3">
                                             <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white text-xs font-black uppercase tracking-widest">
-                                                {donation.type}
+                                                {donation.item_name || donation.type}
                                             </div>
                                         </div>
                                     </div>
@@ -139,9 +140,9 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                             <div className="flex-1 flex flex-col p-4">
                                 <div className="flex items-center gap-3 mb-8">
                                     <div className="size-10 bg-[#FF9248]/10 rounded-xl flex items-center justify-center text-[#FF9248]">
-                                        <Info className="size-5" />
+                                        <Package className="size-5" />
                                     </div>
-                                    <h3 className="text-xl font-black text-[#5A2C10]">Item Description</h3>
+                                    <h3 className="text-xl font-black text-[#5A2C10]">{donation.item_name || 'Item Description'}</h3>
                                 </div>
 
                                 <div className="relative mb-10 overflow-hidden">

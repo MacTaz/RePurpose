@@ -11,6 +11,7 @@ interface Donation {
     status: 'accepted' | 'in_progress' | 'delivered'
     created_at: string
     donor_id: string
+    item_name?: string | null
     donor_name: string
 }
 
@@ -170,7 +171,10 @@ const DonationCard = ({
                     <div className="flex items-center gap-2 min-w-0">
                         <span className="text-sm font-black text-[#c47a3a] flex-shrink-0">{pad(index + 1)}</span>
                         <span className="text-lg flex-shrink-0">{getIcon(donation.type)}</span>
-                        <span className="text-sm font-bold text-slate-800 capitalize truncate">{donation.type}</span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-bold text-slate-800 capitalize truncate">{donation.item_name || donation.type}</span>
+                            {donation.item_name && <span className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none mt-0.5">{donation.type}</span>}
+                        </div>
                         {donation.quantity && (
                             <span className="text-xs text-slate-400 font-medium flex-shrink-0">×{donation.quantity}</span>
                         )}
@@ -200,16 +204,19 @@ const DonationCard = ({
             </div>
 
             {/* ── Desktop layout ── */}
-            <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] items-center px-5 py-4 gap-4">
+            <div className="hidden md:grid grid-cols-[60px_1fr_80px_180px_1fr_1fr] items-center px-5 py-4 gap-4">
                 <div className="text-center">
                     <span className="text-sm font-black text-[#c47a3a]">{pad(index + 1)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-xl">{getIcon(donation.type)}</span>
-                    <span className="text-sm font-bold text-slate-800 capitalize">{donation.type}</span>
-                    {donation.quantity && (
-                        <span className="text-xs text-slate-400 font-medium">×{donation.quantity}</span>
-                    )}
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold text-slate-800 capitalize truncate tracking-tight">{donation.item_name || donation.type}</span>
+                        {donation.item_name && <span className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none mt-0.5">{donation.type}</span>}
+                    </div>
+                </div>
+                <div className="text-center">
+                    <span className="text-sm font-semibold text-slate-500">×{donation.quantity || 1}</span>
                 </div>
                 <div className="flex justify-center">
                     <button
@@ -261,7 +268,7 @@ const StatusManagement = ({ orgId }: { orgId: string }) => {
         const { data, error } = await supabase
             .from('donations')
             .select(`
-                id, type, quantity, status, created_at, donor_id,
+                id, type, item_name, quantity, status, created_at, donor_id,
                 profiles!donor_id ( full_name )
             `)
             .eq('organization_id', orgId)
@@ -271,7 +278,7 @@ const StatusManagement = ({ orgId }: { orgId: string }) => {
         if (error) { console.error(error); setLoading(false); setRefreshing(false); return }
 
         const mapped: Donation[] = (data || []).map((d: any) => ({
-            id: d.id, type: d.type, quantity: d.quantity,
+            id: d.id, type: d.type, item_name: d.item_name, quantity: d.quantity,
             status: d.status, created_at: d.created_at,
             donor_id: d.donor_id,
             donor_name: d.profiles?.full_name || 'Unknown Donor',
@@ -302,9 +309,9 @@ const StatusManagement = ({ orgId }: { orgId: string }) => {
         <div className="flex flex-col h-full">
             {/* Header row — refresh always visible, column labels desktop only */}
             <div className="flex items-center px-4 md:px-5 py-3 mb-2">
-                <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] gap-4 flex-1">
-                    {['#', 'TYPE', 'STATUS', 'DONOR', 'DATE'].map(h => (
-                        <div key={h} className={h === 'STATUS' ? 'text-center' : h === 'DATE' ? 'text-right' : ''}>
+                <div className="hidden md:grid grid-cols-[60px_1fr_80px_180px_1fr_1fr] gap-4 flex-1">
+                    {['#', 'NAME', 'QUANTITY', 'STATUS', 'DONOR', 'DATE'].map(h => (
+                        <div key={h} className={h === 'STATUS' || h === 'QUANTITY' ? 'text-center' : h === 'DATE' ? 'text-right' : ''}>
                             <span className="text-[10px] font-black text-[#c47a3a]/60 uppercase tracking-widest">{h}</span>
                         </div>
                     ))}
@@ -338,9 +345,10 @@ const StatusManagement = ({ orgId }: { orgId: string }) => {
                                     <div className="h-4 w-16 bg-orange-100 rounded" />
                                 </div>
                             </div>
-                            <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] gap-4 items-center">
+                            <div className="hidden md:grid grid-cols-[60px_1fr_80px_180px_1fr_1fr] gap-4 items-center">
                                 <div className="h-4 w-8 bg-orange-100 rounded mx-auto" />
                                 <div className="h-4 w-24 bg-orange-100 rounded" />
+                                <div className="h-4 w-8 bg-orange-100 rounded mx-auto" />
                                 <div className="h-7 w-28 bg-orange-100 rounded-full mx-auto" />
                                 <div className="h-4 w-32 bg-orange-100 rounded" />
                                 <div className="h-4 w-20 bg-orange-100 rounded ml-auto" />

@@ -73,7 +73,7 @@ const DonationStatus = ({ donation, onClose }: any) => {
                                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
                                         <div className="flex items-center gap-3">
                                             <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white text-xs font-black uppercase tracking-widest">
-                                                {donation.type}
+                                                {donation.item_name || donation.type}
                                             </div>
                                         </div>
                                     </div>
@@ -98,6 +98,10 @@ const DonationStatus = ({ donation, onClose }: any) => {
 
                                 <div className="space-y-10 flex-1">
                                     <div className="bg-[#5A2C10]/5 p-8 rounded-[2.5rem] border border-[#5A2C10]/5">
+                                        <div className="mb-6 border-b border-[#5A2C10]/10 pb-4">
+                                            <p className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-[0.2em] mb-1">Item Name</p>
+                                            <h2 className="text-3xl font-black text-[#5A2C10] capitalize tracking-tighter">{donation.item_name || donation.type}</h2>
+                                        </div>
                                         <div className="flex items-center justify-between mb-4">
                                             <p className="text-[10px] font-black text-[#5A2C10]/40 uppercase tracking-[0.2em]">Live Status</p>
                                             <p className="text-sm font-black text-[#5A2C10] uppercase tracking-tighter">{status.replace('_', ' ')}</p>

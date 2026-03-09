@@ -9,6 +9,7 @@ interface DonationThread {
     conversationId: string;
     donationId: string | null;
     donationType: string;
+    donationItemName: string | null;
     donationStatus: string;
     donationQuantity: number;
     lastMessageId: string | null;
@@ -60,11 +61,11 @@ const getIcon = (type: string) => {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bar: string; width: string }> = {
-    pending:     { label: 'Pending',     color: 'text-amber-600',  bar: 'bg-amber-400',  width: 'w-[10%]' },
-    accepted:    { label: 'Accepted',    color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3'   },
-    in_progress: { label: 'In Progress', color: 'text-blue-600',   bar: 'bg-blue-500',   width: 'w-2/3'   },
-    delivered:   { label: 'Delivered',   color: 'text-green-600',  bar: 'bg-green-500',  width: 'w-full'  },
-    rejected:    { label: 'Rejected',    color: 'text-red-500',    bar: 'bg-red-400',    width: 'w-0'     },
+    pending: { label: 'Pending', color: 'text-amber-600', bar: 'bg-amber-400', width: 'w-[10%]' },
+    accepted: { label: 'Accepted', color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3' },
+    in_progress: { label: 'In Progress', color: 'text-blue-600', bar: 'bg-blue-500', width: 'w-2/3' },
+    delivered: { label: 'Delivered', color: 'text-green-600', bar: 'bg-green-500', width: 'w-full' },
+    rejected: { label: 'Rejected', color: 'text-red-500', bar: 'bg-red-400', width: 'w-0' },
 }
 
 // ── Delete Modal ──────────────────────────────────────────────────────────────
@@ -133,8 +134,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const realtimeRef = useRef<any>(null)
 
     const accentColor = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600'
-    const accentText  = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
-    const accentBg    = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
+    const accentText = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
+    const accentBg = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
     const accentShadow = isOrg ? 'shadow-[#FF9248]/20' : 'shadow-blue-200'
 
     // ── Auto scroll ───────────────────────────────────────────────────────────
@@ -194,7 +195,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         )]
         const donationResults = await Promise.all(
             donationIds.map(id =>
-                supabase.from('donations').select('id, type, status, quantity').eq('id', id).single()
+                supabase.from('donations').select('id, type, item_name, status, quantity').eq('id', id).single()
             )
         )
         const donationMap: Record<string, any> = {}
@@ -229,6 +230,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 conversationId: convo.id,
                 donationId: convo.donation_id,
                 donationType: don?.type || 'Donation',
+                donationItemName: don?.item_name || null,
                 donationStatus: don?.status || 'pending',
                 donationQuantity: don?.quantity || 1,
                 lastMessageId: lastMsg?.id || null,
@@ -368,7 +370,9 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
 
         const thread: DonationThread = {
             conversationId: newConvo.id, donationId: null,
-            donationType: 'General', donationStatus: 'pending',
+            donationType: 'General',
+            donationItemName: null,
+            donationStatus: 'pending',
             donationQuantity: 0, lastMessageId: null, lastMessage: 'No messages yet', time: '', unread: 0,
         }
         setOrgGroups(prev => {
@@ -580,11 +584,14 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center justify-between gap-1">
                                                                 <p className={`text-sm font-bold capitalize truncate ${isActive ? accentText : 'text-slate-800'}`}>
-                                                                    {thread.donationType}
+                                                                    {thread.donationItemName || thread.donationType}
                                                                     <span className="text-slate-400 font-normal ml-1">×{thread.donationQuantity}</span>
                                                                 </p>
                                                                 <span className="text-[10px] text-slate-400 flex-shrink-0">{thread.time}</span>
                                                             </div>
+                                                            {thread.donationItemName && (
+                                                                <p className="text-[9px] opacity-40 uppercase font-black tracking-widest leading-none mt-0.5">{thread.donationType}</p>
+                                                            )}
                                                             {/* Status bar */}
                                                             <div className="flex items-center gap-2 mt-1.5">
                                                                 <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -631,9 +638,12 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-slate-900 leading-none capitalize">
-                                            {selectedThread.donationType}
+                                            {selectedThread.donationItemName || selectedThread.donationType}
                                             <span className="text-slate-400 font-normal ml-1.5 text-sm">×{selectedThread.donationQuantity}</span>
                                         </h3>
+                                        {selectedThread.donationItemName && (
+                                            <p className="text-[10px] opacity-40 uppercase font-black tracking-widest leading-none mt-1">{selectedThread.donationType}</p>
+                                        )}
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-xs text-slate-500 font-medium">{selectedOrgGroup.partnerName}</span>
                                             <span className="text-slate-300">·</span>
