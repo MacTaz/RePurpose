@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle } from 'lucide-react';
+import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle, Menu } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signout } from '@/lib/auth-actions';
@@ -61,6 +61,7 @@ export default function MatchClient({ organizations, role, userLocation }: Match
     const [pendingUrl, setPendingUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Prevent accidental navigation via browser refresh/close
     useEffect(() => {
@@ -189,23 +190,46 @@ export default function MatchClient({ organizations, role, userLocation }: Match
         <div className="flex flex-col h-screen overflow-hidden">
             {/* Custom Navbar that handles the guard */}
             <div className="font-inter">
-                <nav className={`px-8 py-3 flex justify-between items-center shadow-lg transition-colors ${role === 'donor' ? 'bg-[#3D5082] text-white' : 'bg-[#FF9248] text-black'}`}>
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-black tracking-tight cursor-pointer" onClick={(e) => handleNavClick(e as any, '/home')}>
-                            RePurpose
-                        </h1>
+                <nav className={`px-4 md:px-8 py-3 relative shadow-lg transition-colors ${role === 'donor' ? 'bg-[#3D5082] text-white' : 'bg-[#FF9248] text-black'}`}>
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-black tracking-tight cursor-pointer" onClick={(e) => handleNavClick(e as any, '/home')}>
+                                RePurpose
+                            </h1>
+                        </div>
+                        {/* Mobile Menu Toggle */}
+                        <button className="lg:hidden p-2 hover:bg-black/5 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                        {/* Desktop Menu */}
+                        <div className="hidden lg:flex items-center gap-8 font-konkhmer text-xl font-normal">
+                            <a href="/home/profile" onClick={(e) => handleNavClick(e, '/home/profile')} className="hover:opacity-70 transition-all cursor-pointer">Profile</a>
+                            <a href="/home/manage" onClick={(e) => handleNavClick(e, '/home/manage')} className="hover:opacity-70 transition-all cursor-pointer">Manage</a>
+                            <a href="/home/donate" onClick={(e) => handleNavClick(e, '/home/donate')} className="hover:opacity-70 transition-all cursor-pointer">Donate</a>
+                            <a href="/home/inbox" onClick={(e) => handleNavClick(e, '/home/inbox')} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={role === 'donor' ? 'text-white' : 'text-black'}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </a>
+                            <form action={signout} className="ml-4 font-inter">
+                                <button type="submit" className={`text-sm px-4 py-1.5 rounded-lg transition-all font-bold shadow-sm ${role === 'donor' ? 'bg-white/20 hover:bg-white/30 text-white' : 'border-2 border-black/20 hover:bg-black/5 text-black'}`}>Logout</button>
+                            </form>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-8 font-konkhmer text-xl font-normal">
-                        <a href="/home/profile" onClick={(e) => handleNavClick(e, '/home/profile')} className="hover:opacity-70 transition-all cursor-pointer">Profile</a>
-                        <a href="/home/manage" onClick={(e) => handleNavClick(e, '/home/manage')} className="hover:opacity-70 transition-all cursor-pointer">Manage</a>
-                        <a href="/home/donate" onClick={(e) => handleNavClick(e, '/home/donate')} className="hover:opacity-70 transition-all cursor-pointer">Donate</a>
-                        <a href="/home/inbox" onClick={(e) => handleNavClick(e, '/home/inbox')} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={role === 'donor' ? 'text-white' : 'text-black'}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </a>
-                        <form action={signout} className="ml-4 font-inter">
-                            <button type="submit" className={`text-sm px-4 py-1.5 rounded-lg transition-all font-bold shadow-sm ${role === 'donor' ? 'bg-white/20 hover:bg-white/30 text-white' : 'border-2 border-black/20 hover:bg-black/5 text-black'}`}>Logout</button>
-                        </form>
-                    </div>
+                    {/* Mobile Menu Dropdown */}
+                    {isMenuOpen && (
+                        <div className={`lg:hidden mt-4 pb-4 flex flex-col gap-4 font-konkhmer text-xl font-normal border-t pt-4 ${role === 'donor' ? 'border-white/10' : 'border-black/10'}`}>
+                            <a href="/home/profile" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/profile'); }} className="hover:opacity-70 transition-all cursor-pointer px-2">Profile</a>
+                            <a href="/home/manage" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/manage'); }} className="hover:opacity-70 transition-all cursor-pointer px-2">Manage</a>
+                            <a href="/home/donate" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/donate'); }} className="hover:opacity-70 transition-all cursor-pointer px-2">Donate</a>
+                            <a href="/home/inbox" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/inbox'); }} className="hover:opacity-70 transition-all cursor-pointer px-2 flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    Inbox <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={role === 'donor' ? 'text-white' : 'text-black'}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                </span>
+                            </a>
+                            <form action={signout} className="font-inter mt-2 px-2">
+                                <button type="submit" className={`w-full text-left text-sm px-4 py-3 rounded-lg transition-all font-bold shadow-sm ${role === 'donor' ? 'bg-white/20 hover:bg-white/30 text-white' : 'border-2 border-black/20 hover:bg-black/5 text-black'}`}>Logout</button>
+                            </form>
+                        </div>
+                    )}
                 </nav>
             </div>
 

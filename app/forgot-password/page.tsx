@@ -16,7 +16,7 @@ const page = () => {
     }
 
     return (
-        <div className="relative min-h-screen bg-[#2D3561] flex">
+        <div className="relative min-h-screen bg-[#2D3561] flex flex-col md:flex-row">
             {/* Topographic Wave Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <svg className="absolute w-[200%] md:w-full h-[200%] md:h-full object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-70" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900">
@@ -34,13 +34,13 @@ const page = () => {
             </div>
 
             {/* Left Side - Placeholder */}
-            <div className="w-1/2 flex items-center justify-center px-10">
+            <div className="hidden md:flex w-full md:w-1/2 items-center justify-center px-10">
                 <div className="bg-white rounded-3xl w-full h-full">
                 </div>
             </div>
 
             {/* Right Side - Form */}
-            <div className="w-1/2 flex flex-col px-16 pt-10">
+            <div className="w-full md:w-1/2 flex flex-col px-8 md:px-16 pt-10 z-10 pb-10">
                 <div>
                     <Link href="/">
                         <h1 className="text-white font-['Inter'] text-5xl font-black mb-4 hover:text-[#647BD0] transition-all duration-300">RePurpose</h1>
