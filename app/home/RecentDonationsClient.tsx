@@ -7,6 +7,7 @@ interface Donation {
     type: string
     created_at: string
     amount?: number | null
+    status?: string | null
 }
 
 interface Props {
@@ -61,6 +62,18 @@ const RecentDonationsClient = ({ donations, onSelect }: Props) => {
                                         {new Date(donation.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </p>
                                 </div>
+                                {donation.status && (
+                                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest flex-shrink-0 ${donation.status === 'rejected'
+                                            ? 'bg-red-100 text-red-500'
+                                            : donation.status === 'delivered'
+                                                ? 'bg-green-100 text-green-600'
+                                                : donation.status === 'in_progress'
+                                                    ? 'bg-yellow-100 text-yellow-600'
+                                                    : 'bg-blue-100 text-[#3a5f8a]'
+                                        }`}>
+                                        {donation.status.replace('_', ' ')}
+                                    </span>
+                                )}
                                 {donation.amount != null && (
                                     <span className="text-sm font-bold text-[#7BA4D5] flex-shrink-0">
                                         ₱{Number(donation.amount).toLocaleString()}

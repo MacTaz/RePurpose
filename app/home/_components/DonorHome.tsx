@@ -11,6 +11,7 @@ interface Donation {
     type: string
     created_at: string
     quantity?: number | null
+    status?: string | null
     [key: string]: any // Allows any other additional fields passed through mappedDonations
 }
 

@@ -65,12 +65,23 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                 <div className="bg-[#30496E]/5 p-8 rounded-[2.5rem] border border-[#30496E]/5 mb-8">
                                     <div className="flex items-center justify-between mb-4">
                                         <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em]">Current Phase</p>
-                                        <p className="text-sm font-black text-[#30496E] uppercase tracking-tighter">{donation?.status?.replace('_', ' ') || 'PROCESSING'}</p>
+                                        <p className={`text-sm font-black uppercase tracking-tighter ${donation?.status === 'rejected' ? 'text-red-500' : 'text-[#30496E]'
+                                            }`}>
+                                            {donation?.status?.replace('_', ' ') || 'PROCESSING'}
+                                        </p>
                                     </div>
                                     <div className="w-full h-4 bg-[#30496E]/10 rounded-full overflow-hidden p-1 shadow-inner">
                                         <div
-                                            className={`h-full bg-gradient-to-r from-[#80A6C2] to-[#30496E] rounded-full transition-all duration-1000 relative`}
-                                            style={{ width: donation?.status === 'delivered' ? '100%' : donation?.status === 'in_progress' ? '66%' : '33%' }}
+                                            className={`h-full rounded-full transition-all duration-1000 relative ${donation?.status === 'rejected'
+                                                    ? 'bg-gradient-to-r from-red-300 to-red-500'
+                                                    : 'bg-gradient-to-r from-[#80A6C2] to-[#30496E]'
+                                                }`}
+                                            style={{
+                                                width: donation?.status === 'rejected' ? '100%'
+                                                    : donation?.status === 'delivered' ? '100%'
+                                                        : donation?.status === 'in_progress' ? '66%'
+                                                            : '33%'
+                                            }}
                                         >
                                             <div className="absolute top-0 right-0 h-full w-4 bg-white/20 skew-x-12 animate-[pulse_2s_infinite]"></div>
                                         </div>

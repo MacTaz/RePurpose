@@ -132,9 +132,11 @@ const ManageDonor = ({ donations }: Props) => {
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize">{donation.type}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.org_name || donation.target_organization || '—'}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                                donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                                                    'bg-blue-100 text-blue-700'
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'rejected' ? 'bg-red-100 text-red-500' :
+                                                    donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                                        donation.status === 'in_progress' ? 'bg-yellow-100 text-yellow-600' :
+                                                            donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                                                                'bg-blue-100 text-blue-700'
                                                 }`}>{donation.status?.replace('_', ' ')}</span>
                                         </div>
                                         <div className="flex-1 flex items-center justify-center font-bold text-[#30496E]">
