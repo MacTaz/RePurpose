@@ -20,6 +20,8 @@ interface Donation {
     donor_line1?: string
     donor_line2?: string
     donor_zip?: string
+    donor_lat?: number
+    donor_lng?: number
 }
 
 interface Props {

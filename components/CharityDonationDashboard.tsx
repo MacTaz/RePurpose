@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { acceptDonation, rejectDonation } from '@/lib/donation-actions';
 import { createClient } from '@/utils/supabase/client';
 import { MapPin, Navigation, Clock, Package, Info, CheckCircle2, X } from 'lucide-react';
 

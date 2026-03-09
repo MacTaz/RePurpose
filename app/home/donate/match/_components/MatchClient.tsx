@@ -440,7 +440,26 @@ export default function MatchClient({ organizations, role, userLocation }: Match
                                                 { icon: Globe, val: selectedOrg?.website || selectedOrg?.facebook_url, label: selectedOrg?.website ? 'Website' : (selectedOrg?.facebook_url ? 'Facebook' : 'Website') },
                                                 { icon: Mail, val: selectedOrg?.email, label: 'Email' },
                                                 { icon: Phone, val: selectedOrg?.phone, label: 'Phone' },
-                                                { icon: Clock, val: selectedOrg?.availability, label: 'Availability' },
+                                                {
+                                                    icon: Clock,
+                                                    val: selectedOrg?.availability ? (() => {
+                                                        const p = selectedOrg.availability.split(' - ');
+                                                        if (p.length === 2) {
+                                                            const f = (t: string) => {
+                                                                if (!t) return '';
+                                                                let [h, m] = t.split(':');
+                                                                let numH = parseInt(h);
+                                                                if (isNaN(numH)) return t;
+                                                                let ampm = numH >= 12 ? 'PM' : 'AM';
+                                                                numH = numH % 12 || 12;
+                                                                return `${numH}:${m} ${ampm}`;
+                                                            };
+                                                            return `${f(p[0])} - ${f(p[1])}`;
+                                                        }
+                                                        return selectedOrg.availability;
+                                                    })() : 'Not specified',
+                                                    label: 'Availability'
+                                                },
                                                 {
                                                     icon: Truck,
                                                     val: selectedOrg?.donation_method?.toLowerCase() === 'both'

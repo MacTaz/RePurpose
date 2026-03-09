@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft, RefreshCcw, ChevronDown } from 'lucide-react';
-import { updateDonationStatus } from '@/lib/donation-actions';
 import { createClient } from '@/utils/supabase/client';
 
 const DonationStatus = ({ donation, onClose }: any) => {

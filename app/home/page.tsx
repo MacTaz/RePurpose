@@ -81,24 +81,43 @@ const Home = async () => {
         )
     }
 
-    // Organization — fetch pending donations with donor info + address
+    // Organization — fetch pending donations
     const { data: donations } = await supabase
         .from('donations')
-        .select(`
-            id, donor_id, organization_id, type, quantity, status, created_at, description, delivery_preference,
-            profiles!donations_donor_id_fkey(
-                full_name,
-                addresses(city, country, latitude, longitude, address_line1, address_line2, zip)
-            )
-        `)
+        .select('*')
         .eq('organization_id', user.id)
         .order('created_at', { ascending: false })
 
+    const donorIds = [...new Set((donations || []).map((d: any) => d.donor_id).filter(Boolean))]
+
+    const adminSupabase = createAdminClient()
+
+    // Fetch donor names
+    const { data: donorProfiles } = donorIds.length > 0
+        ? await adminSupabase.from('profiles').select('id, full_name').in('id', donorIds)
+        : { data: [] }
+
+    // Fetch donor addresses via admin client to bypass RLS
+    const { data: donorAddresses } = donorIds.length > 0
+        ? await adminSupabase.from('addresses').select('*').in('user_id', donorIds)
+        : { data: [] }
+
+    const donorProfileMap: Record<string, any> = {}
+    for (const p of (donorProfiles || [])) donorProfileMap[p.id] = p
+
+    const donorAddressMap: Record<string, any> = {}
+    for (const a of (donorAddresses || [])) {
+        if (!donorAddressMap[a.user_id]) {
+            donorAddressMap[a.user_id] = a // just take the first address
+        }
+    }
+
     const mappedDonations = (donations || []).map((d: any) => {
-        const addr = d.profiles?.addresses?.[0] || {}
+        const profile = donorProfileMap[d.donor_id] || {}
+        const addr = donorAddressMap[d.donor_id] || {}
         return {
             ...d,
-            donor_name: d.profiles?.full_name || 'Anonymous Donor',
+            donor_name: profile.full_name || 'Anonymous Donor',
             donor_address: addr.city ? `${addr.city}, ${addr.country}` : 'City Not Set',
             donor_city: addr.city || 'City Not Set',
             donor_country: addr.country || 'Country Not Set',
