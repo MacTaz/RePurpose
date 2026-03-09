@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useTransition } from 'react'
 import CharityDonationDashboard from './CharityDonationDashboard'
 import DonationStatus from './DonationStatus'
 import { useRouter } from 'next/navigation'
@@ -68,18 +68,46 @@ const FilterDropdown = ({ options, onSelect }: { options: string[], onSelect: (v
 
 const ManageCharity = ({ donations }: Props) => {
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
     const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
     const [mode, setMode] = useState<'request' | 'status' | null>(null);
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isRefreshingPending, setIsRefreshingPending] = useState(false);
+    const [isRefreshingAccepted, setIsRefreshingAccepted] = useState(false);
 
-    const handleRefresh = () => {
-        setIsRefreshing(true);
-        router.refresh();
-        setTimeout(() => setIsRefreshing(false), 1000);
+    const handleRefreshPending = () => {
+        setIsRefreshingPending(true);
+        startTransition(() => {
+            router.refresh();
+        });
+        setTimeout(() => setIsRefreshingPending(false), 1000);
     };
 
-    const pendingDonations = donations.filter(d => d.status === 'pending');
-    const acceptedDonations = donations.filter(d => d.status !== 'pending' && d.status !== 'rejected');
+    const handleRefreshAccepted = () => {
+        setIsRefreshingAccepted(true);
+        startTransition(() => {
+            router.refresh();
+        });
+        setTimeout(() => setIsRefreshingAccepted(false), 1000);
+    };
+
+    const [pendingSortBy, setPendingSortBy] = useState<string>("Newest");
+    const [acceptedSortBy, setAcceptedSortBy] = useState<string>("Newest");
+
+    const pendingDonations = donations
+        .filter(d => d.status === 'pending')
+        .sort((a, b) => {
+            if (pendingSortBy === "Quantity") return (b.quantity || 0) - (a.quantity || 0);
+            if (pendingSortBy === "Type") return (a.type || "").localeCompare(b.type || "");
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+    const acceptedDonations = donations
+        .filter(d => d.status !== 'pending' && d.status !== 'rejected')
+        .sort((a, b) => {
+            if (acceptedSortBy === "Status") return (a.status || "").localeCompare(b.status || "");
+            if (acceptedSortBy === "Type") return (a.type || "").localeCompare(b.type || "");
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
 
     const totalQuantity = donations.reduce((sum, d) => sum + (d.quantity || 1), 0);
     const typeSummary = donations.reduce<Record<string, number>>((acc, d) => {
@@ -119,14 +147,14 @@ const ManageCharity = ({ donations }: Props) => {
                         </div>
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={handleRefresh}
-                                disabled={isRefreshing}
-                                className={`hover:opacity-80 transition-all bg-white/40 backdrop-blur-sm rounded-full p-2 border border-white/50 shadow-sm hover:scale-110 active:scale-95 ${isRefreshing ? 'animate-spin' : ''}`}
+                                onClick={handleRefreshPending}
+                                disabled={isRefreshingPending}
+                                className={`hover:opacity-80 transition-all bg-white/40 backdrop-blur-sm rounded-full p-2 border border-white/50 shadow-sm hover:scale-110 active:scale-95 ${isRefreshingPending ? 'animate-spin' : ''}`}
                                 title="Refresh data"
                             >
                                 <RotateCw className="w-6 h-6 text-[#5A2C10]" />
                             </button>
-                            <FilterDropdown options={["Newest", "Quantity", "Type"]} onSelect={() => { }} />
+                            <FilterDropdown options={["Newest", "Quantity", "Type"]} onSelect={setPendingSortBy} />
                         </div>
                     </div>
 
@@ -165,14 +193,14 @@ const ManageCharity = ({ donations }: Props) => {
                         </div>
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={handleRefresh}
-                                disabled={isRefreshing}
-                                className={`hover:opacity-80 transition-all bg-white/40 backdrop-blur-sm rounded-full p-2 border border-white/50 shadow-sm hover:scale-110 active:scale-95 ${isRefreshing ? 'animate-spin' : ''}`}
+                                onClick={handleRefreshAccepted}
+                                disabled={isRefreshingAccepted}
+                                className={`hover:opacity-80 transition-all bg-white/40 backdrop-blur-sm rounded-full p-2 border border-white/50 shadow-sm hover:scale-110 active:scale-95 ${isRefreshingAccepted ? 'animate-spin' : ''}`}
                                 title="Refresh data"
                             >
                                 <RotateCw className="w-6 h-6 text-[#5A2C10]" />
                             </button>
-                            <FilterDropdown options={["Newest", "Status", "Type"]} onSelect={() => { }} />
+                            <FilterDropdown options={["Newest", "Status", "Type"]} onSelect={setAcceptedSortBy} />
                         </div>
                     </div>
 

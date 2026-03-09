@@ -19,8 +19,8 @@ interface DonationThread {
 interface OrgGroup {
     partnerId: string;
     partnerName: string;
-    partnerAvatar: string;   // initials fallback
-    partnerAvatarUrl?: string | null;  // real photo URL
+    partnerAvatar: string;
+    partnerAvatarUrl?: string | null;
     facebookUrl?: string;
     threads: DonationThread[];
 }
@@ -59,11 +59,11 @@ const getIcon = (type: string) => {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bar: string; width: string }> = {
-    pending:     { label: 'Pending',     color: 'text-amber-600',  bar: 'bg-amber-400',  width: 'w-[10%]' },
-    accepted:    { label: 'Accepted',    color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3'   },
-    in_progress: { label: 'In Progress', color: 'text-blue-600',   bar: 'bg-blue-500',   width: 'w-2/3'   },
-    delivered:   { label: 'Delivered',   color: 'text-green-600',  bar: 'bg-green-500',  width: 'w-full'  },
-    rejected:    { label: 'Rejected',    color: 'text-red-500',    bar: 'bg-red-400',    width: 'w-0'     },
+    pending: { label: 'Pending', color: 'text-amber-600', bar: 'bg-amber-400', width: 'w-[10%]' },
+    accepted: { label: 'Accepted', color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3' },
+    in_progress: { label: 'In Progress', color: 'text-blue-600', bar: 'bg-blue-500', width: 'w-2/3' },
+    delivered: { label: 'Delivered', color: 'text-green-600', bar: 'bg-green-500', width: 'w-full' },
+    rejected: { label: 'Rejected', color: 'text-red-500', bar: 'bg-red-400', width: 'w-0' },
 }
 
 // ── Delete Modal ──────────────────────────────────────────────────────────────
@@ -101,30 +101,25 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const supabase = createClient()
     const isOrg = role === 'organization'
 
-    // Grouped org data
     const [orgGroups, setOrgGroups] = useState<OrgGroup[]>([])
     const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null)
 
-    // Active chat
     const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null)
     const [selectedThread, setSelectedThread] = useState<DonationThread | null>(null)
     const [selectedOrgGroup, setSelectedOrgGroup] = useState<OrgGroup | null>(null)
     const [messages, setMessages] = useState<ChatMessage[]>([])
 
-    // Input
     const [inputValue, setInputValue] = useState('')
     const [sending, setSending] = useState(false)
     const [uploadingImage, setUploadingImage] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    // Search (donor only)
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState<OrgResult[]>([])
     const [searching, setSearching] = useState(false)
     const [showResults, setShowResults] = useState(false)
     const searchRef = useRef<HTMLDivElement>(null)
 
-    // Delete
     const [deleteTarget, setDeleteTarget] = useState<{ convoId: string; name: string } | null>(null)
     const [deleting, setDeleting] = useState(false)
 
@@ -132,16 +127,14 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const realtimeRef = useRef<any>(null)
 
     const accentColor = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600'
-    const accentText  = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
-    const accentBg    = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
+    const accentText = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
+    const accentBg = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
     const accentShadow = isOrg ? 'shadow-[#FF9248]/20' : 'shadow-blue-200'
 
-    // ── Auto scroll ───────────────────────────────────────────────────────────
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
-    // ── Close search on outside click ─────────────────────────────────────────
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (searchRef.current && !searchRef.current.contains(e.target as Node))
@@ -155,17 +148,15 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const fetchConversations = async () => {
         const { data: convos, error } = await supabase
             .from('conversations')
-            .select(`id, donor_id, org_id, donation_id, messages(content, image_url, created_at, sender_id)`)
+            .select(`id, donor_id, org_id, donation_id, messages(id, content, image_url, created_at, sender_id)`)
             .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
 
         if (error || !convos) return
 
-        // Step 1: collect unique partner IDs synchronously (no races)
         const partnerIds = [...new Set(
             (convos as any[]).map(c => isOrg ? c.donor_id : c.org_id).filter(Boolean) as string[]
         )]
 
-        // Step 2: fetch all profiles + avatars in parallel, keyed by id
         const [profileResults, avatarResults] = await Promise.all([
             Promise.all(partnerIds.map(id =>
                 supabase.from('profiles').select('id, full_name, facebook_url').eq('id', id).single()
@@ -187,7 +178,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         const avatarMap: Record<string, string | null> = {}
         avatarResults.forEach(({ id, url }) => { avatarMap[id] = url })
 
-        // Step 3: fetch donation details for all donation_ids in parallel
         const donationIds = [...new Set(
             (convos as any[]).map(c => c.donation_id).filter(Boolean) as string[]
         )]
@@ -199,7 +189,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         const donationMap: Record<string, any> = {}
         donationResults.forEach(({ data }) => { if (data) donationMap[(data as any).id] = data })
 
-        // Step 4: build groupMap synchronously — no async, no race
         const groupMap: Record<string, OrgGroup> = {}
 
         for (const convo of convos as any[]) {
@@ -224,6 +213,10 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
             )
             const lastMsg = msgs[0]
 
+            // FIX: unread = 1 only when the most recent message was sent by the other party.
+            // Previously this counted all foreign messages ever, giving a permanently inflated badge.
+            const hasUnread = lastMsg && lastMsg.sender_id !== userId ? 1 : 0
+
             groupMap[partnerId].threads.push({
                 conversationId: convo.id,
                 donationId: convo.donation_id,
@@ -234,11 +227,10 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 time: lastMsg?.created_at
                     ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                     : '',
-                unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
+                unread: hasUnread,
             })
         }
 
-        // Step 5: sort threads within each group by most recent
         Object.values(groupMap).forEach(g => {
             g.threads.sort((a, b) => (b.time > a.time ? 1 : -1))
         })
@@ -251,7 +243,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     // ── Fetch messages + realtime ─────────────────────────────────────────────
     useEffect(() => {
         if (!selectedConvoId) return
-        let cancelled = false  // stale-fetch guard
+        let cancelled = false
 
         const fetch = async () => {
             const { data, error } = await supabase
@@ -260,7 +252,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 .eq('conversation_id', selectedConvoId)
                 .order('created_at', { ascending: true })
             if (cancelled || error || !data) return
-            // Only replace messages once the full result is ready — no blank flash
             setMessages(data.map((m: any) => ({
                 id: m.id, text: m.content, imageUrl: m.image_url,
                 sender: m.sender_id === userId ? 'user' : 'other',
@@ -285,6 +276,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                         time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
                     }]
                 })
+                // Keep sidebar last-message preview + unread state in sync
+                fetchConversations()
             })
             .subscribe()
         realtimeRef.current = channel
@@ -306,10 +299,9 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         return () => clearTimeout(delay)
     }, [searchQuery, isOrg])
 
-    // ── Start new conversation (donor searching org manually) ─────────────────
+    // ── Start new conversation ────────────────────────────────────────────────
     const handleStartConversation = async (org: OrgResult) => {
         setShowResults(false); setSearchQuery('')
-        // Create a new standalone conversation with no donation_id
         const { data: newConvo, error } = await supabase
             .from('conversations')
             .insert({ donor_id: userId, org_id: org.id, donation_id: null })
@@ -346,8 +338,15 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         setSelectedConvoId(thread.conversationId)
         setSelectedThread(thread)
         setSelectedOrgGroup(group)
-        // Don't clear messages here — let the fetch useEffect replace them
-        // once loaded to avoid a blank flash
+        // Immediately clear the unread dot for this thread on open
+        setOrgGroups(prev => prev.map(g =>
+            g.partnerId !== group.partnerId ? g : {
+                ...g,
+                threads: g.threads.map(t =>
+                    t.conversationId === thread.conversationId ? { ...t, unread: 0 } : t
+                ),
+            }
+        ))
     }
 
     // ── Send text ─────────────────────────────────────────────────────────────
@@ -393,7 +392,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         setDeleteTarget(null); setDeleting(false)
     }
 
-    // ── Filtered org groups for org-side search ───────────────────────────────
     const filteredGroups = isOrg && searchQuery.trim()
         ? orgGroups.filter(g => g.partnerName.toLowerCase().includes(searchQuery.toLowerCase()))
         : orgGroups
@@ -414,7 +412,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                     <div className="p-6 border-b border-slate-100">
                         <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">Messages</h2>
 
-                        {/* Search */}
                         <div className="relative" ref={searchRef}>
                             <div className="relative">
                                 <input type="text" value={searchQuery}
@@ -429,7 +426,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 {searching && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />}
                             </div>
 
-                            {/* Org search dropdown (donor only) */}
                             {!isOrg && showResults && (
                                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
                                     {searchResults.length === 0
@@ -451,7 +447,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                         </div>
                     </div>
 
-                    {/* Org group cards */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
                         {filteredGroups.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-slate-400 px-6 py-12 text-center">
@@ -468,7 +463,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
 
                             return (
                                 <div key={group.partnerId}>
-                                    {/* Org card */}
                                     <div
                                         className={`relative group w-full p-4 rounded-2xl transition-all duration-200 flex gap-4 cursor-pointer hover:shadow-md
                                             ${isExpanded ? `${accentBg} shadow-sm` : 'hover:bg-slate-50'}`}
@@ -499,12 +493,11 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                         </div>
                                         {totalUnread > 0 && (
                                             <div className={`absolute top-3 right-3 w-5 h-5 rounded-full ${accentColor} text-white text-[10px] flex items-center justify-center font-bold`}>
-                                                {totalUnread}
+                                                {totalUnread > 9 ? '9+' : totalUnread}
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Accordion: donation threads */}
                                     {isExpanded && (
                                         <div className="ml-4 mt-1 mb-2 space-y-1 border-l-2 border-slate-100 pl-3">
                                             {group.threads.map(thread => {
@@ -525,7 +518,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                                                 </p>
                                                                 <span className="text-[10px] text-slate-400 flex-shrink-0">{thread.time}</span>
                                                             </div>
-                                                            {/* Status bar */}
                                                             <div className="flex items-center gap-2 mt-1.5">
                                                                 <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
                                                                     <div className={`h-full rounded-full transition-all duration-500 ${status.bar} ${status.width}`} />
@@ -536,7 +528,10 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                                             </div>
                                                             <p className="text-xs text-slate-400 truncate mt-0.5">{thread.lastMessage}</p>
                                                         </div>
-                                                        {/* Delete thread button */}
+                                                        {/* Unread dot — only shown when thread has unread and is not currently open */}
+                                                        {thread.unread > 0 && !isActive && (
+                                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${accentColor}`} />
+                                                        )}
                                                         <button
                                                             onClick={e => {
                                                                 e.stopPropagation()
@@ -563,7 +558,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 <div className="flex-1 flex flex-col bg-white">
                     {selectedConvoId && selectedThread && selectedOrgGroup ? (
                         <>
-                            {/* Chat header */}
                             <div className="h-20 px-8 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-600">
@@ -595,7 +589,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 </button>
                             </div>
 
-                            {/* Messages */}
                             <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-[#FBFCFE] custom-scrollbar">
                                 {messages.length === 0 && (
                                     <div className="flex justify-center">
@@ -635,7 +628,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Input */}
                             <div className="p-6 bg-white border-t border-slate-100">
                                 <div className="bg-slate-50 rounded-2xl p-2 flex items-end gap-2 border border-slate-100 focus-within:ring-2 focus-within:ring-slate-200 transition-all">
                                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
