@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import { setupProfile } from '@/lib/auth-actions'
+import VideoPanel from '@/components/VideoPanel'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 // ── PH phone validator: 10 digits, must start with 9 ──────────────────────
@@ -234,9 +235,7 @@ const RegisterPage = () => {
             </div>
 
             {/* Left decorative panel */}
-            <div className="hidden lg:flex w-1/2 h-full items-center justify-center px-10">
-                <div className="bg-white rounded-3xl w-full h-4/5 opacity-10 border border-white/20 backdrop-blur-sm" />
-            </div>
+            <VideoPanel />
 
             {/* Right form — scrolls independently, background stays fixed */}
             <div className="relative z-10 w-full lg:w-1/2 h-full flex flex-col px-6 md:px-16 pt-10 pb-10 overflow-y-auto">

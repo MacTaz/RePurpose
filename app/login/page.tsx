@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { login, signInWithGoogle, signInWithFacebook } from '@/lib/auth-actions'
+import VideoPanel from '@/components/VideoPanel'
 
 const page = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -25,10 +26,7 @@ const page = () => {
                 </svg>
             </div>
 
-            <div className="hidden md:flex md:w-1/2 items-center justify-center px-10">
-                <div className="bg-white rounded-3xl w-full h-full my-10">
-                </div>
-            </div>
+            <VideoPanel />
 
             <div className="w-full md:w-1/2 flex flex-col px-8 md:px-16 py-10 z-10">
 
