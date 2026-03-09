@@ -43,6 +43,22 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
         else alert(res.error || 'Action failed');
     };
 
+    const acceptDonation = async (id: string): Promise<{ success?: boolean; error?: string }> => {
+        const { error } = await supabase
+            .from('donations')
+            .update({ status: 'accepted' })
+            .eq('id', id);
+        return error ? { error: error.message } : { success: true };
+    };
+
+    const rejectDonation = async (id: string): Promise<{ success?: boolean; error?: string }> => {
+        const { error } = await supabase
+            .from('donations')
+            .update({ status: 'rejected' })
+            .eq('id', id);
+        return error ? { error: error.message } : { success: true };
+    };
+
     const imageUrl = supabase.storage
         .from('donations')
         .getPublicUrl(`${donation.donor_id}/donation-${donation.id}/picture.jpg`).data.publicUrl;
