@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
                     // Already fully registered — go to app
                     return NextResponse.redirect(new URL('/home', origin))
                 }
-                // Email confirmed for new signup → Step 2
+                // Email confirmed for new signup → Step 1 (Finalize Account)
                 const registerUrl = new URL('/register', origin)
-                registerUrl.searchParams.set('step', '2')
+                registerUrl.searchParams.set('step', '1')
                 return NextResponse.redirect(registerUrl)
             }
 

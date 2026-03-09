@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { MapPin, Clock, Truck, CheckCircle2, AlertTriangle, Search, ChevronRight, Building2 } from 'lucide-react'
+import { MapPin, Clock, Truck, CheckCircle2, AlertTriangle, Search, ChevronRight, Building2, ArrowUpDown } from 'lucide-react'
 
 const DistanceMap = dynamic(() => import('@/components/DistanceMap'), { ssr: false })
 
@@ -54,6 +54,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
     const [locationStatus, setLocationStatus] = useState<'idle' | 'locating' | 'granted' | 'denied'>('idle')
     const [selectedOrgId, setSelectedOrgId] = useState<string | null>(registeredOrgs[0]?.id ?? null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [sortBy, setSortBy] = useState<'name' | 'distance'>('name')
     const [orgsWithDistance, setOrgsWithDistance] = useState<OrgWithDistance[]>(
         registeredOrgs.map(org => ({
             ...org,
@@ -63,9 +64,23 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
         }))
     )
 
-    const selectedOrg = orgsWithDistance.find(o => o.id === selectedOrgId) ?? orgsWithDistance[0] ?? null
+    const sortedOrgs = useMemo(() => {
+        let list = [...orgsWithDistance];
+        if (sortBy === 'distance') {
+            list.sort((a, b) => {
+                const distA = parseFloat(a.roadDistance?.replace(' km', '') || 'Infinity');
+                const distB = parseFloat(b.roadDistance?.replace(' km', '') || 'Infinity');
+                return distA - distB;
+            });
+        } else {
+            list.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+        }
+        return list;
+    }, [orgsWithDistance, sortBy]);
 
-    const filteredOrgs = orgsWithDistance.filter(org => {
+    const selectedOrg = sortedOrgs.find(o => o.id === selectedOrgId) ?? sortedOrgs[0] ?? null
+
+    const filteredOrgs = sortedOrgs.filter(org => {
         const q = searchQuery.toLowerCase()
         return (
             !q ||
@@ -172,9 +187,9 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
 
                 {/* LEFT: Org list */}
                 <div className="w-full lg:w-[280px] flex flex-col border-b lg:border-b-0 lg:border-r border-[#edf3fa]">
-                    {/* Search */}
-                    <div className="px-3 py-3 border-b border-[#edf3fa]">
-                        <div className="relative">
+                    {/* Search & Sort */}
+                    <div className="px-3 py-3 border-b border-[#edf3fa] flex items-center gap-2">
+                        <div className="relative flex-1">
                             <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                             <input
                                 type="text"
@@ -184,6 +199,17 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                                 className="w-full text-xs pl-7 pr-3 py-2 border border-[#d4e4f4] rounded-lg focus:outline-none focus:border-[#7BA4D5] bg-[#F8FBFE] text-gray-600 placeholder-gray-400"
                             />
                         </div>
+                        <button
+                            onClick={() => setSortBy(prev => prev === 'name' ? 'distance' : 'name')}
+                            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border text-[10px] font-black uppercase tracking-tight transition-all shrink-0 ${sortBy === 'distance'
+                                ? 'bg-[#7BA4D5] text-white border-[#7BA4D5]'
+                                : 'bg-[#F8FBFE] text-gray-400 border-[#d4e4f4] hover:border-[#7BA4D5]/40 hover:text-[#7BA4D5]'
+                                }`}
+                            title={sortBy === 'distance' ? 'Sorting by Road Distance' : 'Sort by Distance'}
+                        >
+                            <ArrowUpDown className="w-3.5 h-3.5" />
+                            {sortBy === 'distance' ? 'Dist' : 'A-Z'}
+                        </button>
                     </div>
 
                     {/* List */}
@@ -272,6 +298,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                                         userLat={userCoords?.lat}
                                         userLng={userCoords?.lng}
                                         zoom={14}
+                                        role="donor"
                                     />
                                 ) : (
                                     <div className="w-full h-full bg-[#F5F8FA] flex flex-col items-center justify-center gap-2 text-gray-400">
