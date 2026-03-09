@@ -1,7 +1,14 @@
-import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft, RefreshCcw } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { updateDonationStatus } from '@/lib/donation-actions';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const DonorDonationDashboard = ({ donation, onClose }: any) => {
+    const router = useRouter();
+    const [status, setStatus] = useState<string>(donation.status || "pending");
+    const [updating, setUpdating] = useState(false);
+
     const supabase = createClient();
     const imageUrl = supabase.storage
         .from('donations')
@@ -23,8 +30,12 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                             <h1 className="text-3xl font-black text-[#30496E] tracking-tight">
                                 Donation <span className="text-[#80A6C2]">Details</span>
                             </h1>
-                            <div className="px-3 py-1 bg-blue-500/10 text-[#30496E] rounded-full text-[9px] font-black uppercase tracking-widest border border-[#30496E]/20">
-                                {donation.status || 'Active'}
+                            <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${status === 'rejected' || status === 'cancelled' ? 'bg-red-500/10 text-red-600 border-red-500/20' :
+                                status === 'pending' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' :
+                                    status === 'delivered' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                                        'bg-blue-500/10 text-[#30496E] border-[#30496E]/20'
+                                }`}>
+                                {status || 'Active'}
                             </div>
                         </div>
                         <p className="text-[#30496E]/40 font-bold text-xs mt-0.5 tracking-widest uppercase italic">Donation History</p>
@@ -67,19 +78,24 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                         <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em]">Current Phase</p>
                                         <p className={`text-sm font-black uppercase tracking-tighter ${donation?.status === 'rejected' ? 'text-red-500' : 'text-[#30496E]'
                                             }`}>
-                                            {donation?.status?.replace('_', ' ') || 'PROCESSING'}
+                                            {status?.replace('_', ' ') || 'PROCESSING'}
                                         </p>
                                     </div>
-                                    <div className="w-full h-4 bg-[#30496E]/10 rounded-full overflow-hidden p-1 shadow-inner">
+                                    <div className="w-full h-4 bg-[#30496E]/10 rounded-full overflow-hidden p-1 shadow-inner relative">
+                                        {updating && (
+                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                                                <RefreshCcw className="size-3 text-[#30496E] animate-spin" />
+                                            </div>
+                                        )}
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 relative ${donation?.status === 'rejected'
-                                                    ? 'bg-gradient-to-r from-red-300 to-red-500'
-                                                    : 'bg-gradient-to-r from-[#80A6C2] to-[#30496E]'
+                                            className={`h-full rounded-full transition-all duration-1000 relative ${status === 'rejected' || status === 'cancelled'
+                                                ? 'bg-gradient-to-r from-red-300 to-red-500'
+                                                : 'bg-gradient-to-r from-[#80A6C2] to-[#30496E]'
                                                 }`}
                                             style={{
-                                                width: donation?.status === 'rejected' ? '100%'
-                                                    : donation?.status === 'delivered' ? '100%'
-                                                        : donation?.status === 'in_progress' ? '66%'
+                                                width: status === 'rejected' || status === 'cancelled' ? '100%'
+                                                    : status === 'delivered' ? '100%'
+                                                        : status === 'in_progress' ? '66%'
                                                             : '33%'
                                             }}
                                         >
@@ -128,6 +144,35 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                         <p className="font-black text-[#30496E] uppercase tracking-tighter">{new Date(donation?.created_at).toLocaleDateString() || 'Recently'}</p>
                                     </div>
                                 </div>
+
+                                {status === 'pending' && (
+                                    <div className="mt-8 border-t border-gray-100 pt-8">
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm('Are you sure you want to cancel this donation?')) {
+                                                    setUpdating(true);
+                                                    const res = await updateDonationStatus(donation.id, 'cancelled');
+                                                    if (res.success) {
+                                                        setStatus('cancelled');
+                                                        router.refresh();
+                                                    } else {
+                                                        alert(res.error || 'Failed to cancel donation');
+                                                    }
+                                                    setUpdating(false);
+                                                }
+                                            }}
+                                            disabled={updating}
+                                            className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-sm border-2 border-red-500/10 flex items-center justify-center gap-2"
+                                        >
+                                            {updating ? (
+                                                <RefreshCcw className="size-4 animate-spin" />
+                                            ) : (
+                                                <X className="size-4" />
+                                            )}
+                                            Cancel Donation
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

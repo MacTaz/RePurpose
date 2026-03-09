@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle, Menu } from 'lucide-react';
+import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle, Menu, ArrowUpDown, Navigation } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signout } from '@/lib/auth-actions';
@@ -50,6 +50,18 @@ interface MatchClientProps {
     userLocation?: { latitude: number; longitude: number };
 }
 
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 export default function MatchClient({ organizations, role, userLocation }: MatchClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -62,6 +74,7 @@ export default function MatchClient({ organizations, role, userLocation }: Match
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [sortBy, setSortBy] = useState<'name' | 'distance'>('name');
 
     // Prevent accidental navigation via browser refresh/close
     useEffect(() => {
@@ -73,9 +86,24 @@ export default function MatchClient({ organizations, role, userLocation }: Match
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, []);
 
+    const sortedOrgs = useMemo(() => {
+        let list = [...organizations];
+        if (sortBy === 'distance' && userLocation) {
+            list.sort((a, b) => {
+                const distA = a.latitude && a.longitude ? calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude) : Infinity;
+                const distB = b.latitude && b.longitude ? calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude) : Infinity;
+                return distA - distB;
+            });
+        } else {
+            // Default to name sorting if not distance or no location
+            list.sort((a, b) => a.full_name.localeCompare(b.full_name));
+        }
+        return list;
+    }, [organizations, sortBy, userLocation]);
+
     const selectedOrg = useMemo(() => {
-        return organizations.find(org => org.id === selectedId) || organizations[0];
-    }, [selectedId, organizations]);
+        return sortedOrgs.find(org => org.id === selectedId) || sortedOrgs[0];
+    }, [selectedId, sortedOrgs]);
 
     const handleSelect = (id: string) => {
         setSelectedId(id);
@@ -269,68 +297,92 @@ export default function MatchClient({ organizations, role, userLocation }: Match
                     ${showSidebar ? 'flex flex-1 lg:flex-none' : 'hidden lg:flex'} 
                     w-full lg:w-[400px] bg-white lg:rounded-3xl border-r lg:border-r-0 border-gray-200 flex-col shadow-xl z-20 transition-all duration-300
                 `}>
-                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0 z-30">
                         <div>
                             <h3 className="text-xl font-black text-[#30496E]">Matches</h3>
                             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Found in your area</p>
                         </div>
+                        {userLocation && (
+                            <button
+                                onClick={() => setSortBy(prev => prev === 'name' ? 'distance' : 'name')}
+                                className={`p-2 rounded-xl transition-all border flex items-center gap-2 group ${sortBy === 'distance' ? 'bg-[#30496E] text-white border-[#30496E]' : 'bg-white text-gray-400 border-gray-100 hover:border-[#30496E]/20 hover:text-[#30496E]'}`}
+                                title={sortBy === 'distance' ? 'Sorted by Distance' : 'Sort by Distance'}
+                            >
+                                <ArrowUpDown className={`size-4 transition-transform ${sortBy === 'distance' ? 'rotate-180' : ''}`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                                    {sortBy === 'distance' ? 'Closest' : 'A-Z'}
+                                </span>
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        {organizations.map((org) => (
-                            <button
-                                key={org.id}
-                                onClick={() => handleSelect(org.id)}
-                                className={`w-full text-left p-6 transition-all border-b border-gray-50 flex items-center gap-4 group relative ${selectedId === org.id
-                                    ? 'bg-blue-50/80'
-                                    : 'hover:bg-gray-50'
-                                    }`}
-                            >
-                                {selectedId === org.id && (
-                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#304674] rounded-r-full"></div>
-                                )}
-                                <div className="size-16 rounded-2xl overflow-hidden shrink-0 border-2 border-white shadow-md ring-1 ring-gray-100 relative">
-                                    <Image
-                                        src={org.avatar_url || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=2013&auto=format&fit=crop'}
-                                        alt={org.full_name}
-                                        fill
-                                        className="object-cover"
-                                        unoptimized
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className={`font-black truncate ${selectedId === org.id ? 'text-[#304674]' : 'text-gray-700'}`}>
-                                            {org.full_name}
-                                        </h4>
-                                        {org.is_verified && (
-                                            <div className="size-2 bg-green-500 rounded-full shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                                        )}
+                        {sortedOrgs.map((org) => {
+                            const dist = userLocation && org.latitude && org.longitude
+                                ? calculateDistance(userLocation.latitude, userLocation.longitude, org.latitude, org.longitude)
+                                : null;
+
+                            return (
+                                <button
+                                    key={org.id}
+                                    onClick={() => handleSelect(org.id)}
+                                    className={`w-full text-left p-6 transition-all border-b border-gray-50 flex items-center gap-4 group relative ${selectedId === org.id
+                                        ? 'bg-blue-50/80 shadow-inner'
+                                        : 'hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {selectedId === org.id && (
+                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#304674] rounded-r-full animate-in slide-in-from-left duration-300"></div>
+                                    )}
+                                    <div className="size-16 rounded-2xl overflow-hidden shrink-0 border-2 border-white shadow-md ring-1 ring-gray-100 relative group-hover:scale-105 transition-transform duration-300">
+                                        <Image
+                                            src={org.avatar_url || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=2013&auto=format&fit=crop'}
+                                            alt={org.full_name}
+                                            fill
+                                            className="object-cover"
+                                            unoptimized
+                                        />
                                     </div>
-                                    <p className="text-xs text-gray-400 font-bold truncate mb-2 uppercase tracking-tight">
-                                        {org.tagline || 'Ready to accept donations'}
-                                    </p>
-                                    {org.urgent_need && (
-                                        <div className="mb-2">
-                                            <span className="text-[9px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded uppercase tracking-widest inline-flex items-center gap-1 w-fit">
-                                                <AlertTriangle className="size-2.5" /> URGENT: {org.urgent_need}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-center mb-0.5">
+                                            <h4 className={`font-black truncate ${selectedId === org.id ? 'text-[#304674]' : 'text-gray-700'}`}>
+                                                {org.full_name}
+                                            </h4>
+                                            {org.is_verified && (
+                                                <div className="size-2 bg-green-500 rounded-full shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-gray-400 font-bold truncate mb-2 uppercase tracking-tight">
+                                            {org.tagline || 'Ready to accept donations'}
+                                        </p>
+                                        {org.urgent_need && (
+                                            <div className="mb-2">
+                                                <span className="text-[9px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded uppercase tracking-widest inline-flex items-center gap-1 w-fit">
+                                                    <AlertTriangle className="size-2.5" /> URGENT: {org.urgent_need}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] bg-[#30496E]/10 text-[#30496E] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
+                                                {org.donation_method?.toLowerCase() === 'both'
+                                                    ? (searchParams.get('pref') === 'pickup' ? 'Pickup' : searchParams.get('pref') === 'delivery' ? 'Delivery' : 'Delivery & Pickup')
+                                                    : (org.donation_method || 'Organization')}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
+                                                <MapPin className="size-2.5" /> {org.location.split(',')[0]}
+                                                {dist !== null && (
+                                                    <>
+                                                        <span className="mx-1">•</span>
+                                                        <Navigation className="size-2.5" /> {dist.toFixed(1)} km
+                                                    </>
+                                                )}
                                             </span>
                                         </div>
-                                    )}
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] bg-[#30496E]/10 text-[#30496E] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
-                                            {org.donation_method?.toLowerCase() === 'both'
-                                                ? (searchParams.get('pref') === 'pickup' ? 'Pickup' : searchParams.get('pref') === 'delivery' ? 'Delivery' : 'Delivery & Pickup')
-                                                : (org.donation_method || 'Organization')}
-                                        </span>
-                                        <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
-                                            <MapPin className="size-2.5" /> {org.location.split(',')[0]}
-                                        </span>
                                     </div>
-                                </div>
-                                <ChevronRight className={`size-5 text-gray-300 transition-transform ${selectedId === org.id ? 'translate-x-1 text-[#304674]' : ''}`} />
-                            </button>
-                        ))}
+                                    <ChevronRight className={`size-5 text-gray-300 transition-all duration-300 ${selectedId === org.id ? 'translate-x-1 text-[#304674] scale-110' : 'group-hover:text-gray-400'}`} />
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 

@@ -102,7 +102,7 @@ const ManageCharity = ({ donations }: Props) => {
         });
 
     const acceptedDonations = donations
-        .filter(d => d.status !== 'pending' && d.status !== 'rejected')
+        .filter(d => d.status !== 'pending' && d.status !== 'rejected' && d.status !== 'cancelled')
         .sort((a, b) => {
             if (acceptedSortBy === "Status") return (a.status || "").localeCompare(b.status || "");
             if (acceptedSortBy === "Type") return (a.type || "").localeCompare(b.type || "");

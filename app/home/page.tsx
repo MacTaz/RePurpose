@@ -129,6 +129,7 @@ const Home = async () => {
         .from('donations')
         .select('*')
         .eq('organization_id', user.id)
+        .neq('status', 'cancelled')
         .order('created_at', { ascending: false })
 
     const donorIds = [...new Set((donations || []).map((d: any) => d.donor_id).filter(Boolean))]
