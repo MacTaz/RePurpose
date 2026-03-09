@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft, RefreshCcw, ChevronDown } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { updateDonationStatus } from '@/lib/donation-actions';
 
 const DonationStatus = ({ donation, onClose }: any) => {
     const [status, setStatus] = useState<string>(donation.status || "Pending");
