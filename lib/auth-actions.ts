@@ -17,7 +17,7 @@ export async function login(formData: FormData) {
 
     const { data: { user }, error } = await supabase.auth.signInWithPassword(data);
     if (error) {
-        return { error: 'The username or password you have inputted is incorrect.' };
+        return { error: 'The Email or Password is incorrect.' };
     }
 
     // Check setup_complete — metadata first (fast), then DB as fallback
