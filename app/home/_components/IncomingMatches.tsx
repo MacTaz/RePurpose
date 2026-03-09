@@ -181,7 +181,6 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
 
     return (
         <div className="flex flex-col h-full">
-<<<<<<< org-homepage-fix
             {/* Column headers + refresh */}
             <div className="flex items-center px-4 pt-4 pb-2">
                 <div className="hidden sm:grid grid-cols-[50px_1fr_80px_1fr] gap-3 flex-1">
@@ -203,15 +202,6 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                         <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </button>
-=======
-            {/* Column headers — desktop only */}
-            <div className="hidden md:grid grid-cols-[50px_1fr_80px_1fr] gap-3 px-4 pt-4 pb-2">
-                {['#', 'TYPE', 'QTY', 'DONOR'].map(h => (
-                    <div key={h} className={h === '#' ? 'text-center' : ''}>
-                        <span className="text-[10px] font-black text-[#c47a3a]/60 uppercase tracking-widest">{h}</span>
-                    </div>
-                ))}
->>>>>>> main
             </div>
 
             {/* Cards */}
