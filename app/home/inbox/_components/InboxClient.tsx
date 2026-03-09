@@ -59,11 +59,11 @@ const getIcon = (type: string) => {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bar: string; width: string }> = {
-    pending: { label: 'Pending', color: 'text-amber-600', bar: 'bg-amber-400', width: 'w-[10%]' },
-    accepted: { label: 'Accepted', color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3' },
-    in_progress: { label: 'In Progress', color: 'text-blue-600', bar: 'bg-blue-500', width: 'w-2/3' },
-    delivered: { label: 'Delivered', color: 'text-green-600', bar: 'bg-green-500', width: 'w-full' },
-    rejected: { label: 'Rejected', color: 'text-red-500', bar: 'bg-red-400', width: 'w-0' },
+    pending:     { label: 'Pending',     color: 'text-amber-600',  bar: 'bg-amber-400',  width: 'w-[10%]' },
+    accepted:    { label: 'Accepted',    color: 'text-orange-600', bar: 'bg-orange-400', width: 'w-1/3'   },
+    in_progress: { label: 'In Progress', color: 'text-blue-600',   bar: 'bg-blue-500',   width: 'w-2/3'   },
+    delivered:   { label: 'Delivered',   color: 'text-green-600',  bar: 'bg-green-500',  width: 'w-full'  },
+    rejected:    { label: 'Rejected',    color: 'text-red-500',    bar: 'bg-red-400',    width: 'w-0'     },
 }
 
 // ── Delete Modal ──────────────────────────────────────────────────────────────
@@ -132,8 +132,8 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const realtimeRef = useRef<any>(null)
 
     const accentColor = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600'
-    const accentText = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
-    const accentBg = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
+    const accentText  = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
+    const accentBg    = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
     const accentShadow = isOrg ? 'shadow-[#FF9248]/20' : 'shadow-blue-200'
 
     // ── Auto scroll ───────────────────────────────────────────────────────────
@@ -155,95 +155,90 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
     const fetchConversations = async () => {
         const { data: convos, error } = await supabase
             .from('conversations')
-            .select(`id, donor_id, org_id, donation_id, messages(id, content, image_url, created_at, sender_id)`)
+            .select(`id, donor_id, org_id, donation_id, messages(content, image_url, created_at, sender_id)`)
             .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
 
         if (error || !convos) return
 
-        // Group by partner
+        // Step 1: collect unique partner IDs synchronously (no races)
+        const partnerIds = [...new Set(
+            (convos as any[]).map(c => isOrg ? c.donor_id : c.org_id).filter(Boolean) as string[]
+        )]
+
+        // Step 2: fetch all profiles + avatars in parallel, keyed by id
+        const [profileResults, avatarResults] = await Promise.all([
+            Promise.all(partnerIds.map(id =>
+                supabase.from('profiles').select('id, full_name, facebook_url').eq('id', id).single()
+            )),
+            Promise.all(partnerIds.map(async id => {
+                const { data: files } = await supabase.storage
+                    .from('avatars').list(id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } })
+                if (files && files.length > 0) {
+                    const { data: urlData } = supabase.storage
+                        .from('avatars').getPublicUrl(`${id}/${files[0].name}`)
+                    return { id, url: urlData.publicUrl }
+                }
+                return { id, url: null as string | null }
+            })),
+        ])
+
+        const profileMap: Record<string, any> = {}
+        profileResults.forEach(({ data }) => { if (data) profileMap[(data as any).id] = data })
+        const avatarMap: Record<string, string | null> = {}
+        avatarResults.forEach(({ id, url }) => { avatarMap[id] = url })
+
+        // Step 3: fetch donation details for all donation_ids in parallel
+        const donationIds = [...new Set(
+            (convos as any[]).map(c => c.donation_id).filter(Boolean) as string[]
+        )]
+        const donationResults = await Promise.all(
+            donationIds.map(id =>
+                supabase.from('donations').select('id, type, status, quantity').eq('id', id).single()
+            )
+        )
+        const donationMap: Record<string, any> = {}
+        donationResults.forEach(({ data }) => { if (data) donationMap[(data as any).id] = data })
+
+        // Step 4: build groupMap synchronously — no async, no race
         const groupMap: Record<string, OrgGroup> = {}
 
-        await Promise.all(convos.map(async (convo: any) => {
+        for (const convo of convos as any[]) {
             const partnerId = isOrg ? convo.donor_id : convo.org_id
-            if (!partnerId) return
+            if (!partnerId) continue
 
-            // Fetch partner profile if not cached
             if (!groupMap[partnerId]) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, facebook_url')
-                    .eq('id', partnerId)
-                    .single()
-
-                // Fetch avatar from storage bucket
-                let partnerAvatarUrl: string | null = null
-                const { data: avatarFiles } = await supabase.storage
-                    .from('avatars')
-                    .list(partnerId, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } })
-                if (avatarFiles && avatarFiles.length > 0) {
-                    const { data: urlData } = supabase.storage
-                        .from('avatars')
-                        .getPublicUrl(`${partnerId}/${avatarFiles[0].name}`)
-                    partnerAvatarUrl = urlData.publicUrl
-                }
-
+                const profile = profileMap[partnerId]
                 groupMap[partnerId] = {
                     partnerId,
                     partnerName: profile?.full_name || (isOrg ? 'Donor' : 'Organization'),
                     partnerAvatar: (profile?.full_name || '?').charAt(0).toUpperCase(),
-                    partnerAvatarUrl,
+                    partnerAvatarUrl: avatarMap[partnerId] ?? null,
                     facebookUrl: profile?.facebook_url,
                     threads: [],
                 }
             }
 
-            // Fetch donation details
-            let donationType = 'Donation'
-            let donationStatus = 'pending'
-            let donationQuantity = 1
-            if (convo.donation_id) {
-                const { data: don } = await supabase
-                    .from('donations')
-                    .select('type, status, quantity')
-                    .eq('id', convo.donation_id)
-                    .single()
-                if (don) {
-                    donationType = don.type
-                    donationStatus = don.status
-                    donationQuantity = don.quantity || 1
-                }
-            }
-
-            const msgs = convo.messages || []
-            const sortedMsgs = [...msgs].sort((a: any, b: any) =>
+            const don = convo.donation_id ? donationMap[convo.donation_id] : null
+            const msgs = (convo.messages || []).slice().sort((a: any, b: any) =>
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
-            const lastMsg = sortedMsgs[0]
+            const lastMsg = msgs[0]
 
-            const lastSeenId = typeof window !== 'undefined' ? localStorage.getItem(`seen_${convo.id}`) : null
-            let unreadCount = 0
-            for (const m of sortedMsgs) {
-                if (m.id === lastSeenId) break
-                if (m.sender_id !== userId) unreadCount++
-            }
-
-            const thread: DonationThread = {
+            groupMap[partnerId].threads.push({
                 conversationId: convo.id,
                 donationId: convo.donation_id,
-                donationType,
-                donationStatus,
-                donationQuantity,
+                donationType: don?.type || 'Donation',
+                donationStatus: don?.status || 'pending',
+                donationQuantity: don?.quantity || 1,
                 lastMessage: lastMsg?.image_url ? '📷 Image' : (lastMsg?.content || 'No messages yet'),
                 time: lastMsg?.created_at
                     ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                     : '',
-                unread: unreadCount,
-            }
+                unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
+            })
+        }
 
-            groupMap[partnerId].threads.push(thread)
-        }))
-
-        // Sort threads within each group by most recent
+        // Step 5: sort threads within each group by most recent
         Object.values(groupMap).forEach(g => {
             g.threads.sort((a, b) => (b.time > a.time ? 1 : -1))
         })
@@ -251,12 +246,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         setOrgGroups(Object.values(groupMap))
     }
 
-    useEffect(() => {
-        fetchConversations()
-        const handleRead = () => fetchConversations()
-        window.addEventListener('messages_read', handleRead)
-        return () => window.removeEventListener('messages_read', handleRead)
-    }, [userId, role])
+    useEffect(() => { fetchConversations() }, [userId, role])
 
     // ── Fetch messages + realtime ─────────────────────────────────────────────
     useEffect(() => {
@@ -276,15 +266,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 sender: m.sender_id === userId ? 'user' : 'other',
                 time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
             })))
-
-            if (data.length > 0) {
-                const lastMsg = data[data.length - 1]
-                const currentSeen = localStorage.getItem(`seen_${selectedConvoId}`)
-                if (currentSeen !== lastMsg.id) {
-                    localStorage.setItem(`seen_${selectedConvoId}`, lastMsg.id)
-                    window.dispatchEvent(new Event('messages_read'))
-                }
-            }
         }
         fetch()
 
@@ -304,9 +285,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                         time: new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
                     }]
                 })
-
-                localStorage.setItem(`seen_${selectedConvoId}`, m.id)
-                window.dispatchEvent(new Event('messages_read'))
             })
             .subscribe()
         realtimeRef.current = channel
@@ -701,6 +679,13 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                         </div>
                     )}
                 </div>
+
+                <style jsx global>{`
+                    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 20px; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+                `}</style>
             </div>
         </>
     )
