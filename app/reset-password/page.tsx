@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
+import VideoPanel from '@/components/VideoPanel'
 
 const page = () => {
     const [password, setPassword] = useState('')
@@ -58,11 +59,7 @@ const page = () => {
                 </svg>
             </div>
 
-            {/* Left Side - Placeholder */}
-            <div className="hidden md:flex w-full md:w-1/2 items-center justify-center px-10">
-                <div className="bg-white rounded-3xl w-full h-full">
-                </div>
-            </div>
+            <VideoPanel />
 
             {/* Right Side - Form */}
             <div className="w-full md:w-1/2 flex flex-col px-8 md:px-16 pt-10 z-10 pb-10">
