@@ -132,11 +132,20 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const realtimeRef = useRef<any>(null)
+    const selectedConvoIdRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        selectedConvoIdRef.current = selectedConvoId
+    }, [selectedConvoId])
 
     const accentColor = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600'
     const accentText = isOrg ? 'text-[#FF9248]' : 'text-blue-700'
     const accentBg = isOrg ? 'bg-[#FFF5ED]' : 'bg-[#EEF2FF]'
     const accentShadow = isOrg ? 'shadow-[#FF9248]/20' : 'shadow-blue-200'
+    const unreadBadgeBg = isOrg ? 'bg-[#FF9248]' : 'bg-blue-600'
+    const unreadThreadBadgeBg = isOrg ? 'bg-[#FFF5ED]' : 'bg-blue-100'
+    const unreadThreadBadgeText = isOrg ? 'text-[#FF9248]' : 'text-blue-600'
+    const unreadHighlightText = isOrg ? 'text-[#FF9248]' : 'text-blue-600'
 
     // ── Auto scroll ───────────────────────────────────────────────────────────
     useEffect(() => {
@@ -238,7 +247,19 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 time: lastMsg?.created_at
                     ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                     : '',
-                unread: msgs.filter((m: any) => m.sender_id !== userId).length > 0 ? 1 : 0,
+                unread: (() => {
+                    const lastForeignMsg = msgs.find((m: any) => m.sender_id !== userId)
+                    if (!lastForeignMsg) return 0
+                    const lastSeenId = typeof window !== 'undefined' ? localStorage.getItem(`seen_${convo.id}`) : null
+                    if (!lastSeenId) return msgs.filter((m: any) => m.sender_id !== userId).length
+
+                    let count = 0
+                    for (const m of msgs) {
+                        if (m.id === lastSeenId) break
+                        if (m.sender_id !== userId) count++
+                    }
+                    return count
+                })(),
             })
         }
 
@@ -248,6 +269,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         })
 
         setOrgGroups(Object.values(groupMap))
+        window.dispatchEvent(new Event('messages_read')) // Notify Navbar after initial fetch
     }
 
     useEffect(() => { fetchConversations() }, [userId, role])
@@ -261,6 +283,14 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
             }, (payload: any) => {
                 const m = payload.new
                 const convoId: string = m.conversation_id
+                const isCurrentConvo = convoId === selectedConvoIdRef.current
+                const isFromOther = m.sender_id !== userId
+
+                // Side effects outside state setter
+                if (isCurrentConvo || !isFromOther) {
+                    localStorage.setItem(`seen_${convoId}`, m.id)
+                    window.dispatchEvent(new Event('messages_read'))
+                }
 
                 setOrgGroups(prev => {
                     const groupIdx = prev.findIndex(g =>
@@ -274,12 +304,13 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                         if (gi !== groupIdx) return g
                         const newThreads = g.threads.map(t => {
                             if (t.conversationId !== convoId) return t
+
                             return {
                                 ...t,
                                 lastMessageId: m.id,
                                 lastMessage: m.image_url ? '📷 Image' : (m.content || t.lastMessage),
                                 time: newTime,
-                                unread: m.sender_id !== userId ? t.unread + 1 : t.unread,
+                                unread: (isFromOther && !isCurrentConvo) ? t.unread + 1 : 0,
                             }
                         })
                         newThreads.sort((a, b) => (b.time > a.time ? 1 : -1))
@@ -312,6 +343,14 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 .eq('conversation_id', selectedConvoId)
                 .order('created_at', { ascending: true })
             if (cancelled || error || !data) return
+
+            // Mark the most recent message as seen if it's from the other person
+            const lastForeignMsg = [...data].reverse().find(m => m.sender_id !== userId)
+            if (lastForeignMsg) {
+                localStorage.setItem(`seen_${selectedConvoId}`, lastForeignMsg.id)
+                window.dispatchEvent(new Event('messages_read'))
+            }
+
             // Only replace messages once the full result is ready — no blank flash
             setMessages(data.map((m: any) => ({
                 id: m.id, text: m.content, imageUrl: m.image_url,
@@ -329,6 +368,12 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 filter: `conversation_id=eq.${selectedConvoId}`,
             }, (payload: any) => {
                 const m = payload.new
+
+                if (m.sender_id !== userId) {
+                    localStorage.setItem(`seen_${selectedConvoId}`, m.id)
+                    window.dispatchEvent(new Event('messages_read'))
+                }
+
                 setMessages(prev => {
                     if (prev.find(x => x.id === m.id)) return prev
                     return [...prev, {
@@ -402,6 +447,12 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         setSelectedOrgGroup(group)
         // Don't clear messages here — let the fetch useEffect replace them
         // once loaded to avoid a blank flash
+
+        // Mark as read in localStorage and notify Navbar
+        if (thread.lastMessageId) {
+            localStorage.setItem(`seen_${thread.conversationId}`, thread.lastMessageId)
+            window.dispatchEvent(new Event('messages_read'))
+        }
 
         // Immediately clear the unread dot for this thread on open
         setOrgGroups(prev => prev.map(g =>
@@ -545,9 +596,16 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                         </div>
                                         <div className="flex-1 min-w-0 py-1">
                                             <div className="flex justify-between items-start mb-0.5">
-                                                <h3 className={`font-bold truncate ${isExpanded ? accentText : 'text-slate-900'}`}>
-                                                    {group.partnerName}
-                                                </h3>
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <h3 className={`font-bold truncate transition-colors ${totalUnread > 0 ? unreadHighlightText : (isExpanded ? accentText : 'text-slate-900')}`}>
+                                                        {group.partnerName}
+                                                    </h3>
+                                                    {totalUnread > 0 && (
+                                                        <span className={`flex-shrink-0 px-1.5 py-0.5 rounded-full ${unreadBadgeBg} text-white text-[10px] font-bold`}>
+                                                            {totalUnread}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-1.5 flex-shrink-0">
                                                     <span className="text-[11px] font-medium text-slate-400">{latestThread?.time}</span>
                                                     <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
@@ -561,11 +619,6 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                                 {latestThread ? ` · ${latestThread.lastMessage}` : ''}
                                             </p>
                                         </div>
-                                        {totalUnread > 0 && (
-                                            <div className={`absolute top-3 right-3 w-5 h-5 rounded-full ${accentColor} text-white text-[10px] flex items-center justify-center font-bold`}>
-                                                {totalUnread}
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Accordion: donation threads */}
@@ -583,10 +636,17 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                                                         <span className="text-xl flex-shrink-0">{getIcon(thread.donationType)}</span>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center justify-between gap-1">
-                                                                <p className={`text-sm font-bold capitalize truncate ${isActive ? accentText : 'text-slate-800'}`}>
-                                                                    {thread.donationItemName || thread.donationType}
-                                                                    <span className="text-slate-400 font-normal ml-1">×{thread.donationQuantity}</span>
-                                                                </p>
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <p className={`text-sm font-bold capitalize truncate ${isActive ? accentText : 'text-slate-800'}`}>
+                                                                        {thread.donationItemName || thread.donationType}
+                                                                        <span className="text-slate-400 font-normal ml-1">×{thread.donationQuantity}</span>
+                                                                    </p>
+                                                                    {thread.unread > 0 && (
+                                                                        <span className={`flex-shrink-0 px-1.5 py-0.5 rounded-full ${unreadThreadBadgeBg} ${unreadThreadBadgeText} text-[9px] font-bold`}>
+                                                                            {thread.unread}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                                 <span className="text-[10px] text-slate-400 flex-shrink-0">{thread.time}</span>
                                                             </div>
                                                             {thread.donationItemName && (
