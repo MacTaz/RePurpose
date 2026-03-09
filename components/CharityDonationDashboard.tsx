@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { MapPin, Navigation, Clock, Package, Info, CheckCircle2, X } from 'lucide-react';
+import { acceptDonation, rejectDonation } from '@/lib/donation-actions';
 
 // VERSION: 3.1 - Refined Address Layout
 interface Donation {
