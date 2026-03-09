@@ -136,7 +136,7 @@ const ManageDonor = ({ donations }: Props) => {
                     </div>
 
                     <div className="mt-8 px-4 md:px-8 pb-4 overflow-x-auto relative z-10">
-                        <div className="min-w-[700px] space-y-4">
+                        <div className="min-w-[800px] space-y-4">
                             <div className="flex space-x-4">
                                 {["#", "Type", "Charity Sent To", "Status", "Date"].map(h => (
                                     <div key={h} className="flex-1 bg-white/80 rounded-full py-2.5 text-center text-[#30496E] text-[10px] font-black uppercase tracking-widest shadow-sm">{h}</div>
@@ -160,7 +160,7 @@ const ManageDonor = ({ donations }: Props) => {
                                                             'bg-blue-100 text-blue-700'
                                                 }`}>{donation.status?.replace('_', ' ')}</span>
                                         </div>
-                                        <div className="flex-1 flex items-center justify-center font-bold text-[#30496E]">
+                                        <div className="flex-1 flex items-center justify-center font-bold text-[#30496E] px-1 text-center">
                                             {new Date(donation.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
