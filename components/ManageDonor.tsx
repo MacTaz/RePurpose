@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useTransition } from 'react'
 import DonorDonationDashboard from './DonorDonationDashboard';
 import { useRouter } from 'next/navigation'
 import { RotateCw } from 'lucide-react'
@@ -63,14 +63,35 @@ const FilterDropdown = ({ options, onSelect }: { options: string[], onSelect: (v
 
 const ManageDonor = ({ donations }: Props) => {
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
     const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const handleRefresh = () => {
         setIsRefreshing(true);
-        router.refresh();
+        startTransition(() => {
+            router.refresh();
+        });
         setTimeout(() => setIsRefreshing(false), 1000);
     };
+
+    const [sortBy, setSortBy] = useState<string>("All");
+
+    const sortedDonations = [...donations].sort((a, b) => {
+        if (sortBy === "Type") {
+            return (a.type || "").localeCompare(b.type || "");
+        }
+        if (sortBy === "Charity") {
+            const nameA = a.org_name || a.target_organization || "";
+            const nameB = b.org_name || b.target_organization || "";
+            return nameA.localeCompare(nameB);
+        }
+        if (sortBy === "Date") {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        // Default: Newest first
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
     const isEmpty = donations.length === 0
     const totalDonated = donations.reduce((sum, d) => sum + (d.quantity || 1), 0)
@@ -110,7 +131,7 @@ const ManageDonor = ({ donations }: Props) => {
                             >
                                 <RotateCw className="w-6 h-6 text-[#30496E]" />
                             </button>
-                            <FilterDropdown options={["All", "Type", "Charity", "Date"]} onSelect={() => { }} />
+                            <FilterDropdown options={["All", "Type", "Charity", "Date"]} onSelect={setSortBy} />
                         </div>
                     </div>
 
@@ -125,14 +146,14 @@ const ManageDonor = ({ donations }: Props) => {
                             {isEmpty ? (
                                 <div className="text-center py-10 bg-white/10 rounded-2xl border border-dashed border-white/30 text-white/60 font-bold">No donations reported yet.</div>
                             ) : (
-                                donations.map((donation, index) => (
+                                sortedDonations.map((donation, index) => (
                                     <div key={donation.id} onClick={() => setSelectedDonation(donation)}
-                                        className="flex w-full min-h-[56px] py-1 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-black text-[#30496E] px-1 text-center">{String(index + 1).padStart(3, '0')}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize px-1 text-center">{donation.type}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] px-1 text-center">{donation.org_name || donation.target_organization || '—'}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] px-1 text-center">
-                                            <span className={`px-2 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-center ${donation.status === 'rejected' ? 'bg-red-100 text-red-500' :
+                                        className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-black text-[#30496E]">{String(index + 1).padStart(3, '0')}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize">{donation.type}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.org_name || donation.target_organization || '—'}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'rejected' ? 'bg-red-100 text-red-500' :
                                                 donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
                                                     donation.status === 'in_progress' ? 'bg-yellow-100 text-yellow-600' :
                                                         donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
