@@ -46,7 +46,7 @@ const StatusDropdown = ({
     onClose,
 }: {
     current: Status
-    anchorRef: React.RefObject<HTMLButtonElement>
+    anchorRef: React.RefObject<HTMLButtonElement | null>
     onSelect: (s: Status) => void
     onClose: () => void
 }) => {
