@@ -75,6 +75,66 @@ export default function MatchClient({ organizations, role, userLocation }: Match
     const [success, setSuccess] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [sortBy, setSortBy] = useState<'name' | 'distance'>('name');
+    const [roadDistances, setRoadDistances] = useState<Record<string, number>>({});
+    const [isCalculating, setIsCalculating] = useState(false);
+
+    // Fetch road distances for all organizations using OSRM Table API
+    useEffect(() => {
+        if (!userLocation || organizations.length === 0) return;
+
+        const fetchDistances = async () => {
+            setIsCalculating(true);
+            try {
+                // Filter orgs with location
+                const locOrgs = organizations.filter(o => o.latitude && o.longitude);
+                if (locOrgs.length === 0) {
+                    setIsCalculating(false);
+                    return;
+                }
+
+                // Chunk requests if there are too many orgs (OSRM limit is typically ~100)
+                const coordinates = [
+                    `${userLocation.longitude},${userLocation.latitude}`,
+                    ...locOrgs.map(o => `${o.longitude},${o.latitude}`)
+                ].join(';');
+
+                const url = `https://router.project-osrm.org/table/v1/driving/${coordinates}?sources=0&annotations=distance`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.distances && data.distances[0]) {
+                    const nextDistances: Record<string, number> = {};
+                    // Skip index 0 (source)
+                    data.distances[0].slice(1).forEach((dist: number | null, idx: number) => {
+                        if (dist !== null) {
+                            nextDistances[locOrgs[idx].id] = dist / 1000; // to km
+                        }
+                    });
+                    setRoadDistances(nextDistances);
+                }
+            } catch (err) {
+                console.error('Failed to fetch road distances:', err);
+            } finally {
+                setIsCalculating(false);
+            }
+        };
+
+        fetchDistances();
+    }, [userLocation, organizations]);
+
+    const sortedOrgs = useMemo(() => {
+        let list = [...organizations];
+        if (sortBy === 'distance') {
+            list.sort((a, b) => {
+                const distA = roadDistances[a.id] ?? Infinity;
+                const distB = roadDistances[b.id] ?? Infinity;
+                return distA - distB;
+            });
+        } else {
+            list.sort((a, b) => a.full_name.localeCompare(b.full_name));
+        }
+        return list;
+    }, [organizations, sortBy, roadDistances]);
 
     // Prevent accidental navigation via browser refresh/close
     useEffect(() => {
@@ -85,21 +145,6 @@ export default function MatchClient({ organizations, role, userLocation }: Match
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, []);
-
-    const sortedOrgs = useMemo(() => {
-        let list = [...organizations];
-        if (sortBy === 'distance' && userLocation) {
-            list.sort((a, b) => {
-                const distA = a.latitude && a.longitude ? calculateDistance(userLocation.latitude, userLocation.longitude, a.latitude, a.longitude) : Infinity;
-                const distB = b.latitude && b.longitude ? calculateDistance(userLocation.latitude, userLocation.longitude, b.latitude, b.longitude) : Infinity;
-                return distA - distB;
-            });
-        } else {
-            // Default to name sorting if not distance or no location
-            list.sort((a, b) => a.full_name.localeCompare(b.full_name));
-        }
-        return list;
-    }, [organizations, sortBy, userLocation]);
 
     const selectedOrg = useMemo(() => {
         return sortedOrgs.find(org => org.id === selectedId) || sortedOrgs[0];
@@ -305,23 +350,20 @@ export default function MatchClient({ organizations, role, userLocation }: Match
                         {userLocation && (
                             <button
                                 onClick={() => setSortBy(prev => prev === 'name' ? 'distance' : 'name')}
-                                className={`p-2 rounded-xl transition-all border flex items-center gap-2 group ${sortBy === 'distance' ? 'bg-[#30496E] text-white border-[#30496E]' : 'bg-white text-gray-400 border-gray-100 hover:border-[#30496E]/20 hover:text-[#30496E]'}`}
-                                title={sortBy === 'distance' ? 'Sorted by Distance' : 'Sort by Distance'}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${sortBy === 'distance'
+                                    ? 'bg-[#30496E] text-white border-[#30496E]'
+                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#30496E]/20 hover:text-[#30496E]'
+                                    }`}
+                                title={sortBy === 'distance' ? 'Sorting by Road Distance' : 'Sort by Distance'}
                             >
-                                <ArrowUpDown className={`size-4 transition-transform ${sortBy === 'distance' ? 'rotate-180' : ''}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
-                                    {sortBy === 'distance' ? 'Closest' : 'A-Z'}
-                                </span>
+                                <ArrowUpDown className="size-4" />
+                                {sortBy === 'distance' ? 'Distance' : 'Name'}
                             </button>
                         )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                         {sortedOrgs.map((org) => {
-                            const dist = userLocation && org.latitude && org.longitude
-                                ? calculateDistance(userLocation.latitude, userLocation.longitude, org.latitude, org.longitude)
-                                : null;
-
                             return (
                                 <button
                                     key={org.id}
@@ -370,11 +412,10 @@ export default function MatchClient({ organizations, role, userLocation }: Match
                                             </span>
                                             <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
                                                 <MapPin className="size-2.5" /> {org.location.split(',')[0]}
-                                                {dist !== null && (
-                                                    <>
-                                                        <span className="mx-1">•</span>
-                                                        <Navigation className="size-2.5" /> {dist.toFixed(1)} km
-                                                    </>
+                                                {roadDistances[org.id] !== undefined && (
+                                                    <span className="flex items-center gap-1 ml-1 text-[#30496E]/60 uppercase tracking-tighter text-[9px] font-black">
+                                                        <Navigation className="size-2 ml-1" /> {roadDistances[org.id].toFixed(1)} km
+                                                    </span>
                                                 )}
                                             </span>
                                         </div>
