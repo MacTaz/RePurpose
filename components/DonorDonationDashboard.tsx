@@ -243,6 +243,7 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                             orgLng={donation.org_lng || 120.9842}
                             userLat={donation.donor_lat || 0}
                             userLng={donation.donor_lng || 0}
+                            role="donor"
                         />
                     </div>
                 </div>

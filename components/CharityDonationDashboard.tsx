@@ -229,6 +229,7 @@ const CharityDonationDashboard = ({ donation, onClose }: Props) => {
                             orgLng={donation.org_lng || 120.9842}
                             userLat={donation.donor_lat}
                             userLng={donation.donor_lng}
+                            role="organization"
                         />
                     </div>
                 </div>

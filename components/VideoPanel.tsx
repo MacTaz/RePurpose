@@ -122,7 +122,7 @@ export default function VideoPanel() {
     }, []); // runs once — never remounts video elements
 
     return (
-        <div className="hidden md:block md:w-1/2 h-screen sticky top-0 overflow-hidden bg-black">
+        <div className="hidden lg:block lg:w-1/2 h-screen sticky top-0 overflow-hidden bg-black">
 
             {/* Video A */}
             <video

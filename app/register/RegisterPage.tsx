@@ -54,10 +54,14 @@ const RegisterPage = () => {
 
     const isOAuth = searchParams.get('oauth') === 'true';
     const oauthEmail = searchParams.get('email') ?? '';
-    const resumeStep = searchParams.get('step') === '2';
+    const queryStep = searchParams.get('step');
+    const resumeStep2 = queryStep === '2';
+    const finalizeStep = queryStep === '1' || isOAuth;
 
-    // step: 1 = account details, 'pending' = awaiting email confirmation, 2 = profile setup
-    const [step, setStep] = useState<1 | 2 | 'pending'>(resumeStep ? 2 : 1);
+    // steps: 0 = email only, 'pending' = check email, 1 = finalize (name/pass/role), 2 = profile (phone/bio)
+    const [step, setStep] = useState<0 | 1 | 2 | 'pending'>(
+        resumeStep2 ? 2 : (finalizeStep ? 1 : 0)
+    );
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -78,17 +82,16 @@ const RegisterPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (isOAuth || resumeStep) {
+        if (finalizeStep || resumeStep2) {
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
                     if (user.email) setEmail(user.email);
                     if (user.user_metadata?.full_name) setFullName(user.user_metadata.full_name);
-                    if (user.user_metadata?.avatar_url) setProfilePic(user.user_metadata.avatar_url);
                     if (user.user_metadata?.role) setUserType(user.user_metadata.role);
                 }
             });
         }
-    }, [isOAuth, resumeStep]);
+    }, [finalizeStep, resumeStep2]);
 
     const isDonor = userType === 'donor';
     const bgColor = isDonor ? 'bg-[#2D3561]' : 'bg-[#c9621a]';
@@ -109,6 +112,27 @@ const RegisterPage = () => {
         }
     };
 
+    const handleStep0 = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            const { error: otpError } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/confirm`,
+                    shouldCreateUser: true
+                }
+            });
+            if (otpError) throw otpError;
+            setStep('pending');
+        } catch (err: any) {
+            setError(err.message || 'An error occurred. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleStep1 = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -116,33 +140,20 @@ const RegisterPage = () => {
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("No user session found. Please try logging in or verifying your email again.");
 
-            if (user) {
-                // OAuth user: already verified via Google/Facebook.
-                // Just save name/role in state and move to Step 2.
-                // Password will be set AFTER profile setup in handleStep2
-                // to avoid the "must differ from old password" Supabase error.
-                setStep(2);
-            } else {
-                // New email signup — send confirmation email first
-                const { error: signUpError } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        emailRedirectTo: `${window.location.origin}/auth/confirm`,
-                        data: {
-                            full_name: fullName,
-                            role: userType,
-                            email,
-                            identity_confirmed: true,
-                        },
-                    },
-                });
-                if (signUpError) throw signUpError;
-                setStep('pending');
-            }
+            const { error: updateError } = await supabase.auth.updateUser({
+                password,
+                data: {
+                    full_name: fullName,
+                    role: userType,
+                    identity_confirmed: true
+                }
+            });
+            if (updateError) throw updateError;
+            setStep(2);
         } catch (err: any) {
-            setError(err.message || 'An error occurred during account creation');
+            setError(err.message || 'An error occurred during account finalization');
         } finally {
             setLoading(false);
         }
@@ -200,15 +211,6 @@ const RegisterPage = () => {
 
             if (result?.error) throw new Error(result.error);
 
-            // For OAuth users: now that profile is created, safely set their password.
-            // Doing it here (after all DB writes) avoids the "must differ" Supabase error
-            // that occurs when updating password before any session activity.
-            if (isOAuth && password) {
-                const { error: pwError } = await supabase.auth.updateUser({ password });
-                // Non-fatal: if this fails, they can still log in via OAuth
-                if (pwError) console.warn('Password set failed (non-fatal):', pwError.message);
-            }
-
             router.push('/home');
             router.refresh();
         } catch (err: any) {
@@ -221,12 +223,12 @@ const RegisterPage = () => {
     const RoleTabs = () => (
         <div className="flex gap-3 mb-7 p-1 bg-white/10 rounded-2xl border border-white/10">
             <button type="button" onClick={() => setUserType('donor')}
-                className={`flex-1 py-3 rounded-xl font-black text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2
+                className={`flex-1 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2
                     ${isDonor ? `${accentBg} text-white shadow-lg ${accentShadow} scale-[1.02]` : 'text-white/50 hover:text-white/80'}`}>
                 🤝 Donor
             </button>
             <button type="button" onClick={() => setUserType('organization')}
-                className={`flex-1 py-3 rounded-xl font-black text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2
+                className={`flex-1 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2
                     ${!isDonor ? `${accentBg} text-white shadow-lg ${accentShadow} scale-[1.02]` : 'text-white/50 hover:text-white/80'}`}>
                 🏢 Organization
             </button>
@@ -259,20 +261,20 @@ const RegisterPage = () => {
             <VideoPanel />
 
             {/* Right form */}
-            <div className="relative z-10 w-full lg:w-1/2 h-full flex flex-col px-6 md:px-16 pt-10 pb-10 overflow-y-auto">
+            <div className="relative z-10 w-full lg:w-1/2 h-full flex flex-col px-5 sm:px-10 lg:px-16 pt-8 lg:pt-10 pb-10 overflow-y-auto">
 
                 {/* Logo */}
                 <div className="mb-8">
                     <Link href="/">
-                        <h1 className={`text-white font-['Inter'] font-black text-5xl mb-4 ${accentHover} transition-all duration-300`}>
+                        <h1 className={`text-white font-['Inter'] font-black text-4xl lg:text-5xl mb-4 ${accentHover} transition-all duration-300`}>
                             RePurpose
                         </h1>
                     </Link>
                     <hr className="border-white/40" />
                 </div>
 
-                {/* Step indicator — only show for steps 1 and 2 */}
-                {step !== 'pending' && !resumeStep && (
+                {/* Step indicator — Hidden for step 0 and pendng */}
+                {step !== 0 && step !== 'pending' && !resumeStep2 && (
                     <div className="flex items-center gap-3 mb-8">
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all duration-500 ${step >= 1 ? `${accentBg} text-white` : 'bg-white/10 text-white/40'}`}>1</div>
                         <div className={`flex-1 h-[2px] rounded-full transition-all duration-700 ${accentBg} ${step === 2 ? 'opacity-100' : 'opacity-20'}`} />
@@ -282,197 +284,168 @@ const RegisterPage = () => {
                     </div>
                 )}
 
-                {/* ── STEP 1: Account Details ── */}
-                {step === 1 && (
+                {/* ── STEP 0: Email Only ── */}
+                {step === 0 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-6">
-                            {isOAuth ? 'Finalize Your Account' : 'Create Account'}
-                        </h2>
-                        <RoleTabs />
-
-                        <form onSubmit={handleStep1} className="flex flex-col">
-                            <label className="text-white font-['Inter'] mb-2">{isDonor ? 'Full Name' : 'Organization Name'}</label>
-                            <input value={fullName} onChange={e => setFullName(e.target.value)} required type="text"
-                                placeholder={isDonor ? 'Enter your full name' : 'Enter organization name'}
-                                className={`${inputClass} mb-4`} />
-
-                            <label className="text-white font-['Inter'] mb-2">Email</label>
+                        <h2 className="text-white font-['Inter'] text-2xl lg:text-4xl font-bold mb-6 text-center lg:text-left">Get Started</h2>
+                        <form onSubmit={handleStep0} className="flex flex-col">
+                            <label className="text-white font-['Inter'] mb-2">Email Address</label>
                             <input
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 required
                                 type="email"
-                                placeholder="Enter your email"
-                                readOnly={isOAuth}
-                                className={`${inputClass} mb-4 ${isOAuth ? 'opacity-60 cursor-not-allowed bg-white/10' : ''}`} />
+                                placeholder="name@example.com"
+                                className={`${inputClass} mb-6`} />
 
-                            <label className="text-white font-['Inter'] mb-2">
-                                {isOAuth ? 'Create a Password' : 'Password'}
-                            </label>
+                            {error && <p className="text-red-300 text-sm mb-4 font-semibold italic">⚠️ {error}</p>}
+
+                            <button type="submit" disabled={loading}
+                                className={`w-full ${accentBg} text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:brightness-110 shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                {loading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Sending Link...
+                                    </span>
+                                ) : 'Send Verification Link'}
+                            </button>
+                        </form>
+
+                        <p className="text-white mt-4 text-sm">
+                            Already have an account?{' '}
+                            <Link href="/login" className={`font-bold italic ${accentHover} transition-colors`}>Login here</Link>
+                        </p>
+                    </div>
+                )}
+
+                {/* ── PENDING: Check Email ── */}
+                {step === 'pending' && (
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-center lg:text-left py-10">
+                        <div className={`w-20 h-20 ${accentBg} rounded-[2rem] flex items-center justify-center mb-8 mx-auto lg:mx-0 shadow-2xl animate-bounce`}>
+                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-4">Check Your Email</h2>
+                        <p className="text-white/70 text-lg mb-8 max-w-md leading-relaxed font-medium">
+                            We've sent a secure verification link to <span className="text-white font-black underline decoration-[#FF9248] underline-offset-4">{email}</span>. Click it to finalize your account.
+                        </p>
+                        <div className="flex flex-col lg:flex-row gap-4">
+                            <button
+                                onClick={() => setStep(0)}
+                                className="px-8 py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/10 transition-all text-sm">
+                                ← Change Email
+                            </button>
+                            <button
+                                onClick={handleResendEmail}
+                                disabled={loading}
+                                className={`px-8 py-3 rounded-xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all text-sm ${loading ? 'opacity-50' : ''}`}>
+                                {loading ? 'Sending...' : 'Resend Link'}
+                            </button>
+                        </div>
+                        {error && <p className="text-red-300 text-sm mt-6 font-black italic">⚠️ {error}</p>}
+                    </div>
+                )}
+
+                {/* ── STEP 1: Finalize Account ── */}
+                {step === 1 && (
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                        <h2 className="text-white font-['Inter'] text-2xl lg:text-4xl font-bold mb-6">Finalize Account</h2>
+                        <RoleTabs />
+
+                        <form onSubmit={handleStep1} className="flex flex-col">
+                            <label className="text-white font-['Inter'] mb-2">{isDonor ? 'Full Name' : 'Organization Name'}</label>
+                            <input value={fullName} onChange={e => setFullName(e.target.value)} required type="text"
+                                placeholder={isDonor ? 'Enter your name' : 'Enter org name'}
+                                className={`${inputClass} mb-4`} />
+
+                            <label className="text-white font-['Inter'] mb-2">Email</label>
+                            <input value={email} readOnly type="email"
+                                className={`w-full bg-white/10 text-white/50 rounded-lg px-4 py-3 outline-none cursor-not-allowed mb-4`} />
+
+                            <label className="text-white font-['Inter'] mb-2">Password</label>
                             <div className="mb-4">
                                 <PasswordInput value={password} onChange={e => setPassword(e.target.value)}
                                     placeholder="Enter your password" className={inputClass} />
-                                {isOAuth && <p className="text-[10px] text-white/40 mt-1 uppercase tracking-widest font-black">Set a password so you can also log in with email</p>}
                             </div>
 
                             <label className="text-white font-['Inter'] mb-2">Confirm Password</label>
                             <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                                 required type="password" placeholder="Re-enter your password"
                                 className={`${inputClass} ${confirmPassword && password !== confirmPassword ? 'ring-1 ring-red-400/60' : confirmPassword && password === confirmPassword ? 'ring-1 ring-green-400/60' : ''}`} />
-                            {confirmPassword && password !== confirmPassword && (
-                                <p className="text-red-300 text-xs font-semibold mt-1.5 mb-2 ml-1">Passwords do not match</p>
-                            )}
-                            {confirmPassword && password === confirmPassword && (
-                                <p className="text-green-300 text-xs font-semibold mt-1.5 mb-2 ml-1">✓ Passwords match</p>
-                            )}
 
-                            {error && <p className="text-red-300 text-sm mt-2 mb-2">{error}</p>}
+                            {error && <p className="text-red-300 text-sm mt-2 mb-2">⚠️ {error}</p>}
 
                             <button type="submit" disabled={loading}
-                                className={`mt-4 w-full ${accentBg} text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:brightness-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}>
-                                {loading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Creating Account...
-                                    </span>
-                                ) : 'Continue →'}
+                                className={`mt-4 w-full ${accentBg} text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:brightness-110 transition-all duration-300 disabled:opacity-50`}>
+                                {loading ? 'Processing...' : 'Continue →'}
                             </button>
                         </form>
-
-                        <p className="text-white mt-4 text-sm">
-                            Already have an account?{' '}
-                            <Link href="/login" className={`font-bold italic ${accentHover}`}>Login here</Link>
-                        </p>
-                    </div>
-                )}
-
-                {/* ── PENDING: Email confirmation sent ── */}
-                {step === 'pending' && (
-                    <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col items-center text-center mt-8">
-                        <div className="text-7xl mb-6">📬</div>
-                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-4">Check your email</h2>
-                        <p className="text-white/60 text-sm mb-2">
-                            We sent a confirmation link to
-                        </p>
-                        <p className="text-white font-bold text-lg mb-6">{email}</p>
-                        <p className="text-white/40 text-xs max-w-sm mb-10">
-                            Click the link in the email to verify your account. After confirming, you'll be taken back here to complete your profile.
-                        </p>
-
-                        <div className="w-full max-w-sm space-y-3">
-                            {error && (
-                                <p className="text-red-300 text-sm text-center">{error}</p>
-                            )}
-                            <button
-                                onClick={handleResendEmail}
-                                disabled={loading}
-                                className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-3 rounded-lg transition-all duration-300 disabled:opacity-50 text-sm"
-                            >
-                                {loading ? 'Sending...' : 'Resend confirmation email'}
-                            </button>
-                            <button
-                                onClick={() => { setStep(1); setError(''); }}
-                                className="w-full text-white/40 hover:text-white/70 text-sm transition-colors duration-200"
-                            >
-                                ← Back to edit details
-                            </button>
-                        </div>
                     </div>
                 )}
 
                 {/* ── STEP 2: Complete Profile ── */}
                 {step === 2 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-2">Complete Profile</h2>
-                        <p className="text-white/50 text-sm mb-6">
-                            {resumeStep ? '✓ Email confirmed! Now let\'s set up your profile.' : 'Almost there — fill in your details.'}
-                        </p>
-
-                        {/* Only OAuth users need to re-pick role — email signup users already set it in Step 1 */}
-                        {isOAuth && <RoleTabs />}
+                        <h2 className="text-white font-['Inter'] text-2xl lg:text-4xl font-bold mb-6">Complete Profile</h2>
 
                         <form onSubmit={handleStep2} className="flex flex-col">
                             {/* Profile picture */}
-                            <div className="flex flex-col items-center mb-6">
+                            <div className="flex flex-col items-center mb-10">
                                 <div onClick={() => fileInputRef.current?.click()}
-                                    className="w-24 h-24 rounded-full border-4 border-dashed border-white/30 flex items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden relative group shadow-inner hover:border-white/50">
+                                    className={`w-32 h-32 rounded-[3rem] border-4 border-dashed border-white/30 flex items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden relative group shadow-inner hover:border-white/50 hover:bg-white/5`}>
                                     {profilePic ? (
-                                        <img src={profilePic} alt="Profile" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                        <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="text-white/40 flex flex-col items-center group-hover:text-white/60 transition-colors">
-                                            <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <div className="text-white/30 flex flex-col items-center">
+                                            <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                             </svg>
-                                            <span className="text-[9px] font-bold tracking-wide">Add Photo</span>
+                                            <span className="text-xs font-bold">Choose Image</span>
                                         </div>
                                     )}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <span className="text-white text-xs font-bold">Change</span>
-                                    </div>
                                 </div>
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                                <span className="mt-2 text-white/40 text-xs">{profilePic ? 'Click to change' : 'Optional'}</span>
+                                <span className="mt-2 text-white/30 text-xs font-medium">{profilePic ? 'Tap to change' : 'Avatar Recommended'}</span>
                             </div>
-
-                            {/* Full name */}
-                            <label className="text-white font-['Inter'] mb-2">{isDonor ? 'Full Name' : 'Organization Name'}</label>
-                            <input value={fullName} onChange={e => setFullName(e.target.value)} required type="text"
-                                placeholder={isDonor ? 'Enter your full name' : 'Enter organization name'}
-                                className={`${inputClass} mb-4`} />
-
-                            {/* Email locked — already confirmed, cannot change */}
-                            {(isOAuth || resumeStep) && (
-                                <>
-                                    <label className="text-white font-['Inter'] mb-2">
-                                        Email <span className="text-white/40 text-sm font-normal">
-                                            {resumeStep ? '(verified ✓)' : '(from your account)'}
-                                        </span>
-                                    </label>
-                                    <input value={oauthEmail || email} readOnly type="email"
-                                        className="w-full bg-white/10 text-white/50 rounded-lg px-4 py-3 outline-none cursor-not-allowed mb-4" />
-                                </>
-                            )}
 
                             {/* PH Phone */}
                             <label className="text-white font-['Inter'] mb-2">Contact Number</label>
                             <div className={`flex rounded-lg overflow-hidden bg-white/20 mb-1 ${phoneRingClass}`}>
-                                <span className="flex items-center gap-1.5 px-3 py-3 bg-white/10 border-r border-white/20 text-white font-medium text-sm whitespace-nowrap select-none">
+                                <span className="flex items-center gap-1.5 px-3 py-3 bg-white/10 border-r border-white/20 text-white font-medium text-sm select-none">
                                     🇵🇭 +63
                                 </span>
                                 <input
                                     type="tel" value={phone} required
-                                    onChange={e => setPhone(e.target.value.replace(/[^\d\s]/g, ''))}
+                                    onChange={e => setPhone(e.target.value.replace(/[^\d]/g, ''))}
                                     placeholder="9XX XXX XXXX"
-                                    maxLength={13}
+                                    maxLength={10}
                                     className="flex-1 bg-transparent text-white placeholder-white/40 px-4 py-3 outline-none text-sm font-medium"
                                 />
                             </div>
                             {phoneTouched && (
                                 <p className={`text-xs font-semibold mb-4 ml-1 ${phoneValid ? 'text-green-300' : 'text-red-300'}`}>
-                                    {phoneValid
-                                        ? '✓ Valid mobile number'
-                                        : `Must be 10 digits starting with 9 (${phoneDigits.length}/10)`}
+                                    {phoneValid ? '✓ Valid Number' : 'Invalid Format'}
                                 </p>
                             )}
                             {!phoneTouched && <div className="mb-4" />}
 
-                            {/* Donor / Org fields */}
+                            {/* Role fields */}
                             {isDonor ? (
-                                <>
+                                <div className="space-y-4">
                                     <label className="text-white font-['Inter'] mb-2">Bio</label>
                                     <textarea value={bio} onChange={e => setBio(e.target.value)}
-                                        placeholder="Short description for your profile..."
+                                        placeholder="Describe yourself briefly..."
                                         rows={3} className={`${inputClass} resize-none mb-4`} />
-                                </>
+                                </div>
                             ) : (
-                                <>
-                                    <label className="text-white font-['Inter'] mb-2">Organization Details</label>
+                                <div className="space-y-4">
+                                    <label className="text-white font-['Inter'] mb-2">Organization Mission</label>
                                     <textarea value={description} onChange={e => setDescription(e.target.value)}
-                                        placeholder="What is your organization's mission?"
+                                        placeholder="What is your organization's focus?"
                                         rows={3} className={`${inputClass} resize-none mb-4`} />
 
-                                    <label className="text-white font-['Inter'] mb-2">Donation Capability</label>
+                                    <label className="text-white font-['Inter'] mb-2">Donation Preference</label>
                                     <div className="flex gap-2 p-1 bg-white/20 rounded-lg mb-4">
                                         {(['pickup', 'delivery', 'both'] as const).map(method => (
                                             <button key={method} type="button" onClick={() => setDonationMethod(method)}
@@ -482,28 +455,15 @@ const RegisterPage = () => {
                                             </button>
                                         ))}
                                     </div>
-                                </>
+                                </div>
                             )}
 
-                            {error && <p className="text-red-300 text-sm mb-3">{error}</p>}
+                            {error && <p className="text-red-300 text-sm mb-4 font-semibold italic">⚠️ {error}</p>}
 
-                            <div className="flex gap-3">
-                                {!isOAuth && !resumeStep && (
-                                    <button type="button" onClick={() => { setStep(1); setError(''); }}
-                                        className="flex-none px-6 py-3 rounded-lg border border-white/30 text-white font-bold hover:bg-white/10 transition-all duration-300">
-                                        ← Back
-                                    </button>
-                                )}
-                                <button type="submit" disabled={loading}
-                                    className={`flex-1 ${accentBg} text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:brightness-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}>
-                                    {loading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Setting up...
-                                        </span>
-                                    ) : 'Finish Setup'}
-                                </button>
-                            </div>
+                            <button type="submit" disabled={loading}
+                                className={`w-full ${accentBg} text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:brightness-110 shadow-xl transition-all duration-300 disabled:opacity-50`}>
+                                {loading ? 'Finalizing...' : 'Finish Registration'}
+                            </button>
                         </form>
                     </div>
                 )}

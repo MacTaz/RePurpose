@@ -9,7 +9,19 @@ interface DistanceMapProps {
     userLat?: number;
     userLng?: number;
     zoom?: number;
+    role?: 'donor' | 'organization';
 }
+
+const MARKER_URLS = {
+    blue: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    orange: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+    shadow: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
+};
+
+const MARKER_COLORS = {
+    blue: '#30496E',
+    orange: '#FF9248'
+};
 
 // Decode OSRM polyline6 geometry (precision 6)
 function decodePolyline(encoded: string, precision = 6): [number, number][] {
@@ -38,13 +50,20 @@ function decodePolyline(encoded: string, precision = 6): [number, number][] {
     return result;
 }
 
-export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 14 }: DistanceMapProps) {
+export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 14, role = 'donor' }: DistanceMapProps) {
     const mapRef = useRef<any>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const routeLayerRef = useRef<any>(null);
     const userMarkerRef = useRef<any>(null);
     const [distanceKm, setDistanceKm] = useState<string | null>(null);
     const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+
+    const isDonorUser = role === 'donor';
+    const youColor = isDonorUser ? MARKER_COLORS.blue : MARKER_COLORS.orange;
+    const youImg = isDonorUser ? MARKER_URLS.blue : MARKER_URLS.orange;
+    const otherColor = isDonorUser ? MARKER_COLORS.orange : MARKER_COLORS.blue;
+    const otherImg = isDonorUser ? MARKER_URLS.orange : MARKER_URLS.blue;
+    const otherLabel = isDonorUser ? 'Organization' : 'Donor';
 
     // Draw the road route on an already-initialised map
     const drawRoute = async (L: any, map: any, uLat: number, uLng: number) => {
@@ -67,7 +86,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
 
                 // Draw road-following polyline
                 const polyline = L.polyline(latLngs, {
-                    color: '#30496E',
+                    color: youColor,
                     weight: 5,
                     opacity: 0.85,
                     lineJoin: 'round',
@@ -95,7 +114,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
         if (routeLayerRef.current) map.removeLayer(routeLayerRef.current);
 
         const line = L.polyline([userLoc, orgLoc], {
-            color: '#30496E',
+            color: youColor,
             dashArray: '6, 10',
             weight: 4,
             opacity: 0.7,
@@ -146,14 +165,14 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
 
             const orgLoc = L.latLng(orgLat, orgLng);
 
-            // Org marker
-            const orgIcon = L.icon({
-                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            // Org/Other marker
+            const otherIcon = L.icon({
+                iconUrl: otherImg,
+                shadowUrl: MARKER_URLS.shadow,
                 iconSize: [25, 41],
                 iconAnchor: [12, 41],
             });
-            L.marker(orgLoc, { icon: orgIcon }).bindPopup('<b>Organization</b>').addTo(mapInstance);
+            L.marker(orgLoc, { icon: otherIcon }).bindPopup(`<b>${otherLabel}</b>`).addTo(mapInstance);
 
             if (userLat && userLng) {
                 // User marker
@@ -163,19 +182,19 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
                     html: `
                         <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
                             <div style="
-                                background:#22c55e;
+                                background:${youColor};
                                 color:white;
                                 font-family:sans-serif;
                                 font-size:10px;
                                 font-weight:900;
                                 padding:2px 7px;
                                 border-radius:99px;
-                                box-shadow:0 2px 8px rgba(34,197,94,0.45);
+                                box-shadow:0 2px 8px ${youColor}73;
                                 white-space:nowrap;
                                 letter-spacing:0.04em;
                             ">YOU</div>
-                            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #22c55e;margin-top:-1px"></div>
-                            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png"
+                            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${youColor};margin-top:-1px"></div>
+                            <img src="${youImg}"
                                 style="width:20px;height:33px;margin-top:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
                         </div>
                     `,
@@ -207,7 +226,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
                 userMarkerRef.current = null;
             }
         };
-    }, [orgLat, orgLng]); // only re-init when org changes
+    }, [orgLat, orgLng, role]); // only re-init when org or role changes
 
     // Re-draw route when user location changes after map is already mounted
     useEffect(() => {
@@ -224,9 +243,9 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
                     className: '',
                     html: `
                         <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-                            <div style="background:#22c55e;color:white;font-family:sans-serif;font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;box-shadow:0 2px 8px rgba(34,197,94,0.45);white-space:nowrap;letter-spacing:0.04em;">YOU</div>
-                            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #22c55e;margin-top:-1px"></div>
-                            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" style="width:20px;height:33px;margin-top:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
+                            <div style="background:${youColor};color:white;font-family:sans-serif;font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;box-shadow:0 2px 8px ${youColor}73;white-space:nowrap;letter-spacing:0.04em;">YOU</div>
+                            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${youColor};margin-top:-1px"></div>
+                            <img src="${youImg}" style="width:20px;height:33px;margin-top:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
                         </div>
                     `,
                     iconSize: [40, 60],
@@ -235,6 +254,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
 
                 if (userMarkerRef.current) {
                     userMarkerRef.current.setLatLng([userLat, userLng]);
+                    userMarkerRef.current.setIcon(youIcon);
                 } else {
                     userMarkerRef.current = L.marker([userLat, userLng], { icon: youIcon })
                         .bindPopup('<b>Your Location</b>')

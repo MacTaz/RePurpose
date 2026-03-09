@@ -242,6 +242,7 @@ const DonationStatus = ({ donation, onClose }: { donation: Donation, onClose: ()
                             orgLng={donation.org_lng || 0}
                             userLat={donation.donor_lat || 0}
                             userLng={donation.donor_lng || 0}
+                            role="organization"
                         />
                     </div>
                 </div>
