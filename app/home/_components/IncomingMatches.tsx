@@ -120,6 +120,37 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                     }, 3000)
                 }
             )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'donations',
+                    filter: `organization_id=eq.${orgId}`,
+                },
+                (payload: any) => {
+                    const d = payload.new
+                    // If it's no longer pending (cancelled, accepted, etc.), remove it
+                    if (d.status !== 'pending') {
+                        setLocalDonations(prev => prev.filter(x => x.id !== d.id))
+                    } else {
+                        // If it's still pending but was updated (e.g. quantity changed), update it
+                        setLocalDonations(prev => prev.map(x => x.id === d.id ? { ...x, ...d } : x))
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'donations',
+                    filter: `organization_id=eq.${orgId}`,
+                },
+                (payload: any) => {
+                    setLocalDonations(prev => prev.filter(x => x.id !== payload.old.id))
+                }
+            )
             .subscribe()
 
         return () => {

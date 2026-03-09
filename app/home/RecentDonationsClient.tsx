@@ -63,12 +63,14 @@ const RecentDonationsClient = ({ donations, onSelect }: Props) => {
                                     </p>
                                 </div>
                                 {donation.status && (
-                                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest flex-shrink-0 ${donation.status === 'rejected'
-                                            ? 'bg-red-100 text-red-500'
-                                            : donation.status === 'delivered'
-                                                ? 'bg-green-100 text-green-600'
-                                                : donation.status === 'in_progress'
-                                                    ? 'bg-yellow-100 text-yellow-600'
+                                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest flex-shrink-0 ${donation.status === 'rejected' || donation.status === 'cancelled'
+                                        ? 'bg-red-100 text-red-500'
+                                        : donation.status === 'delivered'
+                                            ? 'bg-green-100 text-green-600'
+                                            : donation.status === 'in_progress'
+                                                ? 'bg-yellow-100 text-yellow-600'
+                                                : donation.status === 'pending'
+                                                    ? 'bg-orange-100 text-orange-700'
                                                     : 'bg-blue-100 text-[#3a5f8a]'
                                         }`}>
                                         {donation.status.replace('_', ' ')}

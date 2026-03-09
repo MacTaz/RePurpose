@@ -89,6 +89,9 @@ const ManageDonor = ({ donations }: Props) => {
         if (sortBy === "Date") {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         }
+        if (sortBy === "Status") {
+            return (a.status || "").localeCompare(b.status || "");
+        }
         // Default: Newest first
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
@@ -131,7 +134,7 @@ const ManageDonor = ({ donations }: Props) => {
                             >
                                 <RotateCw className="w-6 h-6 text-[#30496E]" />
                             </button>
-                            <FilterDropdown options={["All", "Type", "Charity", "Date"]} onSelect={setSortBy} />
+                            <FilterDropdown options={["All", "Type", "Charity", "Status", "Date"]} onSelect={setSortBy} />
                         </div>
                     </div>
 
@@ -153,7 +156,7 @@ const ManageDonor = ({ donations }: Props) => {
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize">{donation.type}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.org_name || donation.target_organization || '—'}</div>
                                         <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'rejected' ? 'bg-red-100 text-red-500' :
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'rejected' || donation.status === 'cancelled' ? 'bg-red-100 text-red-500' :
                                                 donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
                                                     donation.status === 'in_progress' ? 'bg-yellow-100 text-yellow-600' :
                                                         donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
