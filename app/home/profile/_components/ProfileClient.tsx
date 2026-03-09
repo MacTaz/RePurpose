@@ -502,16 +502,54 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-100 ml-1 opacity-70">Availability</label>
                                         {isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={details.availability}
-                                                onChange={e => setDetails({ ...details, availability: e.target.value })}
-                                                placeholder="e.g. 8:00 AM - 5:00 PM"
-                                                className="w-full h-12 bg-white/10 border border-white/20 rounded-xl px-4 font-black focus:outline-none placeholder:text-white/30"
-                                            />
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1 relative">
+                                                    <input
+                                                        type="time"
+                                                        value={(details.availability || '').split(' - ')[0] || ''}
+                                                        onChange={e => {
+                                                            const parts = (details.availability || '').split(' - ');
+                                                            const end = parts[1] || '';
+                                                            setDetails({ ...details, availability: `${e.target.value} - ${end}` });
+                                                        }}
+                                                        className="w-full h-12 bg-white/10 border border-white/20 rounded-xl px-4 font-black focus:outline-none cursor-pointer scheme-dark"
+                                                    />
+                                                </div>
+                                                <span className="text-white/50 font-black tracking-widest uppercase text-[10px]">TO</span>
+                                                <div className="flex-1 relative">
+                                                    <input
+                                                        type="time"
+                                                        value={(details.availability || '').split(' - ')[1] || ''}
+                                                        onChange={e => {
+                                                            const parts = (details.availability || '').split(' - ');
+                                                            const start = parts[0] || '';
+                                                            setDetails({ ...details, availability: `${start} - ${e.target.value}` });
+                                                        }}
+                                                        className="w-full h-12 bg-white/10 border border-white/20 rounded-xl px-4 font-black focus:outline-none cursor-pointer scheme-dark"
+                                                    />
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div className="flex items-center gap-3 h-12 bg-white/10 rounded-xl px-4 font-black text-sm text-orange-50">
-                                                <Clock className="size-4" /> {details.availability || 'Not specified'}
+                                                <Clock className="size-4" />
+                                                <span>
+                                                    {details.availability ? (() => {
+                                                        const p = details.availability.split(' - ');
+                                                        if (p.length === 2) {
+                                                            const f = (t: string) => {
+                                                                if (!t) return '';
+                                                                let [h, m] = t.split(':');
+                                                                let numH = parseInt(h);
+                                                                if (isNaN(numH)) return t;
+                                                                let ampm = numH >= 12 ? 'PM' : 'AM';
+                                                                numH = numH % 12 || 12;
+                                                                return `${numH}:${m} ${ampm}`;
+                                                            };
+                                                            return `${f(p[0])} - ${f(p[1])}`;
+                                                        }
+                                                        return details.availability;
+                                                    })() : 'Not specified'}
+                                                </span>
                                             </div>
                                         )}
                                     </div>

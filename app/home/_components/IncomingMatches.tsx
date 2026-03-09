@@ -45,6 +45,12 @@ const getIcon = (type: string) => {
 const IncomingMatches = ({ donations, orgId }: Props) => {
     const supabase = createClient()
     const [localDonations, setLocalDonations] = useState<Donation[]>(donations)
+
+    // keep local matches in sync with props changes
+    useEffect(() => {
+        setLocalDonations(donations)
+    }, [donations])
+
     const [selected, setSelected] = useState<Donation | null>(null)
     const [newIds, setNewIds] = useState<Set<string>>(new Set()) // tracks freshly arrived cards for animation
     const channelRef = useRef<any>(null)
@@ -66,7 +72,8 @@ const IncomingMatches = ({ donations, orgId }: Props) => {
                     if (d.status !== 'pending') return
 
                     // Fetch donor name + address from profiles
-                    const { data: profile } = await supabase
+                    // Note: RLS may block addresses in client-side query, but we handle the empty object securely.
+                    const { data: profile, error } = await supabase
                         .from('profiles')
                         .select(`full_name, addresses(city, country, address_line1, address_line2, zip, latitude, longitude)`)
                         .eq('id', d.donor_id)
