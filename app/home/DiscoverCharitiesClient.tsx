@@ -154,7 +154,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                 </Link>
             </div>
 
-            <div className="flex flex-col lg:flex-row bg-white" style={{ height: '520px' }}>
+            <div className="flex flex-col lg:flex-row bg-white lg:h-[600px] lg:overflow-hidden">
 
                 {/* LEFT: Org list */}
                 <div className="w-full lg:w-[280px] flex flex-col border-b lg:border-b-0 lg:border-r border-[#edf3fa]">
@@ -173,7 +173,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                     </div>
 
                     {/* List */}
-                    <div className="overflow-y-auto flex-1" style={{ maxHeight: '455px' }}>
+                    <div className="lg:overflow-y-auto lg:flex-1">
                         {filteredOrgs.length === 0 ? (
                             <div className="py-10 flex flex-col items-center gap-2 text-gray-400">
                                 <Building2 className="w-8 h-8" />
@@ -245,11 +245,11 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                 </div>
 
                 {/* RIGHT: Map + Details */}
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 flex flex-col lg:overflow-hidden">
                     {selectedOrg ? (
                         <>
                             {/* key={selectedOrg.id} forces full remount when switching orgs so map reinitialises */}
-                            <div className="relative overflow-hidden" style={{ height: '58%', flexShrink: 0 }}>
+                            <div className="relative overflow-hidden lg:flex-shrink-0 lg:h-[360px]" style={{ height: '220px' }}>
                                 {selectedOrg.addresses?.latitude && selectedOrg.addresses?.longitude ? (
                                     <DistanceMap
                                         key={selectedOrg.id}
@@ -295,7 +295,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                             </div>
 
                             {/* Org detail panel */}
-                            <div className="p-4 overflow-y-auto border-t border-[#edf3fa]" style={{ flex: "1 1 0", minHeight: 0 }}>
+                            <div className="p-4 border-t border-[#edf3fa] lg:overflow-y-auto lg:flex-1 lg:min-h-0">
                                 {/* Name */}
                                 <div className="mb-3">
                                     <div className="flex items-center gap-1.5">
@@ -322,6 +322,15 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                                     </div>
                                 )}
 
+                                {/* Urgent need */}
+                                {selectedOrg.organization_profiles?.urgent_need && (
+                                    <div className="mb-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                                        <span className="text-xs font-bold text-red-600 uppercase tracking-wide">Urgent:</span>
+                                        <span className="text-xs text-red-600">{selectedOrg.organization_profiles.urgent_need}</span>
+                                    </div>
+                                )}
+
                                 {/* Meta row */}
                                 <div className="flex flex-wrap gap-3 mb-3 text-xs text-gray-500">
                                     {selectedOrg.addresses?.city && (
@@ -333,17 +342,13 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                                     {selectedOrg.organization_profiles?.availability && (
                                         <span className="flex items-center gap-1">
                                             <Clock className="w-3 h-3 text-[#7BA4D5]" />
-                                            {selectedOrg.organization_profiles?.availability}
+                                            {selectedOrg.organization_profiles.availability}
                                         </span>
                                     )}
                                     {selectedOrg.organization_profiles?.donation_method && (
                                         <span className="flex items-center gap-1 capitalize">
                                             <Truck className="w-3 h-3 text-[#7BA4D5]" />
-                                            {selectedOrg.organization_profiles.donation_method === 'both'
-                                                ? 'Pick-Up / Delivery'
-                                                : selectedOrg.organization_profiles.donation_method === 'pickup'
-                                                    ? 'Pick-Up'
-                                                    : 'Delivery'}
+                                            {selectedOrg.organization_profiles.donation_method}
                                         </span>
                                     )}
                                 </div>
@@ -351,28 +356,25 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                                 {/* Description */}
                                 {selectedOrg.organization_profiles?.description && (
                                     <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
-                                        {selectedOrg.organization_profiles?.description}
+                                        {selectedOrg.organization_profiles.description}
                                     </p>
                                 )}
 
                                 {/* Category pills */}
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedOrg.organization_profiles?.categories_accepted?.map(cat => {
-                                        const isUrgent = selectedOrg.organization_profiles?.urgent_need?.toLowerCase() === cat.toLowerCase()
-                                        return (
-                                            <span
-                                                key={cat}
-                                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white flex items-center gap-1 ${isUrgent ? 'ring-2 ring-red-400 ring-offset-1 scale-110' : ''
-                                                    }`}
-                                                style={{ background: isUrgent ? '#ef4444' : (CATEGORY_COLORS[cat] ?? '#94a3b8') }}
-                                            >
-                                                {isUrgent && <AlertTriangle className="w-2.5 h-2.5" />}
-                                                {cat}
-                                                {isUrgent && ' — Needed'}
-                                            </span>
-                                        )
-                                    })}
-                                </div>
+                                {selectedOrg.organization_profiles?.categories_accepted &&
+                                    selectedOrg.organization_profiles.categories_accepted.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {selectedOrg.organization_profiles.categories_accepted.map(cat => (
+                                                <span
+                                                    key={cat}
+                                                    className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+                                                    style={{ background: CATEGORY_COLORS[cat] ?? '#94a3b8' }}
+                                                >
+                                                    {cat}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                             </div>
                         </>
                     ) : (
