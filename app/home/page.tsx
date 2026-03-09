@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient, createAdminClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import DonorHome from './_components/DonorHome'
@@ -32,37 +32,135 @@ const Home = async () => {
     if (role === 'donor') {
         const { data: donations } = await supabase
             .from('donations')
-            .select('id, type, created_at, quantity')
+            .select('*')
             .eq('donor_id', user.id)
             .order('created_at', { ascending: false })
             .limit(20)
 
+        const orgIds = [...new Set((donations || []).map((d: any) => d.organization_id).filter(Boolean))]
+
+        // Fetch org names
+        const { data: orgProfiles } = orgIds.length > 0
+            ? await supabase.from('profiles').select('id, full_name').in('id', orgIds)
+            : { data: [] }
+
+        // Fetch org addresses via admin client to bypass RLS
+        const adminSupabase = createAdminClient()
+        const { data: orgAddresses } = orgIds.length > 0
+            ? await adminSupabase.from('addresses').select('*').in('user_id', orgIds)
+            : { data: [] }
+
+        const orgProfileMap: Record<string, any> = {}
+        for (const p of (orgProfiles || [])) orgProfileMap[p.id] = p
+
+        const orgAddressMap: Record<string, any> = {}
+        for (const a of (orgAddresses || [])) orgAddressMap[a.user_id] = a
+
+        const mappedDonations = (donations || []).map((d: any) => {
+            const op = orgProfileMap[d.organization_id] || null
+            const addr = orgAddressMap[d.organization_id] || null
+            return {
+                ...d,
+                org_name: op?.full_name || d.target_organization || 'Unknown Organization',
+                org_address: addr?.city ? `${addr.city}, ${addr.country}` : '',
+                org_city: addr?.city || '',
+                org_country: addr?.country || '',
+                org_lat: addr?.latitude || null,
+                org_lng: addr?.longitude || null,
+                org_line1: addr?.address_line1 || '',
+                org_line2: addr?.address_line2 || '',
+                org_zip: addr?.zip || ''
+            }
+        })
+        const { data: allOrgs } = await adminSupabase
+            .from('profiles')
+            .select('id, full_name, profile_pic')  // ✅ was avatar_url
+            .eq('role', 'organization')
+
+        const allOrgIds = (allOrgs || []).map((o: any) => o.id)
+
+        const { data: allOrgAddresses } = await adminSupabase
+            .from('addresses')
+            .select('*')
+            .in('user_id', allOrgIds)
+
+        const { data: allOrgDetails } = await adminSupabase  // ✅ new — fetch org profiles
+            .from('organization_profiles')
+            .select('*')
+            .in('profile_id', allOrgIds)
+
+        const registeredOrgs = (allOrgs || []).map((org: any) => {
+            const addr = allOrgAddresses?.find((a: any) => a.user_id === org.id) || null
+            const details = allOrgDetails?.find((d: any) => d.profile_id === org.id) || null
+            return {
+                id: org.id,
+                full_name: org.full_name || 'Unnamed Organization',  // ✅ match component prop name
+                profile_pic: org.profile_pic || null,                // ✅ was avatar_url
+                organization_profiles: details ? {                   // ✅ nested to match component
+                    description: details.description,
+                    tagline: details.tagline,
+                    is_verified: details.is_verified,
+                    categories_accepted: details.categories_accepted,
+                    donation_method: details.donation_method,
+                    availability: details.availability,
+                    urgent_need: details.urgent_need,
+                    website: details.website,
+                    email: details.email,
+                } : null,
+                addresses: addr ? {                                  // ✅ nested to match component
+                    latitude: addr.latitude,
+                    longitude: addr.longitude,
+                    city: addr.city,
+                    address_line1: addr.address_line1,
+                } : null,
+            }
+        })
+
         return (
             <div className="min-h-screen bg-white flex flex-col font-['Inter']">
                 <Navbar role={role} />
-                <DonorHome donations={donations || []} />
+                <DonorHome donations={mappedDonations} registeredOrgs={registeredOrgs} />
             </div>
         )
     }
 
-    // Organization — fetch pending donations with donor info + address
+    // Organization — fetch pending donations
     const { data: donations } = await supabase
         .from('donations')
-        .select(`
-            id, donor_id, organization_id, type, quantity, status, created_at, description, delivery_preference,
-            profiles!donations_donor_id_fkey(
-                full_name,
-                addresses(city, country, latitude, longitude, address_line1, address_line2, zip)
-            )
-        `)
+        .select('*')
         .eq('organization_id', user.id)
         .order('created_at', { ascending: false })
 
+    const donorIds = [...new Set((donations || []).map((d: any) => d.donor_id).filter(Boolean))]
+
+    const adminSupabase = createAdminClient()
+
+    // Fetch donor names
+    const { data: donorProfiles } = donorIds.length > 0
+        ? await adminSupabase.from('profiles').select('id, full_name').in('id', donorIds)
+        : { data: [] }
+
+    // Fetch donor addresses via admin client to bypass RLS
+    const { data: donorAddresses } = donorIds.length > 0
+        ? await adminSupabase.from('addresses').select('*').in('user_id', donorIds)
+        : { data: [] }
+
+    const donorProfileMap: Record<string, any> = {}
+    for (const p of (donorProfiles || [])) donorProfileMap[p.id] = p
+
+    const donorAddressMap: Record<string, any> = {}
+    for (const a of (donorAddresses || [])) {
+        if (!donorAddressMap[a.user_id]) {
+            donorAddressMap[a.user_id] = a // just take the first address
+        }
+    }
+
     const mappedDonations = (donations || []).map((d: any) => {
-        const addr = d.profiles?.addresses?.[0] || {}
+        const profile = donorProfileMap[d.donor_id] || {}
+        const addr = donorAddressMap[d.donor_id] || {}
         return {
             ...d,
-            donor_name: d.profiles?.full_name || 'Anonymous Donor',
+            donor_name: profile.full_name || 'Anonymous Donor',
             donor_address: addr.city ? `${addr.city}, ${addr.country}` : 'City Not Set',
             donor_city: addr.city || 'City Not Set',
             donor_country: addr.country || 'Country Not Set',

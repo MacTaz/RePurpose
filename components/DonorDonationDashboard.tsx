@@ -1,6 +1,12 @@
 import { X, MapPin, Navigation, Clock, Package, Info, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 const DonorDonationDashboard = ({ donation, onClose }: any) => {
+    const supabase = createClient();
+    const imageUrl = supabase.storage
+        .from('donations')
+        .getPublicUrl(`${donation.donor_id}/donation-${donation.id}/picture.jpg`).data.publicUrl;
+
     return (
         <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-8 animate-in fade-in duration-700 pb-20 px-4 md:px-0">
             {/* Contextual Top Bar */}
@@ -15,24 +21,14 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-black text-[#30496E] tracking-tight">
-                                Contribution <span className="text-[#80A6C2]">Details</span>
+                                Donation <span className="text-[#80A6C2]">Details</span>
                             </h1>
                             <div className="px-3 py-1 bg-blue-500/10 text-[#30496E] rounded-full text-[9px] font-black uppercase tracking-widest border border-[#30496E]/20">
                                 {donation.status || 'Active'}
                             </div>
                         </div>
-                        <p className="text-[#30496E]/40 font-bold text-xs mt-0.5 tracking-widest uppercase italic">Personal Contribution History</p>
+                        <p className="text-[#30496E]/40 font-bold text-xs mt-0.5 tracking-widest uppercase italic">Donation History</p>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={onClose}
-                        className="px-10 py-4 bg-[#30496E] text-white rounded-2xl font-black shadow-xl shadow-[#30496E]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-2 group"
-                    >
-                        Return to Manage
-                        <CheckCircle2 className="size-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
                 </div>
             </div>
 
@@ -47,14 +43,17 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                 <div className="absolute -inset-1 bg-gradient-to-br from-[#80A6C2] to-[#30496E] rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
                                 <div className="relative aspect-[4/5] rounded-[3rem] overflow-hidden bg-gray-100 shadow-2xl border-4 border-white">
                                     <img
-                                        src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1000"
-                                        alt="Organization"
+                                        src={imageUrl}
+                                        alt="Donation Image"
                                         className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1559416525-4c6e9cc05a66?auto=format&fit=crop&q=80&w=1000";
+                                        }}
                                     />
                                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
                                         <div className="flex items-center gap-3">
                                             <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white text-xs font-black uppercase tracking-widest">
-                                                Recieving Partner
+                                                Donation Image
                                             </div>
                                         </div>
                                     </div>
@@ -63,11 +62,37 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
 
                             {/* Tracking and Progress */}
                             <div className="flex-1 flex flex-col p-4">
+                                <div className="bg-[#30496E]/5 p-8 rounded-[2.5rem] border border-[#30496E]/5 mb-8">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em]">Current Phase</p>
+                                        <p className={`text-sm font-black uppercase tracking-tighter ${donation?.status === 'rejected' ? 'text-red-500' : 'text-[#30496E]'
+                                            }`}>
+                                            {donation?.status?.replace('_', ' ') || 'PROCESSING'}
+                                        </p>
+                                    </div>
+                                    <div className="w-full h-4 bg-[#30496E]/10 rounded-full overflow-hidden p-1 shadow-inner">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-1000 relative ${donation?.status === 'rejected'
+                                                    ? 'bg-gradient-to-r from-red-300 to-red-500'
+                                                    : 'bg-gradient-to-r from-[#80A6C2] to-[#30496E]'
+                                                }`}
+                                            style={{
+                                                width: donation?.status === 'rejected' ? '100%'
+                                                    : donation?.status === 'delivered' ? '100%'
+                                                        : donation?.status === 'in_progress' ? '66%'
+                                                            : '33%'
+                                            }}
+                                        >
+                                            <div className="absolute top-0 right-0 h-full w-4 bg-white/20 skew-x-12 animate-[pulse_2s_infinite]"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="size-10 bg-[#80A6C2]/10 rounded-xl flex items-center justify-center text-[#30496E]">
                                         <Info className="size-5" />
                                     </div>
-                                    <h3 className="text-xl font-black text-[#30496E] lowercase">Item Description</h3>
+                                    <h3 className="text-xl font-black text-[#30496E] capitalize">Item Description</h3>
                                 </div>
 
                                 <div className="relative mb-8 overflow-hidden">
@@ -77,31 +102,14 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                     </p>
                                 </div>
 
-                                <div className="space-y-10 flex-1">
-                                    <div className="bg-[#30496E]/5 p-8 rounded-[2.5rem] border border-[#30496E]/5">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <p className="text-[10px] font-black text-[#30496E]/40 uppercase tracking-[0.2em]">Fulfillment Phase</p>
-                                            <p className="text-sm font-black text-[#30496E] uppercase tracking-tighter">{donation?.status?.replace('_', ' ') || 'PROCESSING'}</p>
-                                        </div>
-                                        <div className="w-full h-4 bg-[#30496E]/10 rounded-full overflow-hidden p-1 shadow-inner">
-                                            <div
-                                                className={`h-full bg-gradient-to-r from-[#80A6C2] to-[#30496E] rounded-full transition-all duration-1000 relative`}
-                                                style={{ width: donation?.status === 'delivered' ? '100%' : donation?.status === 'in_progress' ? '66%' : '33%' }}
-                                            >
-                                                <div className="absolute top-0 right-0 h-full w-4 bg-white/20 skew-x-12 animate-[pulse_2s_infinite]"></div>
-                                            </div>
-                                        </div>
+                                <div className="space-y-4 flex-1">
+                                    <div className="bg-[#80A6C2]/10 p-6 rounded-3xl border border-[#80A6C2]/10 transition-colors hover:bg-[#80A6C2]/20">
+                                        <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Item Type</p>
+                                        <p className="text-xl font-black text-[#30496E] capitalize italic truncate">{donation?.type}</p>
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-[#80A6C2]/10 p-6 rounded-3xl border border-[#80A6C2]/10 transition-colors hover:bg-[#80A6C2]/20">
-                                            <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Item Type</p>
-                                            <p className="text-xl font-black text-[#30496E] lowercase italic truncate">{donation?.type}</p>
-                                        </div>
-                                        <div className="bg-[#30496E]/10 p-6 rounded-3xl border border-[#30496E]/10 transition-colors hover:bg-[#30496E]/20">
-                                            <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Destined For</p>
-                                            <p className="text-xl font-black text-[#30496E] uppercase tracking-tighter truncate">{donation?.org_name || donation?.target_organization}</p>
-                                        </div>
+                                    <div className="bg-[#30496E]/10 p-6 rounded-3xl border border-[#30496E]/10 transition-colors hover:bg-[#30496E]/20">
+                                        <p className="text-[9px] font-black text-[#30496E]/40 uppercase tracking-[0.2em] mb-2">Donated To</p>
+                                        <p className="text-xl font-black text-[#30496E] uppercase tracking-tighter truncate">{donation?.org_name || donation?.target_organization}</p>
                                     </div>
                                 </div>
 
@@ -111,8 +119,8 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                             <div className="size-2 bg-blue-600 rounded-full" />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sent From</p>
-                                            <p className="font-black text-[#30496E]">Personal Dashboard</p>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sent By</p>
+                                            <p className="font-black text-[#30496E] truncate max-w-[150px]">{donation?.donor_name || 'You'}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -134,8 +142,8 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
 
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-10">
-                                <h3 className="text-2xl font-black lowercase tracking-tighter flex items-center gap-3">
-                                    Drop-off <span className="text-[#80A6C2]">Location</span>
+                                <h3 className="text-2xl font-black tracking-tighter flex items-center gap-3 capitalize">
+                                    Organization <span className="text-[#80A6C2]">Location</span>
                                 </h3>
                                 <MapPin className="size-6 text-[#80A6C2]" />
                             </div>
@@ -145,7 +153,7 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2 opacity-40">
                                         <Navigation className="size-3" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Partner Hub</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Street</span>
                                     </div>
                                     <p className="text-2xl font-black tracking-tight leading-tight">
                                         {donation?.org_line1 || 'Not Set'}
@@ -160,24 +168,12 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                 {/* Secondary Info Grid */}
                                 <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
                                     <div>
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City Hub</p>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">City</p>
                                         <p className="text-lg font-black">{donation?.org_city || 'Not Set'}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Territory</p>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Country</p>
                                         <p className="text-lg font-black">{donation?.org_country || 'Not Set'}</p>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4">
-                                    <div className="bg-white/10 px-6 py-4 rounded-3xl flex items-center justify-between group-hover:bg-white/20 transition-all">
-                                        <div>
-                                            <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mb-0.5">Contact Verification</p>
-                                            <p className="text-sm font-black lowercase italic">Ready for handover</p>
-                                        </div>
-                                        <div className="size-8 bg-[#80A6C2] rounded-xl flex items-center justify-center text-white shadow-lg">
-                                            <CheckCircle2 className="size-4" />
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -204,7 +200,7 @@ const DonorDonationDashboard = ({ donation, onClose }: any) => {
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pin Location</p>
-                                            <p className="text-xs font-black text-[#30496E]">Hub Coordinates</p>
+                                            <p className="text-xs font-black text-[#30496E] uppercase tracking-tighter truncate max-w-[200px]">{donation?.org_name || donation?.target_organization || 'Organization'}</p>
                                         </div>
                                     </div>
                                     <a

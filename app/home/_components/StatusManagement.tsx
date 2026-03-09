@@ -18,9 +18,9 @@ const STATUS_OPTIONS = ['accepted', 'in_progress', 'delivered'] as const
 type Status = typeof STATUS_OPTIONS[number]
 
 const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: string; dot: string }> = {
-    accepted:    { label: 'ACCEPTED',    color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200', dot: 'bg-[#FFB27D]' },
-    in_progress: { label: 'IN PROGRESS', color: 'text-blue-700',   bg: 'bg-blue-50   border-blue-200',   dot: 'bg-blue-400'  },
-    delivered:   { label: 'DELIVERED',   color: 'text-green-700',  bg: 'bg-green-50  border-green-200',  dot: 'bg-green-500' },
+    accepted: { label: 'ACCEPTED', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200', dot: 'bg-[#FFB27D]' },
+    in_progress: { label: 'IN PROGRESS', color: 'text-blue-700', bg: 'bg-blue-50   border-blue-200', dot: 'bg-blue-400' },
+    delivered: { label: 'DELIVERED', color: 'text-green-700', bg: 'bg-green-50  border-green-200', dot: 'bg-green-500' },
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -146,8 +146,14 @@ const DonationCard = ({
 }) => {
     const [open, setOpen] = useState(false)
     const [optimisticStatus, setOptimisticStatus] = useState<Status>(donation.status)
+<<<<<<< org-homepage-fix
     // Single ref — updated to whichever button was clicked (mobile or desktop)
     const anchorRef = useRef<HTMLButtonElement>(null)
+=======
+    // One ref shared — the portal positions itself from whichever button is currently visible in the DOM
+    const mobileAnchorRef = useRef<HTMLButtonElement>(null)
+    const desktopAnchorRef = useRef<HTMLButtonElement>(null)
+>>>>>>> main
     const cfg = STATUS_CONFIG[optimisticStatus]
 
     const handleSelect = (s: Status) => {
@@ -155,6 +161,7 @@ const DonationCard = ({
         onStatusChange(donation.id, s)
     }
 
+<<<<<<< org-homepage-fix
     const toggle = (buttonEl: HTMLButtonElement) => {
         // Point anchorRef at the button that was actually clicked before opening
         (anchorRef as React.MutableRefObject<HTMLButtonElement>).current = buttonEl
@@ -204,6 +211,64 @@ const DonationCard = ({
                 <div className="text-center">
                     <span className="text-sm font-black text-[#c47a3a]">{pad(index + 1)}</span>
                 </div>
+=======
+    // Pick whichever button is actually rendered/visible as the dropdown anchor
+    const activeAnchor = (desktopAnchorRef.current?.offsetParent !== null ? desktopAnchorRef : mobileAnchorRef) as React.RefObject<HTMLButtonElement>
+
+    return (
+        <div className="bg-white rounded-2xl border border-[#FFB27D]/30 shadow-sm hover:shadow-md transition-shadow duration-200">
+            {/* Mobile layout */}
+            <div className="flex flex-col gap-2 px-4 py-3 md:hidden">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-[#c47a3a]">{pad(index + 1)}</span>
+                        <span className="text-xl">{getIcon(donation.type)}</span>
+                        <span className="text-sm font-bold text-slate-800 capitalize">{donation.type}</span>
+                        {donation.quantity && (
+                            <span className="text-xs text-slate-400 font-medium">×{donation.quantity}</span>
+                        )}
+                    </div>
+                    <button
+                        ref={mobileAnchorRef}
+                        onClick={() => setOpen(o => !o)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black tracking-wider transition-all hover:shadow-sm ${cfg.bg} ${cfg.color}`}
+                    >
+                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                        {cfg.label}
+                        <svg className={`w-2.5 h-2.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </button>
+                    {open && (
+                        <StatusDropdown
+                            current={optimisticStatus}
+                            anchorRef={activeAnchor}
+                            onSelect={handleSelect}
+                            onClose={() => setOpen(false)}
+                        />
+                    )}
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-[#FFE8D4] flex items-center justify-center text-[10px] font-black text-[#c47a3a] flex-shrink-0">
+                            {donation.donor_name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 truncate">{donation.donor_name}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium flex-shrink-0">
+                        {new Date(donation.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                </div>
+            </div>
+
+            {/* Desktop layout */}
+            <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] items-center px-5 py-4 gap-4">
+                {/* # */}
+                <div className="text-center">
+                    <span className="text-sm font-black text-[#c47a3a]">{pad(index + 1)}</span>
+                </div>
+                {/* Type */}
+>>>>>>> main
                 <div className="flex items-center gap-2">
                     <span className="text-xl">{getIcon(donation.type)}</span>
                     <span className="text-sm font-bold text-slate-800 capitalize">{donation.type}</span>
@@ -211,9 +276,17 @@ const DonationCard = ({
                         <span className="text-xs text-slate-400 font-medium">×{donation.quantity}</span>
                     )}
                 </div>
+<<<<<<< org-homepage-fix
                 <div className="flex justify-center">
                     <button
                         onClick={e => toggle(e.currentTarget)}
+=======
+                {/* Status badge */}
+                <div className="flex justify-center">
+                    <button
+                        ref={desktopAnchorRef}
+                        onClick={() => setOpen(o => !o)}
+>>>>>>> main
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-black tracking-wider transition-all hover:shadow-sm ${cfg.bg} ${cfg.color}`}
                     >
                         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
@@ -222,13 +295,30 @@ const DonationCard = ({
                             <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
+<<<<<<< org-homepage-fix
                 </div>
+=======
+                    {open && (
+                        <StatusDropdown
+                            current={optimisticStatus}
+                            anchorRef={activeAnchor}
+                            onSelect={handleSelect}
+                            onClose={() => setOpen(false)}
+                        />
+                    )}
+                </div>
+                {/* Donor */}
+>>>>>>> main
                 <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-[#FFE8D4] flex items-center justify-center text-xs font-black text-[#c47a3a] flex-shrink-0">
                         {donation.donor_name.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-sm font-semibold text-slate-700 truncate">{donation.donor_name}</span>
                 </div>
+<<<<<<< org-homepage-fix
+=======
+                {/* Date */}
+>>>>>>> main
                 <div className="text-right">
                     <span className="text-xs text-slate-400 font-medium">
                         {new Date(donation.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -300,6 +390,7 @@ const StatusManagement = ({ orgId }: { orgId: string }) => {
 
     return (
         <div className="flex flex-col h-full">
+<<<<<<< org-homepage-fix
             {/* Header row — refresh always visible, column labels desktop only */}
             <div className="flex items-center px-4 md:px-5 py-3 mb-2">
                 <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] gap-4 flex-1">
@@ -321,14 +412,33 @@ const StatusManagement = ({ orgId }: { orgId: string }) => {
                         <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </button>
+=======
+            {/* Column headers — desktop only */}
+            <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] items-center px-5 py-3 gap-4 mb-2">
+                {['#', 'TYPE', 'STATUS', 'DONOR', 'DATE'].map(h => (
+                    <div key={h} className={h === 'STATUS' ? 'text-center' : h === 'DATE' ? 'text-right' : ''}>
+                        <span className="text-[10px] font-black text-[#c47a3a]/60 uppercase tracking-widest">{h}</span>
+                    </div>
+                ))}
+>>>>>>> main
             </div>
 
             {/* Cards */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#FFB27D transparent' }}>
                 {loading ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="bg-white rounded-2xl border border-[#FFB27D]/20 px-5 py-4 animate-pulse">
-                            <div className="grid grid-cols-[60px_1fr_180px_1fr_1fr] gap-4 items-center">
+                        <div key={i} className="bg-white rounded-2xl border border-[#FFB27D]/20 px-4 py-3 animate-pulse">
+                            <div className="flex flex-col gap-2 md:hidden">
+                                <div className="flex justify-between">
+                                    <div className="h-4 w-32 bg-orange-100 rounded" />
+                                    <div className="h-6 w-24 bg-orange-100 rounded-full" />
+                                </div>
+                                <div className="flex justify-between">
+                                    <div className="h-4 w-28 bg-orange-100 rounded" />
+                                    <div className="h-4 w-16 bg-orange-100 rounded" />
+                                </div>
+                            </div>
+                            <div className="hidden md:grid grid-cols-[60px_1fr_180px_1fr_1fr] gap-4 items-center">
                                 <div className="h-4 w-8 bg-orange-100 rounded mx-auto" />
                                 <div className="h-4 w-24 bg-orange-100 rounded" />
                                 <div className="h-7 w-28 bg-orange-100 rounded-full mx-auto" />

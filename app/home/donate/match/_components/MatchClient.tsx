@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle } from 'lucide-react';
+import { Search, MapPin, Globe, Mail, Phone, Clock, ArrowRight, ChevronRight, CheckCircle2, X, Truck, Package, AlertTriangle, Menu } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signout } from '@/lib/auth-actions';
 import { createClient } from '@/utils/supabase/client';
+import dynamic from 'next/dynamic';
+
+const DistanceMap = dynamic(() => import('@/components/DistanceMap'), { ssr: false });
 
 interface Donation {
     id: string;
@@ -35,15 +38,19 @@ interface Organization {
     facebook_url?: string;
     email?: string;
     tagline?: string;
+    urgent_need?: string;
     location: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 interface MatchClientProps {
     organizations: Organization[];
     role: 'donor' | 'organization';
+    userLocation?: { latitude: number; longitude: number };
 }
 
-export default function MatchClient({ organizations, role }: MatchClientProps) {
+export default function MatchClient({ organizations, role, userLocation }: MatchClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const supabase = createClient();
@@ -54,6 +61,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
     const [pendingUrl, setPendingUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Prevent accidental navigation via browser refresh/close
     useEffect(() => {
@@ -182,23 +190,46 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
         <div className="flex flex-col h-screen overflow-hidden">
             {/* Custom Navbar that handles the guard */}
             <div className="font-inter">
-                <nav className={`px-8 py-3 flex justify-between items-center shadow-lg transition-colors ${role === 'donor' ? 'bg-[#3D5082] text-white' : 'bg-[#FF9248] text-black'}`}>
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-black tracking-tight cursor-pointer" onClick={(e) => handleNavClick(e as any, '/home')}>
-                            RePurpose
-                        </h1>
+                <nav className={`px-4 md:px-8 py-3 relative shadow-lg transition-colors ${role === 'donor' ? 'bg-[#3D5082] text-white' : 'bg-[#FF9248] text-black'}`}>
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-2xl font-black tracking-tight cursor-pointer" onClick={(e) => handleNavClick(e as any, '/home')}>
+                                RePurpose
+                            </h1>
+                        </div>
+                        {/* Mobile Menu Toggle */}
+                        <button className="lg:hidden p-2 hover:bg-black/5 rounded-lg transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                        {/* Desktop Menu */}
+                        <div className="hidden lg:flex items-center gap-8 font-konkhmer text-xl font-normal">
+                            <a href="/home/profile" onClick={(e) => handleNavClick(e, '/home/profile')} className="hover:opacity-70 transition-all cursor-pointer">Profile</a>
+                            <a href="/home/manage" onClick={(e) => handleNavClick(e, '/home/manage')} className="hover:opacity-70 transition-all cursor-pointer">Manage</a>
+                            <a href="/home/donate" onClick={(e) => handleNavClick(e, '/home/donate')} className="hover:opacity-70 transition-all cursor-pointer">Donate</a>
+                            <a href="/home/inbox" onClick={(e) => handleNavClick(e, '/home/inbox')} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={role === 'donor' ? 'text-white' : 'text-black'}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </a>
+                            <form action={signout} className="ml-4 font-inter">
+                                <button type="submit" className={`text-sm px-4 py-1.5 rounded-lg transition-all font-bold shadow-sm ${role === 'donor' ? 'bg-white/20 hover:bg-white/30 text-white' : 'border-2 border-black/20 hover:bg-black/5 text-black'}`}>Logout</button>
+                            </form>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-8 font-konkhmer text-xl font-normal">
-                        <a href="/home/profile" onClick={(e) => handleNavClick(e, '/home/profile')} className="hover:opacity-70 transition-all cursor-pointer">Profile</a>
-                        <a href="/home/manage" onClick={(e) => handleNavClick(e, '/home/manage')} className="hover:opacity-70 transition-all cursor-pointer">Manage</a>
-                        <a href="/home/donate" onClick={(e) => handleNavClick(e, '/home/donate')} className="hover:opacity-70 transition-all cursor-pointer">Donate</a>
-                        <a href="/home/inbox" onClick={(e) => handleNavClick(e, '/home/inbox')} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={role === 'donor' ? 'text-white' : 'text-black'}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </a>
-                        <form action={signout} className="ml-4 font-inter">
-                            <button type="submit" className={`text-sm px-4 py-1.5 rounded-lg transition-all font-bold shadow-sm ${role === 'donor' ? 'bg-white/20 hover:bg-white/30 text-white' : 'border-2 border-black/20 hover:bg-black/5 text-black'}`}>Logout</button>
-                        </form>
-                    </div>
+                    {/* Mobile Menu Dropdown */}
+                    {isMenuOpen && (
+                        <div className={`lg:hidden mt-4 pb-4 flex flex-col gap-4 font-konkhmer text-xl font-normal border-t pt-4 ${role === 'donor' ? 'border-white/10' : 'border-black/10'}`}>
+                            <a href="/home/profile" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/profile'); }} className="hover:opacity-70 transition-all cursor-pointer px-2">Profile</a>
+                            <a href="/home/manage" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/manage'); }} className="hover:opacity-70 transition-all cursor-pointer px-2">Manage</a>
+                            <a href="/home/donate" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/donate'); }} className="hover:opacity-70 transition-all cursor-pointer px-2">Donate</a>
+                            <a href="/home/inbox" onClick={(e) => { setIsMenuOpen(false); handleNavClick(e, '/home/inbox'); }} className="hover:opacity-70 transition-all cursor-pointer px-2 flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    Inbox <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={role === 'donor' ? 'text-white' : 'text-black'}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                </span>
+                            </a>
+                            <form action={signout} className="font-inter mt-2 px-2">
+                                <button type="submit" className={`w-full text-left text-sm px-4 py-3 rounded-lg transition-all font-bold shadow-sm ${role === 'donor' ? 'bg-white/20 hover:bg-white/30 text-white' : 'border-2 border-black/20 hover:bg-black/5 text-black'}`}>Logout</button>
+                            </form>
+                        </div>
+                    )}
                 </nav>
             </div>
 
@@ -279,10 +310,17 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     <p className="text-xs text-gray-400 font-bold truncate mb-2 uppercase tracking-tight">
                                         {org.tagline || 'Ready to accept donations'}
                                     </p>
+                                    {org.urgent_need && (
+                                        <div className="mb-2">
+                                            <span className="text-[9px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded uppercase tracking-widest inline-flex items-center gap-1 w-fit">
+                                                <AlertTriangle className="size-2.5" /> URGENT: {org.urgent_need}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] bg-[#30496E]/10 text-[#30496E] font-black px-2 py-0.5 rounded uppercase tracking-tighter">
                                             {org.donation_method?.toLowerCase() === 'both'
-                                                ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
+                                                ? (searchParams.get('pref') === 'pickup' ? 'Pickup' : searchParams.get('pref') === 'delivery' ? 'Delivery' : 'Delivery & Pickup')
                                                 : (org.donation_method || 'Organization')}
                                         </span>
                                         <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
@@ -352,9 +390,22 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                         <div className="py-2">
                             <div className="grid xl:grid-cols-3 gap-8 lg:gap-12 mt-4">
                                 <div className="xl:col-span-2 space-y-8 lg:space-y-10">
+                                    {/* Map Display */}
+                                    {(selectedOrg?.latitude && selectedOrg?.longitude) && (
+                                        <div className="bg-white p-2 lg:p-3 rounded-[32px] lg:rounded-[40px] shadow-sm border border-[#9dbcd4]/30 relative overflow-hidden group hover:border-[#9dbcd4] transition-all" style={{ height: '350px' }}>
+                                            <DistanceMap
+                                                orgLat={selectedOrg.latitude}
+                                                orgLng={selectedOrg.longitude}
+                                                userLat={userLocation?.latitude}
+                                                userLng={userLocation?.longitude}
+                                                zoom={14}
+                                            />
+                                        </div>
+                                    )}
+
                                     <div>
-                                        <h3 className="text-xl lg:text-2xl font-black text-[#30496E] mb-6 flex flex-col sm:flex-row items-center gap-3 lowercase tracking-tight">
-                                            <span className="hidden sm:inline">/</span> profile description
+                                        <h3 className="text-xl lg:text-2xl font-black text-[#30496E] mb-6 flex flex-col sm:flex-row items-center gap-3 tracking-tight">
+                                            <span className="hidden sm:inline">Profile Description</span>
                                             <div className="hidden sm:block h-1 flex-1 bg-[#9dbcd4]/20 rounded-full"></div>
                                         </h3>
                                         <p className="text-gray-600 text-base lg:text-lg leading-relaxed font-medium text-center sm:text-left">
@@ -363,40 +414,82 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                     </div>
 
                                     <div className="space-y-6">
-                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] flex flex-col sm:flex-row items-center gap-3 lowercase tracking-tight">
-                                            <span className="hidden sm:inline">/</span> accepted categories
+                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] flex flex-col sm:flex-row items-center gap-3 tracking-tight">
+                                            <span className="hidden sm:inline">Accepted Categories</span>
                                             <div className="hidden sm:block h-1 w-12 bg-[#30496E]/10 rounded-full"></div>
                                         </h4>
                                         <div className="flex flex-wrap justify-center sm:justify-start gap-2 lg:gap-3">
                                             {selectedOrg?.categories_accepted && selectedOrg.categories_accepted.length > 0 ? (
-                                                selectedOrg.categories_accepted.map(cat => (
-                                                    <div key={cat} className="px-4 py-2 lg:px-5 lg:py-3 bg-[#30496E]/5 border border-[#30496E]/10 rounded-2xl flex items-center gap-2 lg:gap-3 group hover:bg-[#30496E] hover:text-white transition-all cursor-default shadow-sm text-center">
-                                                        <div className="size-1.5 lg:size-2 bg-[#30496E] rounded-full group-hover:bg-white hidden sm:block"></div>
-                                                        <span className="font-bold text-[#30496E] group-hover:text-white uppercase text-[10px] lg:text-xs tracking-widest">{cat}</span>
-                                                    </div>
-                                                ))
+                                                selectedOrg.categories_accepted.map(cat => {
+                                                    const isUrgent = selectedOrg.urgent_need?.toLowerCase() === cat.toLowerCase();
+                                                    return (
+                                                        <div key={cat} className={`px-4 py-2 lg:px-5 lg:py-3 ${isUrgent ? 'bg-red-500 hover:bg-red-600 shadow-md shadow-red-500/20' : 'bg-[#30496E]/5 hover:bg-[#30496E] shadow-sm'} border ${isUrgent ? 'border-red-500' : 'border-[#30496E]/10'} rounded-2xl flex items-center gap-2 lg:gap-3 group transition-all cursor-default text-center`}>
+                                                            <div className={`size-1.5 lg:size-2 ${isUrgent ? 'bg-white' : 'bg-[#30496E] group-hover:bg-white'} rounded-full hidden sm:block`}></div>
+                                                            <span className={`font-bold uppercase text-[10px] lg:text-xs tracking-widest ${isUrgent ? 'text-white' : 'text-[#30496E] group-hover:text-white'}`}>
+                                                                {cat} {isUrgent && '(Needed)'}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })
                                             ) : (
-                                                <p className="text-gray-400 italic">No categories listed.</p>
+                                                <p className="text-gray-400 italic font-bold">No categories listed.</p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6 lg:space-y-8">
+
+                                    {/* Urgent Need Sidebar Panel */}
+                                    {selectedOrg?.urgent_need && (
+                                        <div className="bg-red-50 border-2 border-red-200 p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] flex flex-col gap-3 text-center shadow-inner relative overflow-hidden group">
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-red-400"></div>
+                                            <div className="size-14 bg-red-100 rounded-2xl flex items-center justify-center shrink-0 mx-auto group-hover:scale-110 transition-transform shadow-sm relative">
+                                                <AlertTriangle className="size-6 text-red-600" />
+                                                <div className="absolute inset-0 bg-red-400 opacity-20 animate-ping rounded-2xl delay-100"></div>
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] lg:text-xs font-black text-red-400 mb-1.5 tracking-widest uppercase">Urgent Inventory Need</h4>
+                                                <p className="text-red-600 font-black text-lg lg:text-xl leading-tight uppercase tracking-tight">
+                                                    {selectedOrg.urgent_need}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="bg-[#f0f4f8] p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] border-2 border-dashed border-[#9dbcd4] shadow-inner">
-                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] mb-6 lg:mb-8 lowercase tracking-tight text-center sm:text-left"><span className="hidden sm:inline">/</span> connectivity</h4>
+                                        <h4 className="text-lg lg:text-xl font-black text-[#30496E] mb-6 lg:mb-8 tracking-tight text-center sm:text-left"><span className="hidden sm:inline">Details</span></h4>
                                         <div className="space-y-4 lg:space-y-6">
                                             {[
-                                                { icon: Globe, val: selectedOrg?.website, label: 'Website' },
+                                                { icon: Globe, val: selectedOrg?.website || selectedOrg?.facebook_url, label: selectedOrg?.website ? 'Website' : (selectedOrg?.facebook_url ? 'Facebook' : 'Website') },
                                                 { icon: Mail, val: selectedOrg?.email, label: 'Email' },
                                                 { icon: Phone, val: selectedOrg?.phone, label: 'Phone' },
-                                                { icon: Clock, val: selectedOrg?.availability, label: 'Availability' },
+                                                {
+                                                    icon: Clock,
+                                                    val: selectedOrg?.availability ? (() => {
+                                                        const p = selectedOrg.availability.split(' - ');
+                                                        if (p.length === 2) {
+                                                            const f = (t: string) => {
+                                                                if (!t) return '';
+                                                                let [h, m] = t.split(':');
+                                                                let numH = parseInt(h);
+                                                                if (isNaN(numH)) return t;
+                                                                let ampm = numH >= 12 ? 'PM' : 'AM';
+                                                                numH = numH % 12 || 12;
+                                                                return `${numH}:${m} ${ampm}`;
+                                                            };
+                                                            return `${f(p[0])} - ${f(p[1])}`;
+                                                        }
+                                                        return selectedOrg.availability;
+                                                    })() : 'Not specified',
+                                                    label: 'Availability'
+                                                },
                                                 {
                                                     icon: Truck,
                                                     val: selectedOrg?.donation_method?.toLowerCase() === 'both'
-                                                        ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
-                                                        : selectedOrg?.donation_method,
-                                                    label: 'Handover Method'
+                                                        ? (searchParams.get('pref') === 'pickup' ? 'Pick-Up' : searchParams.get('pref') === 'delivery' ? 'Delivery' : 'Delivery & Pickup')
+                                                        : (selectedOrg?.donation_method?.toLowerCase() === 'pickup' ? 'Pick-Up' : selectedOrg?.donation_method?.toLowerCase() === 'delivery' ? 'Delivery' : selectedOrg?.donation_method || 'Pick-Up/Delivery'),
+                                                    label: 'Donation Method'
                                                 }
                                             ].map((item, i) => (
                                                 <div key={i} className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4 group text-center sm:text-left">
@@ -405,26 +498,28 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <p className="text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{item.label}</p>
-                                                        <p className="text-sm lg:text-sm font-bold text-[#30496E] break-words sm:truncate">{item.val || 'Not listed'}</p>
+                                                        {item.val ? (
+                                                            (item.label === 'Facebook' || item.label === 'Website') ? (
+                                                                <a
+                                                                    href={item.val.toString().startsWith('http') ? item.val.toString() : `https://${item.val}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-sm lg:text-sm font-bold text-blue-500 hover:text-blue-700 hover:underline break-words sm:truncate block transition-colors"
+                                                                >
+                                                                    Visit {item.label}
+                                                                </a>
+                                                            ) : (
+                                                                <p className="text-sm lg:text-sm font-bold text-[#30496E] break-words sm:truncate">{item.val}</p>
+                                                            )
+                                                        ) : (
+                                                            <p className="text-sm lg:text-sm font-bold text-gray-400 break-words sm:truncate">Not listed</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="p-4 lg:p-6 bg-[#30496E] rounded-[24px] lg:rounded-[32px] text-white flex flex-col sm:flex-row items-center gap-3 lg:gap-4 shadow-lg text-center sm:text-left">
-                                        <div className="size-10 lg:size-12 bg-white/20 rounded-xl lg:rounded-2xl flex items-center justify-center backdrop-blur-md">
-                                            <Truck className="size-5 lg:size-6 text-white" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] lg:text-[10px] font-black text-blue-200 uppercase tracking-widest">Support Mode</p>
-                                            <p className="font-bold text-base lg:text-lg">
-                                                {selectedOrg?.donation_method?.toLowerCase() === 'both'
-                                                    ? (searchParams.get('pref') === 'pickup' ? 'Pickup Selected' : searchParams.get('pref') === 'delivery' ? 'Delivery Selected' : 'Delivery & Pickup')
-                                                    : (selectedOrg?.donation_method || 'Pickup/Delivery')}
-                                            </p>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -433,7 +528,7 @@ export default function MatchClient({ organizations, role }: MatchClientProps) {
                     {/* Sticky Action Footer - Fixed at bottom */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8 bg-white/90 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 z-40 text-center sm:text-left">
                         <div className="hidden sm:block">
-                            <p className="text-sm text-gray-400 font-bold uppercase tracking-tight">Handover Request for</p>
+                            <p className="text-sm text-gray-400 font-bold uppercase tracking-tight">Donation Request for</p>
                             <h4 className="text-xl font-black text-[#30496E]">{selectedOrg?.full_name}</h4>
                         </div>
                         {success ? (

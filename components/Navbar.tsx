@@ -35,15 +35,13 @@ const Navbar = ({ role, userId: initialUserId }: NavbarProps) => {
         if (!userId) return
 
         const fetchUnread = async () => {
-            // We fetch conversations and their messages to see if there are any where last message is NOT from user
-            // In a better version (with is_read), we would count messages where is_read = false AND recipient = user
+            // We fetch conversations and their messages to see which ones are not read
             const { data: conversations } = await supabase
                 .from('conversations')
                 .select(`
                     id, 
                     messages(id, sender_id, created_at)
                 `)
-
                 .or(`donor_id.eq.${userId},org_id.eq.${userId}`)
 
             if (conversations) {
@@ -52,11 +50,13 @@ const Navbar = ({ role, userId: initialUserId }: NavbarProps) => {
                     const sortedMsgs = (convo.messages || []).sort((a: any, b: any) =>
                         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                     )
-                    const lastMsg = sortedMsgs[0]
                     const lastSeenId = typeof window !== 'undefined' ? localStorage.getItem(`seen_${convo.id}`) : null
 
-                    if (lastMsg && lastMsg.sender_id !== userId && lastMsg.id !== lastSeenId) {
-                        count++
+                    for (const msg of sortedMsgs) {
+                        if (msg.id === lastSeenId) break
+                        if (msg.sender_id !== userId) {
+                            count++
+                        }
                     }
                 })
                 setUnreadCount(count)
@@ -79,7 +79,18 @@ const Navbar = ({ role, userId: initialUserId }: NavbarProps) => {
             })
             .subscribe()
 
-        return () => { supabase.removeChannel(channel) }
+        const handleMessagesRead = () => {
+            fetchUnread()
+        }
+
+        window.addEventListener('messages_read', handleMessagesRead)
+        window.addEventListener('storage', handleMessagesRead)
+
+        return () => {
+            supabase.removeChannel(channel)
+            window.removeEventListener('messages_read', handleMessagesRead)
+            window.removeEventListener('storage', handleMessagesRead)
+        }
     }, [userId, supabase])
 
     return (

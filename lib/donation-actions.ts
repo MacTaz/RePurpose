@@ -1,29 +1,34 @@
-"use server";
+import { createClient } from '@/utils/supabase/client';
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+export const acceptDonation = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('donations')
+        .update({ status: 'accepted' })
+        .eq('id', id);
 
-export async function updateDonationStatus(donationId: string, status: string) {
-    const supabase = await createClient();
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+};
 
+export const rejectDonation = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase
+        .from('donations')
+        .update({ status: 'declined' })
+        .eq('id', id);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+};
+
+export const updateDonationStatus = async (id: string, status: string) => {
+    const supabase = createClient();
     const { error } = await supabase
         .from('donations')
         .update({ status })
-        .eq('id', donationId);
+        .eq('id', id);
 
-    if (error) {
-        console.error('Error updating donation status:', error);
-        return { error: error.message };
-    }
-
-    revalidatePath('/home/manage');
+    if (error) return { success: false, error: error.message };
     return { success: true };
-}
-
-export async function acceptDonation(donationId: string) {
-    return updateDonationStatus(donationId, 'accepted');
-}
-
-export async function rejectDonation(donationId: string) {
-    return updateDonationStatus(donationId, 'rejected');
-}
+};

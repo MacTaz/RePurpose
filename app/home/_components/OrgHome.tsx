@@ -20,6 +20,8 @@ interface Donation {
     donor_line1?: string
     donor_line2?: string
     donor_zip?: string
+    donor_lat?: number
+    donor_lng?: number
 }
 
 interface Props {
@@ -31,32 +33,32 @@ const OrgHome = ({ orgId, donations }: Props) => {
     const pendingDonations = donations.filter(d => d.status === 'pending')
 
     return (
-        <main className="flex-1 p-10 flex flex-col gap-8 overflow-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 flex flex-col gap-6 lg:gap-8">
             {/* TOP: Status Management */}
-            <div className="flex-[0.8] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col min-h-[300px]">
-                <div className="bg-[#FFD1B3] px-6 py-2 border-b-2 border-[#FFB27D]">
+            <div className="border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col min-h-[280px] lg:min-h-[300px]">
+                <div className="bg-[#FFD1B3] px-4 sm:px-6 py-2 border-b-2 border-[#FFB27D]">
                     <h2 className="text-black text-lg font-extrabold">Status Management</h2>
                 </div>
-                <div className="flex-1 bg-white p-5 overflow-hidden">
+                <div className="flex-1 bg-white p-3 sm:p-5 overflow-auto">
                     <StatusManagement orgId={orgId} />
                 </div>
             </div>
 
-            {/* BOTTOM ROW */}
-            <div className="flex-[1.2] flex gap-8">
+            {/* BOTTOM ROW — stacks on mobile, side-by-side on lg+ */}
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
                 {/* Inventory Needs */}
-                <div className="flex-[0.4] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
+                <div className="lg:flex-[0.4] border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
                     <div className="bg-[#FFD1B3] px-4 py-2 border-b-2 border-[#FFB27D]">
                         <h2 className="text-black text-lg font-extrabold">Inventory</h2>
                     </div>
-                    <div className="flex-1 bg-white p-4 overflow-hidden">
+                    <div className="bg-white p-4">
                         <InventoryManagement orgId={orgId} />
                     </div>
                 </div>
 
                 {/* Incoming Matches */}
-                <div className="flex-1 border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col">
-                    <div className="bg-[#FFD1B3] px-6 py-2 border-b-2 border-[#FFB27D]">
+                <div className="lg:flex-1 border-[6px] border-[#FFB27D] rounded-xl overflow-hidden shadow-sm flex flex-col min-h-[300px]">
+                    <div className="bg-[#FFD1B3] px-4 sm:px-6 py-2 border-b-2 border-[#FFB27D]">
                         <h2 className="text-black text-lg font-extrabold">Incoming Matches</h2>
                     </div>
                     <div className="flex-1 bg-white overflow-hidden">
