@@ -50,6 +50,13 @@ export default async function Manage() {
         const orgAddressMap: Record<string, any> = {}
         for (const a of (orgAddresses || [])) orgAddressMap[a.user_id] = a
 
+        // Fetch current user's (donor) address
+        const { data: userAddress } = await adminSupabase
+            .from('addresses')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+
         const mappedDonations = (donations || []).map((d: any) => {
             const op = orgProfileMap[d.organization_id] || null
             const addr = orgAddressMap[d.organization_id] || null
@@ -63,7 +70,9 @@ export default async function Manage() {
                 org_lng: addr?.longitude || null,
                 org_line1: addr?.address_line1 || '',
                 org_line2: addr?.address_line2 || '',
-                org_zip: addr?.zip || ''
+                org_zip: addr?.zip || '',
+                donor_lat: userAddress?.latitude || null,
+                donor_lng: userAddress?.longitude || null
             }
         })
 
@@ -102,6 +111,13 @@ export default async function Manage() {
         const donorAddressMap: Record<string, any> = {}
         for (const a of (donorAddresses || [])) donorAddressMap[a.user_id] = a
 
+        // Fetch current user's (organization) address
+        const { data: userAddress } = await adminSupabase
+            .from('addresses')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+
         const mappedDonations = (donations || []).map((d: any) => {
             const dp = donorProfileMap[d.donor_id] || null
             const addr = donorAddressMap[d.donor_id] || null
@@ -115,7 +131,9 @@ export default async function Manage() {
                 donor_lng: addr?.longitude || null,
                 donor_line1: addr?.address_line1 || '',
                 donor_line2: addr?.address_line2 || '',
-                donor_zip: addr?.zip || ''
+                donor_zip: addr?.zip || '',
+                org_lat: userAddress?.latitude || null,
+                org_lng: userAddress?.longitude || null
             }
         })
 

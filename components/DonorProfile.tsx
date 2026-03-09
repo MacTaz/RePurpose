@@ -87,7 +87,7 @@ const DonorProfile = ({ user, userId }: DonorProfileProps) => {
             </div>
 
             {/* Container */}
-            <div className="w-full bg-gradient-to-br from-[#9BBAD0] to-[#80A6C2] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#9BBAD0]/30 border border-white/20 min-h-[600px] flex flex-col relative overflow-visible">
+            <div className="w-full bg-gradient-to-br from-[#9BBAD0] to-[#80A6C2] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#9BBAD0]/30 border border-white/20 flex flex-col relative overflow-visible">
                 {/* Decorative background circle */}
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 

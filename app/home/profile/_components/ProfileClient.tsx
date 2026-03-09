@@ -29,6 +29,8 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
     const [isDeleting, setIsDeleting] = useState(false);
     const [showCatError, setShowCatError] = useState(false);
 
+    const addressMapRef = useRef<any>(null);
+
     useEffect(() => {
         setIsMounted(true);
     }, []);
@@ -74,7 +76,15 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
 
             if (profileError) throw profileError;
 
-            // 2. Update Role Table
+            // 2. Update Address inside AddressMap
+            if (addressMapRef.current) {
+                const res = await addressMapRef.current.saveAddress();
+                if (res && !res.success) {
+                    throw new Error(res.error || 'Failed to save address');
+                }
+            }
+
+            // 3. Update Role Table
             if (isDonor) {
                 const { error: donorError } = await supabase
                     .from('donor_profiles')
@@ -288,6 +298,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                             facebook_url: initialProfile.facebook_url || '',
                                         });
                                         setDetails(initialProfile.details || {});
+                                        addressMapRef.current?.resetAddress();
                                     }}
                                     className="px-6 py-3 bg-white text-gray-400 rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center gap-2 border-2 border-transparent hover:border-gray-200"
                                 >
@@ -332,7 +343,7 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Left Panel: Primary Info */}
                     <div className="lg:col-span-2 space-y-8">
-                        {activeTab === 'Profile' ? (
+                        <div className={activeTab === 'Profile' ? 'block' : 'hidden'}>
                             <div className={`bg-white rounded-[40px] p-8 lg:p-12 shadow-sm border-2 ${borderColor}`}>
                                 <h2 className={`text-2xl font-black ${textColor} mb-8 flex items-center gap-3`}>
                                     <Info className={`size-6 ${textColor}`} />
@@ -463,11 +474,13 @@ export default function ProfileClient({ initialProfile, userId, email }: Profile
                                     )}
                                 </div>
                             </div>
-                        ) : (
-                            <div className={`bg-white rounded-[40px] p-4 lg:p-8 shadow-sm border-2 ${borderColor} min-h-[600px] overflow-hidden`}>
-                                <AddressMap userId={userId} role={role} />
+                        </div>
+
+                        <div className={activeTab === 'Address' ? 'block' : 'hidden'}>
+                            <div className={`bg-white rounded-[40px] p-4 lg:p-8 shadow-sm border-2 ${borderColor} overflow-hidden`}>
+                                <AddressMap ref={addressMapRef} userId={userId} role={role} externalIsEditing={isEditing} />
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* Right Panel: Supplementary Info */}

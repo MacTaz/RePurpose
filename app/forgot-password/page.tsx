@@ -1,19 +1,36 @@
 "use client";
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { forgotPassword } from '@/lib/auth-actions'
+import { createClient } from '@/utils/supabase/client'
 import VideoPanel from '@/components/VideoPanel'
 
 const page = () => {
     const [submitted, setSubmitted] = useState(false)
     const [email, setEmail] = useState('')
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
+    const supabase = createClient()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        const formData = new FormData()
-        formData.append('email', email)
-        await forgotPassword(formData)
-        setSubmitted(true)
+        setError('')
+        setLoading(true)
+        try {
+            // Priority: Current window origin (for localhost) > Env var > Fallback
+            const siteUrl = window.location.origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                // This sends the reset link through your custom SMTP (Gmail)
+                // and routes the token through your confirm route
+                redirectTo: `${siteUrl}/auth/confirm?next=/reset-password&type=recovery`,
+            })
+            if (error) throw error
+            setSubmitted(true)
+        } catch (err: any) {
+            setError(err.message || 'Something went wrong. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -49,7 +66,15 @@ const page = () => {
                     {!submitted ? (
                         <>
                             <h2 className="text-white font-['Inter'] text-4xl font-bold mb-3">Forgot Password</h2>
-                            <p className="text-white/60 text-sm mb-8">Enter your email and we'll send you a link to reset your password.</p>
+                            <p className="text-white/60 text-sm mb-8">
+                                Enter your email and we'll send you a link to reset your password.
+                            </p>
+
+                            {error && (
+                                <div className="bg-red-500/20 border border-red-500/40 text-red-200 rounded-lg px-4 py-3 mb-6 text-sm">
+                                    ⚠️ {error}
+                                </div>
+                            )}
 
                             <form onSubmit={handleSubmit} className="flex flex-col">
                                 <label className="text-white font-['Inter'] mb-2">Email</label>
@@ -63,16 +88,32 @@ const page = () => {
                                 />
                                 <button
                                     type="submit"
-                                    className="bg-[#647BD0] text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:bg-[#4f63b0] transition-all duration-300"
+                                    disabled={loading}
+                                    className="bg-[#647BD0] text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:bg-[#4f63b0] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    Send Reset Link
+                                    {loading ? (
+                                        <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</>
+                                    ) : 'Send Reset Link'}
                                 </button>
                             </form>
                         </>
                     ) : (
                         <>
+                            <div className="text-6xl mb-6">📬</div>
                             <h2 className="text-white font-['Inter'] text-4xl font-bold mb-3">Check your email!</h2>
-                            <p className="text-white/60 text-sm mb-8">We sent a password reset link to <span className="text-white font-bold">{email}</span>. Click the link in the email to reset your password.</p>
+                            <p className="text-white/60 text-sm mb-4">
+                                We sent a password reset link to{' '}
+                                <span className="text-white font-bold">{email}</span>.
+                            </p>
+                            <p className="text-white/40 text-xs mb-8">
+                                Click the link in the email to reset your password. The link expires in 1 hour.
+                            </p>
+                            <button
+                                onClick={() => { setSubmitted(false); setError('') }}
+                                className="text-white/50 hover:text-white text-sm transition-colors duration-200 text-left"
+                            >
+                                ← Try a different email
+                            </button>
                         </>
                     )}
 

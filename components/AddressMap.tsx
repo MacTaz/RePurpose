@@ -1,5 +1,5 @@
-'use client'
-import { useEffect, useRef, useState } from 'react'
+'use client';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import 'leaflet/dist/leaflet.css'
 import { MapPin, Navigation, CheckCircle2, Edit3, Loader2 } from 'lucide-react'
@@ -7,9 +7,10 @@ import { MapPin, Navigation, CheckCircle2, Edit3, Loader2 } from 'lucide-react'
 interface AddressMapProps {
     userId: string
     role?: 'donor' | 'organization'
+    externalIsEditing?: boolean
 }
 
-export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) {
+const AddressMap = forwardRef<any, AddressMapProps>(({ userId, role = 'donor', externalIsEditing }, ref) => {
     const isDonor = role === 'donor'
     const textColor = isDonor ? 'text-[#30496E]' : 'text-[#FF9248]'
     const bgColor = isDonor ? 'bg-[#30496E]' : 'bg-[#FF9248]'
@@ -35,6 +36,32 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
 
+    // Derived editing state
+    const effectiveIsEditing = externalIsEditing !== undefined ? externalIsEditing : !isSaved
+
+    useImperativeHandle(ref, () => ({
+        saveAddress: handleConfirm,
+        resetAddress: () => {
+            if (mapRef.current && markerRef.current) {
+                loadAddressData(mapRef.current, markerRef.current)
+            }
+        }
+    }))
+
+    // Synchronize isSavedRef and marker dragging when externalIsEditing changes
+    useEffect(() => {
+        if (externalIsEditing !== undefined) {
+            isSavedRef.current = !externalIsEditing
+            if (markerRef.current) {
+                if (externalIsEditing) {
+                    markerRef.current.dragging.enable()
+                } else {
+                    markerRef.current.dragging.disable()
+                }
+            }
+        }
+    }, [externalIsEditing])
+
     // Initialize Leaflet map
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -48,7 +75,6 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
 
             const L = (await import('leaflet')).default
 
-            // Double check after async import completes to handle React Strict Mode concurrent calls
             if (!isMounted || !mapContainerRef.current) return
             if ((mapContainerRef.current as any)._leaflet_id) return
 
@@ -90,7 +116,6 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
             mapRef.current = mapInstance
             markerRef.current = marker
 
-            // Force Leaflet to recalculate size after DOM paint
             setTimeout(() => {
                 mapInstance.invalidateSize()
             }, 100)
@@ -107,6 +132,18 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                 mapRef.current = null
             }
         }
+    }, [])
+
+    // Handle map container resizing (especially when toggling visibility)
+    useEffect(() => {
+        if (!mapRef.current || !mapContainerRef.current) return
+        const resizeObserver = new ResizeObserver(() => {
+            if (mapRef.current) {
+                mapRef.current.invalidateSize()
+            }
+        })
+        resizeObserver.observe(mapContainerRef.current)
+        return () => resizeObserver.disconnect()
     }, [])
 
     const loadAddressData = async (map: any, marker: any) => {
@@ -127,9 +164,17 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                 latitude: data.latitude || 14.5995,
                 longitude: data.longitude || 120.9842
             })
+
+            const saved = externalIsEditing !== undefined ? !externalIsEditing : true
             setIsSaved(true)
-            isSavedRef.current = true
-            marker.dragging.disable()
+            isSavedRef.current = saved
+
+            if (saved) {
+                marker.dragging.disable()
+            } else {
+                marker.dragging.enable()
+            }
+
             map.setView([data.latitude, data.longitude], 15)
             marker.setLatLng([data.latitude, data.longitude])
         }
@@ -191,11 +236,15 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                 }, { onConflict: 'user_id' })
 
             if (error) throw error
-            setIsSaved(true)
-            isSavedRef.current = true
-            markerRef.current?.dragging.disable()
-        } catch (err) {
+            if (externalIsEditing === undefined) {
+                setIsSaved(true)
+                isSavedRef.current = true
+                markerRef.current?.dragging.disable()
+            }
+            return { success: true }
+        } catch (err: any) {
             console.error('Save error:', err)
+            return { success: false, error: err.message }
         } finally {
             setIsSaving(false)
         }
@@ -231,7 +280,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                         <div className="space-y-1.5">
                             <label className="text-xs font-black uppercase text-gray-400 ml-1">Address Line 1</label>
                             <input
-                                disabled={isSaved}
+                                disabled={!effectiveIsEditing}
                                 type="text"
                                 value={addressForm.line1}
                                 onChange={e => setAddressForm({ ...addressForm, line1: e.target.value })}
@@ -243,7 +292,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                         <div className="space-y-1.5">
                             <label className="text-xs font-black uppercase text-gray-400 ml-1">Address Line 2 (Optional)</label>
                             <input
-                                disabled={isSaved}
+                                disabled={!effectiveIsEditing}
                                 type="text"
                                 value={addressForm.line2}
                                 onChange={e => setAddressForm({ ...addressForm, line2: e.target.value })}
@@ -255,7 +304,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black uppercase text-gray-400 ml-1">City</label>
                                 <input
-                                    disabled={isSaved}
+                                    disabled={!effectiveIsEditing}
                                     type="text"
                                     value={addressForm.city}
                                     onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
@@ -265,7 +314,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black uppercase text-gray-400 ml-1">Country</label>
                                 <input
-                                    disabled={isSaved}
+                                    disabled={!effectiveIsEditing}
                                     type="text"
                                     value={addressForm.country}
                                     onChange={e => setAddressForm({ ...addressForm, country: e.target.value })}
@@ -276,7 +325,7 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                         <div className="space-y-1.5">
                             <label className="text-xs font-black uppercase text-gray-400 ml-1">Zip / Postal Code</label>
                             <input
-                                disabled={isSaved}
+                                disabled={!effectiveIsEditing}
                                 type="text"
                                 value={addressForm.zip}
                                 onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
@@ -286,27 +335,32 @@ export default function AddressMap({ userId, role = 'donor' }: AddressMapProps) 
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-gray-100">
-                    {!isSaved ? (
-                        <button
-                            onClick={handleConfirm}
-                            disabled={isSaving}
-                            className={`w-full py-4 ${bgColor} text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50`}
-                        >
-                            {isSaving ? <Loader2 className="animate-spin size-5" /> : <CheckCircle2 className="size-5" />}
-                            Confirm Location
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleEdit}
-                            className={`w-full py-4 bg-white ${textColor} border-2 ${borderColor} rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3`}
-                        >
-                            <Edit3 className="size-5" />
-                            Update Address
-                        </button>
-                    )}
-                </div>
+                {externalIsEditing === undefined && (
+                    <div className="pt-6 border-t border-gray-100">
+                        {!isSaved ? (
+                            <button
+                                onClick={handleConfirm}
+                                disabled={isSaving}
+                                className={`w-full py-4 ${bgColor} text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50`}
+                            >
+                                {isSaving ? <Loader2 className="animate-spin size-5" /> : <CheckCircle2 className="size-5" />}
+                                Confirm Location
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleEdit}
+                                className={`w-full py-4 bg-white ${textColor} border-2 ${borderColor} rounded-2xl font-black shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-3`}
+                            >
+                                <Edit3 className="size-5" />
+                                Update Address
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     )
-}
+})
+
+AddressMap.displayName = 'AddressMap'
+export default AddressMap
