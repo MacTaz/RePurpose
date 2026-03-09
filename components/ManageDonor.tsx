@@ -115,7 +115,7 @@ const ManageDonor = ({ donations }: Props) => {
                     </div>
 
                     <div className="mt-8 px-4 md:px-8 pb-4 overflow-x-auto relative z-10">
-                        <div className="min-w-[700px] space-y-4">
+                        <div className="min-w-[800px] space-y-4">
                             <div className="flex space-x-4">
                                 {["#", "Type", "Charity Sent To", "Status", "Date"].map(h => (
                                     <div key={h} className="flex-1 bg-white/80 rounded-full py-2.5 text-center text-[#30496E] text-[10px] font-black uppercase tracking-widest shadow-sm">{h}</div>
@@ -127,19 +127,19 @@ const ManageDonor = ({ donations }: Props) => {
                             ) : (
                                 donations.map((donation, index) => (
                                     <div key={donation.id} onClick={() => setSelectedDonation(donation)}
-                                        className="flex w-full h-14 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-black text-[#30496E]">{String(index + 1).padStart(3, '0')}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize">{donation.type}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">{donation.org_name || donation.target_organization || '—'}</div>
-                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E]">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${donation.status === 'rejected' ? 'bg-red-100 text-red-500' :
-                                                    donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                                        donation.status === 'in_progress' ? 'bg-yellow-100 text-yellow-600' :
-                                                            donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                                                                'bg-blue-100 text-blue-700'
+                                        className="flex w-full min-h-[56px] py-1 bg-white/70 backdrop-blur-sm rounded-xl border border-white/50 cursor-pointer hover:bg-white hover:scale-[1.01] hover:shadow-lg transition-all duration-300">
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-black text-[#30496E] px-1 text-center">{String(index + 1).padStart(3, '0')}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] capitalize px-1 text-center">{donation.type}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] px-1 text-center">{donation.org_name || donation.target_organization || '—'}</div>
+                                        <div className="flex-1 border-r border-[#9BBAD0]/30 flex items-center justify-center font-bold text-[#30496E] px-1 text-center">
+                                            <span className={`px-2 md:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-center ${donation.status === 'rejected' ? 'bg-red-100 text-red-500' :
+                                                donation.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                                    donation.status === 'in_progress' ? 'bg-yellow-100 text-yellow-600' :
+                                                        donation.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                                                            'bg-blue-100 text-blue-700'
                                                 }`}>{donation.status?.replace('_', ' ')}</span>
                                         </div>
-                                        <div className="flex-1 flex items-center justify-center font-bold text-[#30496E]">
+                                        <div className="flex-1 flex items-center justify-center font-bold text-[#30496E] px-1 text-center">
                                             {new Date(donation.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
