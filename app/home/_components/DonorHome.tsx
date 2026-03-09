@@ -16,9 +16,10 @@ interface Donation {
 
 interface Props {
     donations: Donation[]
+    registeredOrgs: Array<any>
 }
 
-const DonorHome = ({ donations }: Props) => {
+const DonorHome = ({ donations, registeredOrgs }: Props) => {
     const [selectedDonation, setSelectedDonation] = useState<Donation | null>(null);
 
     if (selectedDonation) {
@@ -36,7 +37,7 @@ const DonorHome = ({ donations }: Props) => {
 
             {/* RIGHT: Discover & Recent */}
             <div className="flex-1 flex flex-col gap-8">
-                <DiscoverCharitiesClient />
+                <DiscoverCharitiesClient registeredOrgs={registeredOrgs} />
                 <RecentDonationsClient donations={donations} onSelect={setSelectedDonation} />
             </div>
         </main>

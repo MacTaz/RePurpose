@@ -72,11 +72,54 @@ const Home = async () => {
                 org_zip: addr?.zip || ''
             }
         })
+        const { data: allOrgs } = await adminSupabase
+            .from('profiles')
+            .select('id, full_name, profile_pic')  // ✅ was avatar_url
+            .eq('role', 'organization')
+
+        const allOrgIds = (allOrgs || []).map((o: any) => o.id)
+
+        const { data: allOrgAddresses } = await adminSupabase
+            .from('addresses')
+            .select('*')
+            .in('user_id', allOrgIds)
+
+        const { data: allOrgDetails } = await adminSupabase  // ✅ new — fetch org profiles
+            .from('organization_profiles')
+            .select('*')
+            .in('profile_id', allOrgIds)
+
+        const registeredOrgs = (allOrgs || []).map((org: any) => {
+            const addr = allOrgAddresses?.find((a: any) => a.user_id === org.id) || null
+            const details = allOrgDetails?.find((d: any) => d.profile_id === org.id) || null
+            return {
+                id: org.id,
+                full_name: org.full_name || 'Unnamed Organization',  // ✅ match component prop name
+                profile_pic: org.profile_pic || null,                // ✅ was avatar_url
+                organization_profiles: details ? {                   // ✅ nested to match component
+                    description: details.description,
+                    tagline: details.tagline,
+                    is_verified: details.is_verified,
+                    categories_accepted: details.categories_accepted,
+                    donation_method: details.donation_method,
+                    availability: details.availability,
+                    urgent_need: details.urgent_need,
+                    website: details.website,
+                    email: details.email,
+                } : null,
+                addresses: addr ? {                                  // ✅ nested to match component
+                    latitude: addr.latitude,
+                    longitude: addr.longitude,
+                    city: addr.city,
+                    address_line1: addr.address_line1,
+                } : null,
+            }
+        })
 
         return (
             <div className="min-h-screen bg-white flex flex-col font-['Inter']">
                 <Navbar role={role} />
-                <DonorHome donations={mappedDonations} />
+                <DonorHome donations={mappedDonations} registeredOrgs={registeredOrgs} />
             </div>
         )
     }
