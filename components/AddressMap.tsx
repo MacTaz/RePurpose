@@ -20,6 +20,7 @@ const AddressMap = forwardRef<any, AddressMapProps>(({ userId, role = 'donor', e
     const mapRef = useRef<any>(null)
     const markerRef = useRef<any>(null)
     const mapContainerRef = useRef<HTMLDivElement>(null)
+    const resizeObserverRef = useRef<ResizeObserver | null>(null)
     const isSavedRef = useRef(false)
     const supabase = createClient()
 
@@ -116,34 +117,36 @@ const AddressMap = forwardRef<any, AddressMapProps>(({ userId, role = 'donor', e
             mapRef.current = mapInstance
             markerRef.current = marker
 
+            // Setup ResizeObserver after map is ready
+            const observer = new ResizeObserver(() => {
+                if (mapInstance) mapInstance.invalidateSize()
+            })
+            observer.observe(mapContainerRef.current)
+            resizeObserverRef.current = observer
+
             setTimeout(() => {
                 mapInstance.invalidateSize()
             }, 100)
 
-            loadAddressData(mapInstance, marker)
+            // Multiple attempts to ensure it works even with layout shifts
+            setTimeout(() => mapInstance.invalidateSize(), 500)
+            setTimeout(() => mapInstance.invalidateSize(), 1500)
+
+            await loadAddressData(mapInstance, marker)
         }
 
         initMap()
 
         return () => {
             isMounted = false
-            if (mapInstance) {
-                mapInstance.remove()
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect()
+            }
+            if (mapRef.current) {
+                mapRef.current.remove()
                 mapRef.current = null
             }
         }
-    }, [])
-
-    // Handle map container resizing (especially when toggling visibility)
-    useEffect(() => {
-        if (!mapRef.current || !mapContainerRef.current) return
-        const resizeObserver = new ResizeObserver(() => {
-            if (mapRef.current) {
-                mapRef.current.invalidateSize()
-            }
-        })
-        resizeObserver.observe(mapContainerRef.current)
-        return () => resizeObserver.disconnect()
     }, [])
 
     const loadAddressData = async (map: any, marker: any) => {

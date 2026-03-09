@@ -289,7 +289,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                     {selectedOrg ? (
                         <>
                             {/* key={selectedOrg.id} forces full remount when switching orgs so map reinitialises */}
-                            <div className="relative overflow-hidden lg:flex-shrink-0 lg:h-[360px]" style={{ height: '220px' }}>
+                            <div className="relative overflow-hidden lg:h-[340px] lg:flex-none min-h-[220px]">
                                 {selectedOrg.addresses?.latitude && selectedOrg.addresses?.longitude ? (
                                     <DistanceMap
                                         key={selectedOrg.id}
@@ -336,7 +336,7 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                             </div>
 
                             {/* Org detail panel */}
-                            <div className="p-4 border-t border-[#edf3fa] lg:overflow-y-auto lg:flex-1 lg:min-h-0">
+                            <div className="p-4 border-t border-[#edf3fa] lg:overflow-y-auto lg:flex-1 lg:min-h-0 custom-scrollbar">
                                 {/* Name */}
                                 <div className="mb-3">
                                     <div className="flex items-center gap-1.5">

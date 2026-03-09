@@ -55,6 +55,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const routeLayerRef = useRef<any>(null);
     const userMarkerRef = useRef<any>(null);
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const [distanceKm, setDistanceKm] = useState<string | null>(null);
     const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
@@ -212,13 +213,25 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
             }
 
             mapRef.current = mapInstance;
+
+            // Setup ResizeObserver to handle container resizing
+            const observer = new ResizeObserver(() => {
+                if (mapInstance) mapInstance.invalidateSize();
+            });
+            observer.observe(mapContainerRef.current);
+            resizeObserverRef.current = observer;
+
             setTimeout(() => mapInstance.invalidateSize(), 100);
+            setTimeout(() => mapInstance.invalidateSize(), 500);
         };
 
         if (orgLat && orgLng) initMap();
 
         return () => {
             isMounted = false;
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect();
+            }
             if (mapInstance) {
                 mapInstance.remove();
                 mapRef.current = null;
