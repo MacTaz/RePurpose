@@ -6,6 +6,21 @@ import VideoPanel from '@/components/VideoPanel'
 
 const page = () => {
     const [showPassword, setShowPassword] = useState(false);
+    const [loginError, setLoginError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoginError('');
+        setLoading(true);
+        const formData = new FormData(e.currentTarget);
+        const result = await login(formData);
+        if (result?.error) {
+            setLoginError(result.error);
+            setLoading(false);
+        }
+        // On success, login() redirects server-side — nothing to do here
+    };
     return (
         <div className="relative min-h-screen bg-[#2D3561] flex flex-col md:flex-row">
             {/* Topographic Wave Background */}
@@ -84,7 +99,12 @@ const page = () => {
                         <span className="text-white/40 text-xs font-bold uppercase tracking-widest">or login with email</span>
                         <div className="flex-1 h-[1px] bg-white/20"></div>
                     </div>
-                    <form action={login} className="flex flex-col">
+                    <form onSubmit={handleLogin} className="flex flex-col">
+                        {loginError && (
+                            <div className="mb-4 px-4 py-3 bg-red-500/20 border border-red-400/40 rounded-lg">
+                                <p className="text-red-300 text-sm font-semibold">⚠️ {loginError}</p>
+                            </div>
+                        )}
                         <label className="text-white font-['Inter'] mb-2">Email</label>
                         <input
                             name="email"
@@ -124,8 +144,10 @@ const page = () => {
                             </Link>
                         </div>
 
-                        <button type="submit" className="bg-[#647BD0] text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:bg-[#4f63b0] transition-all duration-300">
-                            Login
+                        <button type="submit" disabled={loading} className="bg-[#647BD0] text-white font-['Inter'] text-xl font-bold py-3 rounded-lg hover:bg-[#4f63b0] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            {loading ? (
+                                <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Logging in...</>
+                            ) : 'Login'}
                         </button>
                     </form>
 
