@@ -392,7 +392,7 @@ export default function MatchClient({ organizations, role, userLocation }: Match
                                 <div className="xl:col-span-2 space-y-8 lg:space-y-10">
                                     {/* Map Display */}
                                     {(selectedOrg?.latitude && selectedOrg?.longitude) && (
-                                        <div className="bg-white p-2 lg:p-3 rounded-[32px] lg:rounded-[40px] shadow-sm border border-[#9dbcd4]/30 relative overflow-hidden group hover:border-[#9dbcd4] transition-all">
+                                        <div className="bg-white p-2 lg:p-3 rounded-[32px] lg:rounded-[40px] shadow-sm border border-[#9dbcd4]/30 relative overflow-hidden group hover:border-[#9dbcd4] transition-all" style={{ height: '350px' }}>
                                             <DistanceMap
                                                 orgLat={selectedOrg.latitude}
                                                 orgLng={selectedOrg.longitude}
