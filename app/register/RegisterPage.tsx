@@ -6,7 +6,7 @@ import { setupProfile } from '@/lib/auth-actions'
 import VideoPanel from '@/components/VideoPanel'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-// ── PH phone validator: 10 digits, must start with 9 ──────────────────────
+// ── PH phone validator: 10 digits, must start with 9 ─────────────────────
 const isValidPHPhone = (v: string) => {
     const d = v.replace(/\D/g, '');
     return d.length === 10 && d.startsWith('9');
@@ -54,10 +54,10 @@ const RegisterPage = () => {
 
     const isOAuth = searchParams.get('oauth') === 'true';
     const oauthEmail = searchParams.get('email') ?? '';
-    // Redirected from login when setup_complete is false
     const resumeStep = searchParams.get('step') === '2';
 
-    const [step, setStep] = useState<1 | 2>(resumeStep ? 2 : 1);
+    // step: 1 = account details, 'pending' = awaiting email confirmation, 2 = profile setup
+    const [step, setStep] = useState<1 | 2 | 'pending'>(resumeStep ? 2 : 1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -78,7 +78,6 @@ const RegisterPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // Pre-fill from session for: OAuth users, incomplete-registration resumers
         if (isOAuth || resumeStep) {
             supabase.auth.getUser().then(({ data: { user } }) => {
                 if (user) {
@@ -119,36 +118,50 @@ const RegisterPage = () => {
             const { data: { user } } = await supabase.auth.getUser();
 
             if (user) {
-                // If user already exists (OAuth), we update password AND set the role metadata
-                const { error: updateError } = await supabase.auth.updateUser({
-                    password,
-                    data: {
-                        full_name: fullName,
-                        role: userType,
-                        email: email || user.email,
-                        identity_confirmed: true // Custom flag to mark Step 1 completion
-                    }
-                });
-                if (updateError) throw updateError;
+                // OAuth user: already verified via Google/Facebook.
+                // Just save name/role in state and move to Step 2.
+                // Password will be set AFTER profile setup in handleStep2
+                // to avoid the "must differ from old password" Supabase error.
+                setStep(2);
             } else {
-                // Standard email signup
+                // New email signup — send confirmation email first
                 const { error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
+                        emailRedirectTo: `${window.location.origin}/auth/confirm`,
                         data: {
                             full_name: fullName,
                             role: userType,
                             email,
-                            identity_confirmed: true
-                        }
+                            identity_confirmed: true,
+                        },
                     },
                 });
                 if (signUpError) throw signUpError;
+                setStep('pending');
             }
-            setStep(2);
         } catch (err: any) {
             setError(err.message || 'An error occurred during account creation');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendEmail = async () => {
+        setError('');
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/confirm`,
+                },
+            });
+            if (error) throw error;
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -186,6 +199,16 @@ const RegisterPage = () => {
             });
 
             if (result?.error) throw new Error(result.error);
+
+            // For OAuth users: now that profile is created, safely set their password.
+            // Doing it here (after all DB writes) avoids the "must differ" Supabase error
+            // that occurs when updating password before any session activity.
+            if (isOAuth && password) {
+                const { error: pwError } = await supabase.auth.updateUser({ password });
+                // Non-fatal: if this fails, they can still log in via OAuth
+                if (pwError) console.warn('Password set failed (non-fatal):', pwError.message);
+            }
+
             router.push('/home');
             router.refresh();
         } catch (err: any) {
@@ -210,7 +233,6 @@ const RegisterPage = () => {
         </div>
     );
 
-    // Phone field: strip non-digits, show validation
     const phoneDigits = phone.replace(/\D/g, '');
     const phoneValid = isValidPHPhone(phone);
     const phoneTouched = phone.length > 0;
@@ -234,10 +256,9 @@ const RegisterPage = () => {
                 </svg>
             </div>
 
-            {/* Left decorative panel */}
             <VideoPanel />
 
-            {/* Right form — scrolls independently, background stays fixed */}
+            {/* Right form */}
             <div className="relative z-10 w-full lg:w-1/2 h-full flex flex-col px-6 md:px-16 pt-10 pb-10 overflow-y-auto">
 
                 {/* Logo */}
@@ -250,8 +271,8 @@ const RegisterPage = () => {
                     <hr className="border-white/40" />
                 </div>
 
-                {/* Step indicator — hidden for resume flows */}
-                {!resumeStep && (
+                {/* Step indicator — only show for steps 1 and 2 */}
+                {step !== 'pending' && !resumeStep && (
                     <div className="flex items-center gap-3 mb-8">
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all duration-500 ${step >= 1 ? `${accentBg} text-white` : 'bg-white/10 text-white/40'}`}>1</div>
                         <div className={`flex-1 h-[2px] rounded-full transition-all duration-700 ${accentBg} ${step === 2 ? 'opacity-100' : 'opacity-20'}`} />
@@ -261,7 +282,7 @@ const RegisterPage = () => {
                     </div>
                 )}
 
-                {/* ── STEP 1 ── */}
+                {/* ── STEP 1: Account Details ── */}
                 {step === 1 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                         <h2 className="text-white font-['Inter'] text-4xl font-bold mb-6">
@@ -286,12 +307,12 @@ const RegisterPage = () => {
                                 className={`${inputClass} mb-4 ${isOAuth ? 'opacity-60 cursor-not-allowed bg-white/10' : ''}`} />
 
                             <label className="text-white font-['Inter'] mb-2">
-                                {isOAuth ? 'Create Account Password' : 'Password'}
+                                {isOAuth ? 'Create a Password' : 'Password'}
                             </label>
                             <div className="mb-4">
                                 <PasswordInput value={password} onChange={e => setPassword(e.target.value)}
                                     placeholder="Enter your password" className={inputClass} />
-                                {isOAuth && <p className="text-[10px] text-white/40 mt-1 uppercase tracking-widest font-black">Secure your account for future email logins</p>}
+                                {isOAuth && <p className="text-[10px] text-white/40 mt-1 uppercase tracking-widest font-black">Set a password so you can also log in with email</p>}
                             </div>
 
                             <label className="text-white font-['Inter'] mb-2">Confirm Password</label>
@@ -325,12 +346,50 @@ const RegisterPage = () => {
                     </div>
                 )}
 
-                {/* ── STEP 2 ── */}
+                {/* ── PENDING: Email confirmation sent ── */}
+                {step === 'pending' && (
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col items-center text-center mt-8">
+                        <div className="text-7xl mb-6">📬</div>
+                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-4">Check your email</h2>
+                        <p className="text-white/60 text-sm mb-2">
+                            We sent a confirmation link to
+                        </p>
+                        <p className="text-white font-bold text-lg mb-6">{email}</p>
+                        <p className="text-white/40 text-xs max-w-sm mb-10">
+                            Click the link in the email to verify your account. After confirming, you'll be taken back here to complete your profile.
+                        </p>
+
+                        <div className="w-full max-w-sm space-y-3">
+                            {error && (
+                                <p className="text-red-300 text-sm text-center">{error}</p>
+                            )}
+                            <button
+                                onClick={handleResendEmail}
+                                disabled={loading}
+                                className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-3 rounded-lg transition-all duration-300 disabled:opacity-50 text-sm"
+                            >
+                                {loading ? 'Sending...' : 'Resend confirmation email'}
+                            </button>
+                            <button
+                                onClick={() => { setStep(1); setError(''); }}
+                                className="w-full text-white/40 hover:text-white/70 text-sm transition-colors duration-200"
+                            >
+                                ← Back to edit details
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── STEP 2: Complete Profile ── */}
                 {step === 2 && (
                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-6">Complete Profile</h2>
-                        {/* Show role tabs for OAuth and resume-step users (they skipped step 1) */}
-                        {(isOAuth || resumeStep) && <RoleTabs />}
+                        <h2 className="text-white font-['Inter'] text-4xl font-bold mb-2">Complete Profile</h2>
+                        <p className="text-white/50 text-sm mb-6">
+                            {resumeStep ? '✓ Email confirmed! Now let\'s set up your profile.' : 'Almost there — fill in your details.'}
+                        </p>
+
+                        {/* Only OAuth users need to re-pick role — email signup users already set it in Step 1 */}
+                        {isOAuth && <RoleTabs />}
 
                         <form onSubmit={handleStep2} className="flex flex-col">
                             {/* Profile picture */}
@@ -362,10 +421,14 @@ const RegisterPage = () => {
                                 placeholder={isDonor ? 'Enter your full name' : 'Enter organization name'}
                                 className={`${inputClass} mb-4`} />
 
-                            {/* Email locked for OAuth or resume users */}
+                            {/* Email locked — already confirmed, cannot change */}
                             {(isOAuth || resumeStep) && (
                                 <>
-                                    <label className="text-white font-['Inter'] mb-2">Email <span className="text-white/40 text-sm font-normal">(from your account)</span></label>
+                                    <label className="text-white font-['Inter'] mb-2">
+                                        Email <span className="text-white/40 text-sm font-normal">
+                                            {resumeStep ? '(verified ✓)' : '(from your account)'}
+                                        </span>
+                                    </label>
                                     <input value={oauthEmail || email} readOnly type="email"
                                         className="w-full bg-white/10 text-white/50 rounded-lg px-4 py-3 outline-none cursor-not-allowed mb-4" />
                                 </>
@@ -425,7 +488,6 @@ const RegisterPage = () => {
                             {error && <p className="text-red-300 text-sm mb-3">{error}</p>}
 
                             <div className="flex gap-3">
-                                {/* Back button only for standard multi-step flow */}
                                 {!isOAuth && !resumeStep && (
                                     <button type="button" onClick={() => { setStep(1); setError(''); }}
                                         className="flex-none px-6 py-3 rounded-lg border border-white/30 text-white font-bold hover:bg-white/10 transition-all duration-300">

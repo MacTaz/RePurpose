@@ -101,7 +101,7 @@ const CharityProfile = ({ user, userId }: CharityProfileProps) => {
             </div>
 
             {/* Container - Orange/Peach Gradient matching Charity Theme */}
-            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 min-h-[600px] flex flex-col relative overflow-visible">
+            <div className="w-full bg-gradient-to-br from-[#FFD1B3] to-[#FFB27D] rounded-[2rem] p-8 lg:p-12 shadow-2xl shadow-[#FFB27D]/30 border border-white/20 flex flex-col relative overflow-visible">
                 {/* Decorative background circle */}
                 <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-white/30 rounded-full blur-3xl pointer-events-none"></div>
 

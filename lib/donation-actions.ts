@@ -15,7 +15,7 @@ export const rejectDonation = async (id: string) => {
     const supabase = createClient();
     const { error } = await supabase
         .from('donations')
-        .update({ status: 'declined' })
+        .update({ status: 'rejected' })
         .eq('id', id);
 
     if (error) return { success: false, error: error.message };

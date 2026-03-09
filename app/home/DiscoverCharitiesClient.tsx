@@ -119,7 +119,21 @@ export default function DiscoverCharitiesClient({ registeredOrgs }: Props) {
                 const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
                 setUserCoords(coords)
                 setLocationStatus('granted')
+
+                // 1. Fetch for selected org first
+                if (selectedOrgId) {
+                    const selOrg = registeredOrgs.find(o => o.id === selectedOrgId);
+                    if (selOrg) {
+                        const addr = selOrg.addresses;
+                        if (addr?.latitude && addr?.longitude) {
+                            fetchRoadDistance(selOrg.id, coords.lat, coords.lng, addr.latitude, addr.longitude);
+                        }
+                    }
+                }
+
+                // 2. Fetch for the rest
                 registeredOrgs.forEach(org => {
+                    if (org.id === selectedOrgId) return; // Skip already started
                     const addr = org.addresses
                     if (addr?.latitude && addr?.longitude) {
                         fetchRoadDistance(org.id, coords.lat, coords.lng, addr.latitude, addr.longitude)

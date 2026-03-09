@@ -42,6 +42,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
     const mapRef = useRef<any>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const routeLayerRef = useRef<any>(null);
+    const userMarkerRef = useRef<any>(null);
     const [distanceKm, setDistanceKm] = useState<string | null>(null);
     const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 
@@ -181,7 +182,8 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
                     iconSize: [40, 60],
                     iconAnchor: [20, 60],
                 });
-                L.marker(L.latLng(userLat, userLng), { icon: youIcon })
+                if (userMarkerRef.current) mapInstance.removeLayer(userMarkerRef.current);
+                userMarkerRef.current = L.marker(L.latLng(userLat, userLng), { icon: youIcon })
                     .bindPopup('<b>Your Location</b>')
                     .addTo(mapInstance);
 
@@ -202,6 +204,7 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
                 mapInstance.remove();
                 mapRef.current = null;
                 routeLayerRef.current = null;
+                userMarkerRef.current = null;
             }
         };
     }, [orgLat, orgLng]); // only re-init when org changes
@@ -216,12 +219,38 @@ export default function DistanceMap({ orgLat, orgLng, userLat, userLng, zoom = 1
             if (!map) return;
 
             if (userLat && userLng) {
+                // Add or update marker
+                const youIcon = L.divIcon({
+                    className: '',
+                    html: `
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+                            <div style="background:#22c55e;color:white;font-family:sans-serif;font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;box-shadow:0 2px 8px rgba(34,197,94,0.45);white-space:nowrap;letter-spacing:0.04em;">YOU</div>
+                            <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #22c55e;margin-top:-1px"></div>
+                            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" style="width:20px;height:33px;margin-top:-4px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))" />
+                        </div>
+                    `,
+                    iconSize: [40, 60],
+                    iconAnchor: [20, 60],
+                });
+
+                if (userMarkerRef.current) {
+                    userMarkerRef.current.setLatLng([userLat, userLng]);
+                } else {
+                    userMarkerRef.current = L.marker([userLat, userLng], { icon: youIcon })
+                        .bindPopup('<b>Your Location</b>')
+                        .addTo(map);
+                }
+
                 await drawRoute(L, map, userLat, userLng);
             } else {
-                // Remove route if user location is cleared
+                // Remove route and marker if user location is cleared
                 if (routeLayerRef.current) {
                     map.removeLayer(routeLayerRef.current);
                     routeLayerRef.current = null;
+                }
+                if (userMarkerRef.current) {
+                    map.removeLayer(userMarkerRef.current);
+                    userMarkerRef.current = null;
                 }
                 map.setView(L.latLng(orgLat, orgLng), zoom);
                 setDistanceKm(null);
