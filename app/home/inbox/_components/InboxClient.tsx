@@ -11,6 +11,7 @@ interface DonationThread {
     donationType: string;
     donationStatus: string;
     donationQuantity: number;
+    lastMessageId: string | null;
     lastMessage: string;
     time: string;
     unread: number;
@@ -213,9 +214,16 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
             )
             const lastMsg = msgs[0]
 
-            // FIX: unread = 1 only when the most recent message was sent by the other party.
-            // Previously this counted all foreign messages ever, giving a permanently inflated badge.
-            const hasUnread = lastMsg && lastMsg.sender_id !== userId ? 1 : 0
+            // Count unread messages against localStorage
+            const lastSeenId = typeof window !== 'undefined' ? localStorage.getItem(`seen_${convo.id}`) : null
+            let unreadCount = 0
+            if (lastMsg && lastMsg.sender_id !== userId) {
+                for (const m of msgs) {
+                    if (m.sender_id === userId) continue
+                    if (m.id === lastSeenId) break
+                    unreadCount++
+                }
+            }
 
             groupMap[partnerId].threads.push({
                 conversationId: convo.id,
@@ -223,11 +231,12 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                 donationType: don?.type || 'Donation',
                 donationStatus: don?.status || 'pending',
                 donationQuantity: don?.quantity || 1,
+                lastMessageId: lastMsg?.id || null,
                 lastMessage: lastMsg?.image_url ? '📷 Image' : (lastMsg?.content || 'No messages yet'),
                 time: lastMsg?.created_at
                     ? new Date(lastMsg.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
                     : '',
-                unread: hasUnread,
+                unread: unreadCount,
             })
         }
 
@@ -277,6 +286,13 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
                     }]
                 })
                 // Keep sidebar last-message preview + unread state in sync
+                if (m.sender_id !== userId && m.id) {
+                    // If we're already looking at this thread, mark it read immediately
+                    if (selectedConvoId === m.conversation_id) {
+                        localStorage.setItem(`seen_${m.conversation_id}`, m.id)
+                        window.dispatchEvent(new Event('messages_read'))
+                    }
+                }
                 fetchConversations()
             })
             .subscribe()
@@ -311,7 +327,7 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         const thread: DonationThread = {
             conversationId: newConvo.id, donationId: null,
             donationType: 'General', donationStatus: 'pending',
-            donationQuantity: 0, lastMessage: 'No messages yet', time: '', unread: 0,
+            donationQuantity: 0, lastMessageId: null, lastMessage: 'No messages yet', time: '', unread: 0,
         }
         setOrgGroups(prev => {
             const existing = prev.find(g => g.partnerId === org.id)
@@ -338,6 +354,13 @@ const InboxClient = ({ role, userId, userDisplayName }: InboxClientProps) => {
         setSelectedConvoId(thread.conversationId)
         setSelectedThread(thread)
         setSelectedOrgGroup(group)
+
+        // Mark as read in localStorage
+        if (thread.lastMessageId) {
+            localStorage.setItem(`seen_${thread.conversationId}`, thread.lastMessageId)
+            window.dispatchEvent(new Event('messages_read'))
+        }
+
         // Immediately clear the unread dot for this thread on open
         setOrgGroups(prev => prev.map(g =>
             g.partnerId !== group.partnerId ? g : {
