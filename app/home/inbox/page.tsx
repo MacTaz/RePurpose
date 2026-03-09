@@ -25,7 +25,7 @@ const InboxPage = async () => {
     return (
         <div className="h-screen bg-[#F8F9FA] flex flex-col overflow-hidden font-['Inter']">
             <Navbar role={role} />
-            <main className="flex-1 flex flex-col max-w-[1600px] mx-auto w-full overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
+            <main className="flex-1 flex flex-col w-full overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
                 <InboxClient
                     role={role}
                     userId={user.id}

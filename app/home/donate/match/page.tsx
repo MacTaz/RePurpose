@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import MatchClient from './_components/MatchClient'
-
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 export default async function MatchPage({ searchParams }: { searchParams: Promise<{ category?: string, pref?: string }> }) {
     const { category, pref } = await searchParams;
     const supabase = await createClient();
@@ -9,6 +9,15 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
 
     if (!user) {
         redirect('/login');
+    }
+
+    const adminSupabase = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!);
+    const { data: usersData } = await adminSupabase.auth.admin.listUsers();
+    const userEmails: Record<string, string> = {};
+    if (usersData?.users) {
+        usersData.users.forEach(u => {
+            if (u.email) userEmails[u.id] = u.email;
+        });
     }
 
     const { data: profile } = await supabase
@@ -19,13 +28,21 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
 
     const role = (profile?.role || 'donor') as 'donor' | 'organization';
 
-    const { data: orgData } = await supabase
+    const { data: userAddr } = await adminSupabase
+        .from('addresses')
+        .select('latitude, longitude')
+        .eq('user_id', user.id)
+        .single();
+    const userLocation = userAddr ? { latitude: userAddr.latitude, longitude: userAddr.longitude } : undefined;
+
+    const { data: orgData } = await adminSupabase
         .from('profiles')
         .select(`
             id,
             full_name,
             phone,
             profile_pic,
+            facebook_url,
             organization_profiles!inner (
                 description,
                 donation_method,
@@ -34,15 +51,22 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
                 categories_accepted,
                 website,
                 email,
-                tagline
-            ),
-            addresses (
-                city,
-                country
+                tagline,
+                urgent_need
             )
         `)
         .eq('role', 'organization')
         .order('full_name', { ascending: true });
+
+    const orgIds = (orgData || []).map((o: any) => o.id);
+    const { data: orgAddresses } = orgIds.length > 0
+        ? await adminSupabase.from('addresses').select('*').in('user_id', orgIds)
+        : { data: null };
+
+    const orgAddressMap: Record<string, any> = {};
+    (orgAddresses || []).forEach(addr => {
+        orgAddressMap[addr.user_id] = addr;
+    });
 
     let organizations = (orgData || []).map((org: any) => {
         const details = Array.isArray(org.organization_profiles)
@@ -59,12 +83,16 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
             is_verified: details?.is_verified,
             availability: details?.availability,
             categories_accepted: details?.categories_accepted,
+            facebook_url: org.facebook_url,
             website: details?.website,
-            email: details?.email,
+            email: userEmails[org.id] || details?.email,
             tagline: details?.tagline,
-            location: org.addresses?.[0]
-                ? `${org.addresses[0].city}, ${org.addresses[0].country}`
-                : 'Location not set'
+            urgent_need: details?.urgent_need,
+            location: orgAddressMap[org.id]?.country && orgAddressMap[org.id]?.city
+                ? `${orgAddressMap[org.id].country}, ${orgAddressMap[org.id].city}`
+                : 'Location not set',
+            latitude: orgAddressMap[org.id]?.latitude,
+            longitude: orgAddressMap[org.id]?.longitude,
         };
     });
 
@@ -86,7 +114,7 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
     return (
         <div className="min-h-screen bg-[#9dbcd4] flex flex-col font-['Inter'] overflow-hidden">
             <main className="flex-1 overflow-hidden">
-                <MatchClient organizations={organizations} role={role} />
+                <MatchClient organizations={organizations} role={role} userLocation={userLocation} />
             </main>
         </div>
     )
